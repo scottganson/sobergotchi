@@ -35,6 +35,7 @@ void show(uint8_t screenId, UiData& data, bool full) {
     partials++;
   }
   uint32_t t0 = millis();
+  LOG("screen %d: busy pin %d before", screenId, digitalRead(PIN_EPD_BUSY));
   epd.firstPage();
   do {
     epd.fillScreen(GxEPD_WHITE);
@@ -44,22 +45,29 @@ void show(uint8_t screenId, UiData& data, bool full) {
   awake = true;
 }
 
-bool probe(const char* label) {
+bool probe(const char* label, uint8_t screenId, UiData& data) {
+  // Fresh reset each time so one failed step cannot spoil the next.
+  epd.init(0, true, 2, false);
+  epd.setRotation(0);
   pinMode(PIN_EPD_DC, OUTPUT);
-  LOG("probe '%s': busy pin %d before", label, digitalRead(PIN_EPD_BUSY));
+  int busy = digitalRead(PIN_EPD_BUSY);
   uint32_t t0 = millis();
   epd.setFullWindow();
   epd.firstPage();
   do {
     epd.fillScreen(GxEPD_WHITE);
-    epd.setTextColor(GxEPD_BLACK);
-    epd.setTextSize(2);
-    epd.setCursor(6, 100);
+    ui::draw(epd, screenId, data);
+    epd.fillRect(0, 232, epd.width(), 18, GxEPD_BLACK);
+    epd.setTextColor(GxEPD_WHITE);
+    epd.setTextSize(1);
+    epd.setCursor(4, 237);
     epd.print(label);
   } while (epd.nextPage());
   uint32_t ms = millis() - t0;
-  LOG("probe '%s': %lu ms %s", label, (unsigned long)ms, ms > 9000 ? "FAILED" : "ok");
-  return ms <= 9000;
+  bool ok = ms > 1000 && ms < 9000;
+  LOG("step '%s': busy pin %d before, %lu ms, %s", label, busy, (unsigned long)ms, ok ? "ok" : "FAILED");
+  delay(1500);  // time to read the screen
+  return ok;
 }
 
 void sleep() {

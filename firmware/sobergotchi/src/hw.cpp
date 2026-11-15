@@ -74,7 +74,6 @@ void readBattery() {
 }
 
 float batteryVolts() {
-  if (lastRead == 0) readBattery();  // first use only; afterwards the app refreshes it between screens
   return lastVolts;
 }
 
