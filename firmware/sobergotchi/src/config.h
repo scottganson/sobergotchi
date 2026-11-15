@@ -28,9 +28,10 @@
 #define PIN_EPD_POWER   6    // D6, high = panel powered
 #define PIN_SPI_UNUSED_MISO 19 // the panel has no MISO; park SPI MISO on an unconnected pin (not D9!)
 
-#define PIN_KEY1        1    // D1, active low: back / previous / minus
-#define PIN_KEY2        2    // D2, active low: select / next field (hold = back)
-#define PIN_KEY3        9    // D9, active low: forward / next / plus
+// Buttons, left to right with the screen facing you (found with firmware/button_finder):
+#define PIN_KEY1        2    // left,   D2, active low: back / previous / minus
+#define PIN_KEY2        9    // middle, D9, active low: select / next field (hold = back)
+#define PIN_KEY3        1    // right,  D1, active low: forward / next / plus
 #define PIN_REED        0    // D0, reed switch to GND (closes near a magnet)
 
 #define PIN_BAT_SENSE   PIN_VBAT       // 35 = P0.31 through a 1M/510k divider

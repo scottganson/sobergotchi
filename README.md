@@ -18,14 +18,14 @@ Hold two Sobergotchis back to back, both upright with screens facing out: each m
 
 ## Buttons
 
-| | KEY1 | KEY2 | KEY3 |
+| | Left (D2) | Middle (D9) | Right (D1) |
 | --- | --- | --- | --- |
 | Moving between screens | previous screen | select (turn the page on Reflection) | next screen |
 | In a list | up | open / change | down |
 | Editing a date | minus | next field (the last one saves) | plus |
 | Editing a name or phone | previous letter | next position | next letter |
 
-Hold KEY2 to go back (in the name/phone editor, holding KEY2 saves). After 30 seconds without a press the device returns to the home screen and sleeps.
+Hold the middle button to go back (in the name/phone editor, holding it saves). After 30 seconds without a press the device returns to the home screen and sleeps.
 
 ## Screens
 
