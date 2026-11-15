@@ -44,6 +44,24 @@ void show(uint8_t screenId, UiData& data, bool full) {
   awake = true;
 }
 
+bool probe(const char* label) {
+  pinMode(PIN_EPD_DC, OUTPUT);
+  LOG("probe '%s': busy pin %d before", label, digitalRead(PIN_EPD_BUSY));
+  uint32_t t0 = millis();
+  epd.setFullWindow();
+  epd.firstPage();
+  do {
+    epd.fillScreen(GxEPD_WHITE);
+    epd.setTextColor(GxEPD_BLACK);
+    epd.setTextSize(2);
+    epd.setCursor(6, 100);
+    epd.print(label);
+  } while (epd.nextPage());
+  uint32_t ms = millis() - t0;
+  LOG("probe '%s': %lu ms %s", label, (unsigned long)ms, ms > 9000 ? "FAILED" : "ok");
+  return ms <= 9000;
+}
+
 void sleep() {
   if (awake) epd.hibernate();
   awake = false;

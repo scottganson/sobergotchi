@@ -10,10 +10,30 @@
 #include "src/exchange.h"
 #include "src/app.h"
 
+// 1 = at start-up, redraw a test label after each step and log which step stops the panel answering.
+#define BRINGUP_STEPS 1
+
 void setup() {
   Serial.begin(115200);
-  delay(300);  // a moment for the Serial Monitor to attach
+#if BRINGUP_STEPS
+  uint32_t t = millis();
+  while (!Serial && millis() - t < 6000) delay(10);  // time to open the Serial Monitor
+#endif
+  delay(300);
   LOG("Sobergotchi " FIRMWARE_VERSION);
+#if BRINGUP_STEPS
+  display::begin();
+  display::probe("1 display");
+  store::begin();
+  display::probe("2 storage");
+  hw::begin();
+  display::probe("3 buttons");
+  hw::readBattery();
+  LOG("battery %d mV", (int)(hw::batteryVolts() * 1000));
+  display::probe("4 battery");
+  exchange::begin();
+  display::probe("5 bluetooth");
+#else
   store::begin();      // before Bluetooth: first start uses the hardware random generator
   LOG("storage ok, %d friends", store::friendCount);
   hw::begin();
@@ -22,6 +42,7 @@ void setup() {
   LOG("display ok");
   exchange::begin();
   LOG("bluetooth ok");
+#endif
   app::begin();
   LOG("home screen drawn");
 }
