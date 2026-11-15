@@ -142,10 +142,10 @@ static const UiNode SCREEN_main_nodes[] = {
   {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 0, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {0, 0, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
   {1, 1, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "{next.name} \177 {next.years} yrs \177 {next.date:MMM d}", nullptr, "next.any", 0}, // <text>
-  {1, 0, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "No friends added yet", nullptr, "!next.any", 0}, // <text>
+  {1, 0, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "No friends yet", nullptr, "!next.any", 0}, // <text>
   {0, 0, 20, 1, 0, 5, 3, 220, 116, 20, 0, 0, nullptr, nullptr, "next.today", 2}, // <row>
   {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 0, 1, nullptr, nullptr, nullptr, 0}, // <image>
-  {1, 1, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "{next.name} \177 {next.years} yrs today!", nullptr, nullptr, 0}, // <text>
+  {1, 1, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "{next.name} \177 {next.years} yrs!", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 4, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
 static const UiNode SCREEN_menu_nodes[] = {
