@@ -1,0 +1,237 @@
+{
+ "_comment": "Sample values used only for the PNG previews. Keys match what the firmware provides (see docs/screen-markup.md). _variants renders extra versions of a screen with some values changed.",
+ "today": {
+  "date": "2026-11-15"
+ },
+ "user.name": "Scott",
+ "user.phone": "416-555-0134",
+ "sober.date": {
+  "date": "2024-08-19"
+ },
+ "sober.days": 818,
+ "sober.ymd": "2 years \u00b7 2 months \u00b7 27 days",
+ "sober.num": "2",
+ "sober.unit": "YEARS",
+ "tree.stage": 17,
+ "battery.pct": 82,
+ "battery.charging": false,
+ "screen.index": 0,
+ "hint": "",
+ "next.any": true,
+ "next.today": false,
+ "next.name": "Sam",
+ "next.years": 5,
+ "next.date": {
+  "date": "2026-12-02"
+ },
+ "next.in": "17 days",
+ "friends.any": true,
+ "friends.count": 6,
+ "friends.sel": -1,
+ "friends": [
+  {
+   "name": "Sam R.",
+   "date": {
+    "date": "2021-12-02"
+   },
+   "years": 5,
+   "in": "17 days",
+   "phone": "416-555-0101"
+  },
+  {
+   "name": "Maria",
+   "date": {
+    "date": "2018-01-09"
+   },
+   "years": 9,
+   "in": "55 days",
+   "phone": "647-555-0199"
+  },
+  {
+   "name": "Big Book Bob",
+   "date": {
+    "date": "1999-03-21"
+   },
+   "years": 28,
+   "in": "4 mos",
+   "phone": "905-555-0123"
+  },
+  {
+   "name": "Jen",
+   "date": {
+    "date": "2025-04-30"
+   },
+   "years": 2,
+   "in": "5 mos",
+   "phone": "416-555-0177"
+  },
+  {
+   "name": "Dave K.",
+   "date": {
+    "date": "2015-07-04"
+   },
+   "years": 11,
+   "in": "7 mos",
+   "phone": "416-555-0142"
+  },
+  {
+   "name": "Luis",
+   "date": {
+    "date": "2023-09-12"
+   },
+   "years": 3,
+   "in": "10 mos",
+   "phone": "289-555-0166"
+  }
+ ],
+ "reflect.title": "Language of the Heart",
+ "reflect.text": "I don't need to project the future or cry about the past. Just live to the best of my ability, one day at a time.",
+ "reflect.page": 0,
+ "reflect.more": "",
+ "menu.sel": 0,
+ "menu": [
+  {
+   "label": "Sober date",
+   "value": "Aug 19, 2024"
+  },
+  {
+   "label": "Today",
+   "value": "Nov 15, 2026"
+  },
+  {
+   "label": "Name",
+   "value": "Scott"
+  },
+  {
+   "label": "Phone",
+   "value": "416-555-0134"
+  },
+  {
+   "label": "Friends",
+   "value": "6"
+  },
+  {
+   "label": "Clear friends",
+   "value": ""
+  },
+  {
+   "label": "Battery",
+   "value": "82%"
+  },
+  {
+   "label": "Version",
+   "value": "1.0"
+  }
+ ],
+ "friend.name": "Sam R.",
+ "friend.date": {
+  "date": "2021-12-02"
+ },
+ "friend.years": 5,
+ "friend.in": "17 days",
+ "friend.phone": "416-555-0101",
+ "friend.confirm": false,
+ "edit.title": "Sobriety date",
+ "edit.l0": "Month",
+ "edit.v0": "Aug",
+ "edit.s0": true,
+ "edit.l1": "Day",
+ "edit.v1": "19",
+ "edit.s1": false,
+ "edit.l2": "Year",
+ "edit.v2": "2024",
+ "edit.s2": false,
+ "edit.l3": "",
+ "edit.v3": "",
+ "edit.s3": false,
+ "edit.has3": false,
+ "edit.text": "SCO_",
+ "edit.prev": "C",
+ "edit.cur": "T",
+ "edit.next": "U",
+ "rps.name": "Maria",
+ "rps.mine": 0,
+ "rps.theirs": 2,
+ "rps.result": "You win!",
+ "_variants": {
+  "main": [
+   {},
+   {
+    "tree.stage": 25,
+    "sober.days": 3725,
+    "sober.ymd": "10 years \u00b7 2 months",
+    "next.today": true,
+    "next.name": "Maria",
+    "next.years": 9,
+    "sober.short": "10y 2m 27d"
+   },
+   {
+    "tree.stage": 2,
+    "sober.days": 9,
+    "sober.ymd": "9 days",
+    "next.any": false,
+    "friends.any": false,
+    "battery.pct": 30,
+    "battery.charging": true,
+    "sober.short": "9 days"
+   }
+  ],
+  "reflection": [
+   {},
+   {
+    "reflect.title": "Daily Reflections",
+    "reflect.text": "Before I came to AA I was afraid of everything: of people, of the phone, of the mail, of myself. Today I can face each of these with the help of my Higher Power and the people in the program who walk beside me, one day at a time, and I am grateful for it.",
+    "reflect.more": "1/2"
+   }
+  ],
+  "friends": [
+   {},
+   {
+    "friends.sel": 2,
+    "hint": "\u25cf open  \u00b7  hold \u25cf back"
+   },
+   {
+    "friends.any": false,
+    "friends.count": 0
+   }
+  ],
+  "menu": [
+   {
+    "menu.sel": -1
+   },
+   {
+    "menu.sel": 1
+   }
+  ],
+  "edit-text": [
+   {},
+   {
+    "edit.title": "Phone",
+    "edit.text": "416-55_",
+    "edit.prev": "4",
+    "edit.cur": "5",
+    "edit.next": "6"
+   }
+  ],
+  "edit-date": [
+   {},
+   {
+    "edit.title": "Today",
+    "edit.l3": "Hour",
+    "edit.v3": "7 AM",
+    "edit.has3": true,
+    "edit.v0": "Nov",
+    "edit.v1": "15",
+    "edit.v2": "2026"
+   }
+  ],
+  "anniversary": [
+   {},
+   {
+    "sober.num": "90",
+    "sober.unit": "DAYS"
+   }
+  ]
+ },
+ "sober.short": "2y 2m 27d"
+}
