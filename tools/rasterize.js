@@ -1,7 +1,7 @@
 // Rasterize SVG files to greyscale PNGs with headless Chromium (Playwright).
 // Usage: node tools/rasterize.js jobs.json
-// jobs.json: [{"svg": "path.svg", "png": "out.png", "scale": 4, "hide": "shade"}, ...]
-// "hide" hides the <g id="..."> layer before rendering (used to split ink and shading).
+// jobs.json: [{"svg": "path.svg", "png": "out.png", "scale": 4}, ...]
+// Shapes are drawn without anti-aliasing so every sample is pure black, white or a flat grey.
 const fs = require('fs');
 const { chromium } = require('playwright');
 
@@ -16,7 +16,7 @@ const { chromium } = require('playwright');
     if (!w || !h) throw new Error(`${job.svg}: <svg> needs numeric width and height`);
     const s = job.scale || 4;
     await page.setViewportSize({ width: Math.ceil(w * s), height: Math.ceil(h * s) });
-    const hide = job.hide ? `#${job.hide}{display:none}` : '';
+    const hide = 'svg *{shape-rendering:crispEdges}';
     await page.setContent(`<!doctype html><html><head><style>html,body{margin:0;background:#fff}svg{display:block;width:${w * s}px;height:${h * s}px}${hide}</style></head><body>${svg}</body></html>`);
     await page.screenshot({ path: job.png, clip: { x: 0, y: 0, width: Math.ceil(w * s), height: Math.ceil(h * s) } });
   }

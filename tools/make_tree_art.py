@@ -2,8 +2,8 @@
 """Generate the 26 tree-stage drawings as SVG files in art/tree/.
 
 The SVGs are the source art: you can open and redraw any of them in Inkscape,
-Figma or Illustrator. Keep the two layers: <g id="ink"> for black line work and
-<g id="shade"> for grey areas (greys become dither textures on the e-paper).
+Figma or Illustrator. Shapes are painted in order (later covers earlier); black
+is ink, white is paper and greys become dither textures on the e-paper.
 Re-running this script overwrites art/tree/*.svg.
 """
 import math
@@ -11,12 +11,13 @@ import os
 import random
 
 W, H = 122, 114
-GROUND = 95  # ground line height at the centre
+GROUND = 94  # ground line height at the centre
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "art", "tree")
 
-# Grey levels (become dither textures): lower = darker
-G_SOIL, G_LEAF, G_LEAF_DARK, G_CANOPY, G_CANOPY_DARK, G_TRUNK, G_SEED = 236, 200, 130, 226, 186, 118, 120
+# Greys the build turns into dither textures
+G12, G25, G50, G75 = "#e1e1e1", "#bfbfbf", "#7f7f7f", "#404040"
+K, P = "#000", "#fff"
 
 STAGES = [
     ("1-3 days", "Dry seed"),
@@ -48,304 +49,387 @@ STAGES = [
 ]
 
 
-def grey(v):
-    return f"rgb({v},{v},{v})"
+def f(v):
+    return f"{v:.2f}".rstrip("0").rstrip(".")
+
+
+def pts(points, close=False):
+    return "M" + " L".join(f"{f(x)},{f(y)}" for x, y in points) + (" Z" if close else "")
 
 
 def ground_y(x):
     """Gentle mound: highest in the middle."""
     t = (x - W / 2) / (W / 2)
-    return GROUND + 4 * t * t
+    return GROUND + 4.5 * t * t
 
 
 class Svg:
     def __init__(self):
-        self.ink, self.shade = [], []
+        self.out = []
+        self.n = 0
+
+    def add(self, s):
+        self.out.append(s)
+
+    def path(self, d, fill="none", stroke=None, w=1.4, extra=""):
+        st = f' stroke="{stroke}" stroke-width="{f(w)}"' if stroke else ""
+        self.add(f'<path d="{d}" fill="{fill}"{st}{extra}/>')
+
+    def line(self, x0, y0, x1, y1, w=1.4, stroke=K):
+        self.path(f"M{f(x0)},{f(y0)} L{f(x1)},{f(y1)}", stroke=stroke, w=w)
+
+    def circle(self, x, y, r, fill="none", stroke=None, w=1.4):
+        st = f' stroke="{stroke}" stroke-width="{f(w)}"' if stroke else ""
+        self.add(f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(r)}" fill="{fill}"{st}/>')
+
+    def ellipse(self, x, y, rx, ry, fill="none", stroke=None, w=1.4, rot=0, extra=""):
+        st = f' stroke="{stroke}" stroke-width="{f(w)}"' if stroke else ""
+        tr = f' transform="rotate({f(rot)} {f(x)} {f(y)})"' if rot else ""
+        self.add(f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="{f(rx)}" ry="{f(ry)}" fill="{fill}"{st}{tr}{extra}/>')
+
+    def uid(self):
+        self.n += 1
+        return f"c{self.n}"
 
     def doc(self, title):
         return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">\n'
                 f'<title>{title}</title>\n'
-                f'<g id="shade">\n' + "\n".join(self.shade) + '\n</g>\n'
-                f'<g id="ink" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">\n'
-                + "\n".join(self.ink) + '\n</g>\n</svg>\n')
+                f'<g stroke-linecap="round" stroke-linejoin="round">\n' + "\n".join(self.out) + '\n</g>\n</svg>\n')
 
 
-def f(v):
-    return f"{v:.2f}".rstrip("0").rstrip(".")
+# ---------------------------------------------------------------- scenery
+
+def sky(s):
+    sx, sy, r = 101, 16, 6.5
+    for k in range(12):
+        a = k * math.pi / 6 + 0.26
+        r0, r1 = r + 2.8, r + (6.4 if k % 2 == 0 else 4.6)
+        s.line(sx + math.cos(a) * r0, sy + math.sin(a) * r0, sx + math.cos(a) * r1, sy + math.sin(a) * r1, 1.3)
+    s.circle(sx, sy, r, fill=P, stroke=K, w=1.5)
+    # cloud: puffs with a flat bottom
+    puffs = [(13.5, 24, 5), (21, 19.5, 7), (30, 20.5, 6), (36.5, 24.5, 4.5)]
+    cid = s.uid()
+    s.add(f'<clipPath id="{cid}"><rect x="0" y="0" width="{W}" height="29"/></clipPath>')
+    s.add(f'<g clip-path="url(#{cid})">')
+    for x, y, r in puffs:
+        s.circle(x, y, r, fill=K)
+    s.add('</g>')
+    cid2 = s.uid()
+    s.add(f'<clipPath id="{cid2}"><rect x="0" y="0" width="{W}" height="27.6"/></clipPath>')
+    s.add(f'<g clip-path="url(#{cid2})">')
+    for x, y, r in puffs:
+        s.circle(x, y, r - 1.4, fill=P)
+    s.add(f'<rect x="12" y="22" width="26" height="6" fill="{P}"/>')
+    s.add('</g>')
 
 
-def path(pts, close=False):
-    d = "M" + " L".join(f"{f(x)},{f(y)}" for x, y in pts)
-    return d + (" Z" if close else "")
+def hills(s):
+    far = "M-2,90 Q14,72 34,79 Q48,84 58,92 L58,110 L-2,110 Z"
+    near = "M52,94 Q78,78 100,81 Q114,83 124,88 L124,110 L52,110 Z"
+    s.path(far, fill=P, stroke=K, w=1.1)
+    s.path(near, fill=G12, stroke=K, w=1.1)
 
 
-def scene(s, rng, stage):
-    # sun and a cloud, drawn first so a big canopy covers them
-    sx, sy, sr = 101, 15, 6.5
-    s.shade.append(f'<circle cx="{sx}" cy="{sy}" r="{sr}" fill="{grey(214)}"/>')
-    s.ink.append(f'<circle cx="{sx}" cy="{sy}" r="{sr}" stroke-width="1.3"/>')
-    for k in range(8):
-        a = k * math.pi / 4 + 0.2
-        s.ink.append(f'<path d="M{f(sx + math.cos(a) * (sr + 2.5))},{f(sy + math.sin(a) * (sr + 2.5))} L{f(sx + math.cos(a) * (sr + 5.5))},{f(sy + math.sin(a) * (sr + 5.5))}" stroke-width="1.2"/>')
-    cloud = [(17, 22, 5), (24, 18, 6.5), (31, 22, 5), (22, 24, 4), (28, 24.5, 4)]
-    for x, y, r in cloud:
-        s.ink.append(f'<circle cx="{x}" cy="{y}" r="{r}" stroke-width="1.2"/>')
-    for x, y, r in cloud:
-        s.ink.append(f'<circle cx="{x}" cy="{y}" r="{r - 0.7}" fill="#fff" stroke="none"/>')
-    s.ink.append('<path d="M12.5,26.5 L35.5,26.5" stroke="#fff" stroke-width="2"/>')
-    s.ink.append('<path d="M13,27.2 L35,27.2" stroke-width="1.2"/>')
-    # soil
-    soil = [(x, ground_y(x)) for x in range(0, W + 1, 2)] + [(W, H), (0, H)]
-    s.shade.append(f'<path d="{path(soil, True)}" fill="{grey(G_SOIL)}"/>')
-    # ground line
-    gl = [(x, ground_y(x)) for x in range(0, W + 1, 2)]
-    s.ink.append(f'<path d="{path(gl)}" stroke-width="1.6"/>')
-    # pebbles in the soil
-    for _ in range(9):
-        x = rng.uniform(4, W - 4)
-        y = rng.uniform(ground_y(x) + 6, H - 3)
-        rx = rng.uniform(1.4, 2.6)
-        s.ink.append(f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="{f(rx)}" ry="{f(rx * 0.65)}" stroke-width="1.05"/>')
-    # grass tufts on the ground
-    tufts = [8, 19, 33, 88, 101, 114] if stage >= 2 else [10, 24, 96, 112]
-    for x in tufts:
-        x += rng.uniform(-2, 2)
+def flower(s, x, big=False):
+    gy = ground_y(x)
+    h = 7.5 if big else 6
+    s.path(f"M{f(x)},{f(gy)} q0.8,{f(-h / 2)} 0,{f(-h)}", stroke=K, w=1.1)
+    s.circle(x, gy - h - 1, 2.3, fill=P, stroke=K, w=1.1)
+    s.circle(x, gy - h - 1, 0.7, fill=K)
+
+
+def ground(s, rng, stage, flowers=()):
+    top = [(x, ground_y(x)) for x in range(-2, W + 3, 2)]
+    s.path(pts(top + [(W + 2, H + 2), (-2, H + 2)], True), fill=G25)
+    # darker band of deep soil
+    deep = [(x, H - 4.5 + 1.2 * math.sin(x / 7.0)) for x in range(-2, W + 3, 3)]
+    s.path(pts(deep + [(W + 2, H + 2), (-2, H + 2)], True), fill=G50)
+    # stones
+    for x, dy, rx in ((9, 9, 2.6), (27, 13, 1.9), (44, 8.5, 1.6), (83, 12, 2.2), (99, 8, 1.7), (113, 12.5, 2.4)):
+        s.ellipse(x, ground_y(x) + dy, rx, rx * 0.68, fill=P, stroke=K, w=1.0)
+    # grass: an uneven fringe plus a few taller tufts
+    x = 1.0
+    while x < W:
+        if abs(x - W / 2) > 6:
+            gy = ground_y(x)
+            h = rng.uniform(1.8, 4.2)
+            lean = rng.uniform(-1.4, 1.4)
+            s.path(f"M{f(x)},{f(gy)} q{f(lean * 0.2)},{f(-h * 0.6)} {f(lean)},{f(-h)}", stroke=K, w=1.1)
+        x += rng.uniform(2.2, 3.6)
+    for x in (7, 22, 37, 86, 103, 116):
         gy = ground_y(x)
-        for dx, h, lean in ((-2, 4, -1.6), (0, 6, 0.3), (2, 4.5, 1.8)):
-            s.ink.append(f'<path d="M{f(x + dx)},{f(gy)} Q{f(x + dx + lean * 0.3)},{f(gy - h * 0.6)} {f(x + dx + lean)},{f(gy - h)}" stroke-width="1.1"/>')
+        for dx, h, lean in ((-2.2, 5, -2.4), (0, 7.5, 0.4), (2.2, 5.5, 2.6)):
+            s.path(f"M{f(x + dx)},{f(gy)} q{f(lean * 0.2)},{f(-h * 0.6)} {f(lean)},{f(-h)}", stroke=K, w=1.2)
+    for i, x in enumerate(flowers):
+        flower(s, x, big=(i % 2 == 0))
+    s.path(pts(top), stroke=K, w=2.0)
 
 
-def seed(s, cx, cy, rx, ry, angle, swollen=False):
-    s.shade.append(f'<ellipse cx="{f(cx)}" cy="{f(cy)}" rx="{f(rx)}" ry="{f(ry)}" transform="rotate({angle} {f(cx)} {f(cy)})" fill="{grey(G_SEED)}"/>')
-    s.ink.append(f'<ellipse cx="{f(cx)}" cy="{f(cy)}" rx="{f(rx)}" ry="{f(ry)}" transform="rotate({angle} {f(cx)} {f(cy)})" stroke-width="1.5"/>')
-    # seam
-    s.ink.append(f'<path d="M{f(cx - rx * 0.7)},{f(cy)} Q{f(cx)},{f(cy - ry * 0.55)} {f(cx + rx * 0.7)},{f(cy)}" transform="rotate({angle} {f(cx)} {f(cy)})" stroke-width="1"/>')
-    # highlight (white) on the ink layer = erase
-    s.ink.append(f'<ellipse cx="{f(cx - rx * 0.35)}" cy="{f(cy - ry * 0.45)}" rx="{f(rx * 0.25)}" ry="{f(ry * 0.18)}" transform="rotate({angle} {f(cx)} {f(cy)})" fill="#fff" stroke="none"/>')
+# ---------------------------------------------------------------- small parts
 
-
-def soil_pocket(s, cx, cy, r):
-    # a darker pocket of dug soil around a planted seed
-    s.shade.append(f'<ellipse cx="{f(cx)}" cy="{f(cy)}" rx="{f(r * 1.6)}" ry="{f(r * 1.05)}" fill="#fff"/>')
-    s.ink.append(f'<ellipse cx="{f(cx)}" cy="{f(cy)}" rx="{f(r * 1.6)}" ry="{f(r * 1.05)}" stroke-width="0.9" stroke-dasharray="1.2 1.6"/>')
+def seed(s, cx, cy, rx, ry, angle):
+    s.ellipse(cx, cy, rx * 1.75, ry * 1.7, fill=P, stroke=K, w=1.0, extra=' stroke-dasharray="1.5 1.9"')
+    d = (f"M{f(cx - rx)},{f(cy)} Q{f(cx - rx * 0.6)},{f(cy - ry * 1.25)} {f(cx + rx * 0.35)},{f(cy - ry * 0.8)} "
+         f"Q{f(cx + rx * 1.05)},{f(cy - ry * 0.3)} {f(cx + rx)},{f(cy + ry * 0.25)} "
+         f"Q{f(cx + rx * 0.4)},{f(cy + ry * 1.2)} {f(cx - rx * 0.5)},{f(cy + ry * 0.85)} Q{f(cx - rx * 1.05)},{f(cy + ry * 0.5)} {f(cx - rx)},{f(cy)} Z")
+    rot = f' transform="rotate({angle} {f(cx)} {f(cy)})"'
+    s.path(d, fill=K, extra=rot)
+    s.path(f"M{f(cx - rx * 0.55)},{f(cy - ry * 0.25)} Q{f(cx - rx * 0.3)},{f(cy - ry * 0.75)} {f(cx + rx * 0.2)},{f(cy - ry * 0.5)}",
+           stroke=P, w=1.2, extra=rot)
 
 
 def roots(s, x, y, depth, spread, rng, n=3):
     for i in range(n):
         ang = math.radians(90 + (i - (n - 1) / 2) * spread)
-        L = depth * rng.uniform(0.75, 1.0)
-        ex, ey = x + math.cos(ang) * L * 0.6, y + math.sin(ang) * L
-        mx, my = x + math.cos(ang) * L * 0.2 + rng.uniform(-2, 2), y + L * 0.45
-        s.ink.append(f'<path d="M{f(x)},{f(y)} Q{f(mx)},{f(my)} {f(ex)},{f(min(ey, H - 2))}" stroke-width="1"/>')
+        L = depth * rng.uniform(0.8, 1.0)
+        ex, ey = x + math.cos(ang) * L * 0.7, min(y + math.sin(ang) * L, H - 2.5)
+        mx, my = x + math.cos(ang) * L * 0.15 + rng.uniform(-1.5, 1.5), y + L * 0.5
+        d = f"M{f(x)},{f(y)} Q{f(mx)},{f(my)} {f(ex)},{f(ey)}"
+        s.path(d, stroke=P, w=3.0)
+        s.path(d, stroke=K, w=1.2)
 
 
-def leaf(s, bx, by, angle_deg, length, width, dark=False, rib=True):
+def leaf(s, bx, by, angle_deg, length, fat=0.62, vein=True):
+    """A two-tone leaf: white on the lit side, black underneath."""
     a = math.radians(angle_deg)
     ux, uy = math.cos(a), math.sin(a)
     nx, ny = -uy, ux
+    if ny < 0:  # normal points down the page so the dark half is underneath
+        nx, ny = -nx, -ny
     tx, ty = bx + ux * length, by + uy * length
-    c1 = (bx + ux * length * 0.45 + nx * width, by + uy * length * 0.45 + ny * width)
-    c2 = (bx + ux * length * 0.45 - nx * width, by + uy * length * 0.45 - ny * width)
-    d = f"M{f(bx)},{f(by)} Q{f(c1[0])},{f(c1[1])} {f(tx)},{f(ty)} Q{f(c2[0])},{f(c2[1])} {f(bx)},{f(by)} Z"
-    s.shade.append(f'<path d="{d}" fill="{grey(G_LEAF_DARK if dark else G_LEAF)}"/>')
-    s.ink.append(f'<path d="{d}" stroke-width="1.35" fill="#fff" fill-opacity="0"/>')
-    if rib and length >= 8:
-        s.ink.append(f'<path d="M{f(bx + ux * 1.5)},{f(by + uy * 1.5)} L{f(bx + ux * length * 0.72)},{f(by + uy * length * 0.72)}" stroke-width="0.9"/>')
+    wdt = length * fat
+    c1 = (bx + ux * length * 0.42 + nx * wdt, by + uy * length * 0.42 + ny * wdt)
+    c2 = (bx + ux * length * 0.42 - nx * wdt, by + uy * length * 0.42 - ny * wdt)
+    full = f"M{f(bx)},{f(by)} Q{f(c1[0])},{f(c1[1])} {f(tx)},{f(ty)} Q{f(c2[0])},{f(c2[1])} {f(bx)},{f(by)} Z"
+    half = f"M{f(bx)},{f(by)} Q{f(c1[0])},{f(c1[1])} {f(tx)},{f(ty)} Z"
+    s.path(full, fill=P, stroke=K, w=1.3)
+    s.path(half, fill=K)
+    if vein and length >= 10:
+        for t in (0.38, 0.62):
+            px, py = bx + ux * length * t, by + uy * length * t
+            s.line(px, py, px - nx * wdt * 0.3 + ux * 1.6, py - ny * wdt * 0.3 + uy * 1.6, 0.9)
 
 
-def cotyledons(s, x, y, size, open_amt):
-    # two round seed leaves; open_amt 0 = closed upward, 1 = flat open
-    for side in (-1, 1):
-        ang = -90 + side * (12 + 70 * open_amt)
-        leaf(s, x, y, ang, size, size * 0.62, rib=False)
+def stem_poly(s, centre, w0, w1):
+    """Tapered solid stem along a list of centre points (bottom first)."""
+    left, right = [], []
+    n = len(centre)
+    for i, (x, y) in enumerate(centre):
+        w = w0 + (w1 - w0) * i / (n - 1)
+        left.append((x - w / 2, y))
+        right.append((x + w / 2, y))
+    s.path(pts(left + right[::-1], True), fill=K, stroke=K, w=0.6)
 
 
-def stem(s, pts, width):
-    d = "M" + " ".join(f"{f(x)},{f(y)}" for x, y in pts[:1]) + " " + " ".join(
-        f"Q{f(pts[i][0])},{f(pts[i][1])} {f((pts[i][0] + pts[i + 1][0]) / 2)},{f((pts[i][1] + pts[i + 1][1]) / 2)}" for i in range(1, len(pts) - 1)
-    ) + f" L{f(pts[-1][0])},{f(pts[-1][1])}"
-    s.ink.append(f'<path d="{d}" stroke-width="{f(width)}"/>')
+def limb(s, x0, y0, x1, y1, w0, w1, bend=0.0):
+    """Tapered curved branch from (x0, y0) to (x1, y1)."""
+    mx, my = (x0 + x1) / 2 + bend, (y0 + y1) / 2 + abs(bend) * 0.8
+    L = math.hypot(x1 - x0, y1 - y0) or 1
+    nx, ny = -(y1 - y0) / L, (x1 - x0) / L
+    d = (f"M{f(x0 + nx * w0 / 2)},{f(y0 + ny * w0 / 2)} Q{f(mx + nx * (w0 + w1) / 4)},{f(my + ny * (w0 + w1) / 4)} {f(x1 + nx * w1 / 2)},{f(y1 + ny * w1 / 2)} "
+         f"L{f(x1 - nx * w1 / 2)},{f(y1 - ny * w1 / 2)} Q{f(mx - nx * (w0 + w1) / 4)},{f(my - ny * (w0 + w1) / 4)} {f(x0 - nx * w0 / 2)},{f(y0 - ny * w0 / 2)} Z")
+    s.path(d, fill=K, stroke=K, w=0.5)
 
 
-def apple(s, x, y, r=4.4, leafy=True):
-    s.ink.append(f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(r)}" fill="#000" stroke="#fff" stroke-width="1.2" paint-order="stroke"/>')
-    s.ink.append(f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(r)}" fill="#000" stroke="none"/>')
-    s.ink.append(f'<circle cx="{f(x - r * 0.38)}" cy="{f(y - r * 0.38)}" r="{f(r * 0.3)}" fill="#fff" stroke="none"/>')
-    s.ink.append(f'<path d="M{f(x + 0.3)},{f(y - r + 0.8)} q0.2,-2 1.4,-2.9" stroke-width="1.1"/>')
-    if leafy:
-        s.ink.append(f'<path d="M{f(x + 1.2)},{f(y - r - 1.4)} q2.4,-1.8 4.2,-0.4 q-2.2,1.6 -4.2,0.4 Z" fill="#fff" stroke-width="1"/>')
+def apple(s, x, y, r=3.7, stem=True):
+    """A black apple with a white rim so it stands out from foliage and grass."""
+    stalk = f"M{f(x + 0.2)},{f(y - r * 0.8)} q0.2,-1.8 1.5,-2.9"
+    if stem:
+        s.path(stalk, stroke=P, w=3.0)
+    s.ellipse(x, y, r * 1.06, r, fill=K, stroke=P, w=2.4)
+    s.ellipse(x, y, r * 1.06, r, fill=K)
+    s.path(f"M{f(x - 1.1)},{f(y - r + 0.2)} L{f(x + 1.1)},{f(y - r + 0.2)}", stroke=K, w=1.0)
+    s.circle(x - r * 0.42, y - r * 0.32, 0.95, fill=P)
+    if stem:
+        s.path(stalk, stroke=K, w=1.2)
+        s.path(f"M{f(x + 1.5)},{f(y - r - 2.6)} q2.4,-1.6 3.8,0.2 q-2.2,1.2 -3.8,-0.2 Z", fill=K, stroke=K, w=0.5)
 
 
-def trunk(s, base_x, base_y, top_y, w_base, w_top, lean=0):
-    lx0, rx0 = base_x - w_base / 2, base_x + w_base / 2
-    lx1, rx1 = base_x + lean - w_top / 2, base_x + lean + w_top / 2
-    # root flare
-    d = (f"M{f(lx0 - 3)},{f(base_y + 0.5)} Q{f(lx0)},{f(base_y - 1)} {f(lx0 + 0.6)},{f(base_y - 6)} "
-         f"L{f(lx1)},{f(top_y)} L{f(rx1)},{f(top_y)} L{f(rx0 - 0.6)},{f(base_y - 6)} "
-         f"Q{f(rx0)},{f(base_y - 1)} {f(rx0 + 3)},{f(base_y + 0.5)} Z")
-    s.shade.append(f'<path d="{d}" fill="{grey(G_TRUNK)}"/>')
-    s.ink.append(f'<path d="{d}" stroke-width="1.5" fill="#fff" fill-opacity="0"/>')
-    # bark lines
+def trunk(s, cx, base_y, top_y, w_base, w_top, lean=0.0):
+    """Tapered trunk with flared roots; lit from the left."""
+    hb, ht = w_base / 2, w_top / 2
+    tx = cx + lean
+    flare = w_base * 0.55
+    d = (f"M{f(cx - hb - flare)},{f(base_y + 1.5)} Q{f(cx - hb - 0.5)},{f(base_y - 1)} {f(cx - hb + 0.3)},{f(base_y - 8)} "
+         f"Q{f(cx - hb + 1)},{f((base_y + top_y) / 2)} {f(tx - ht)},{f(top_y)} L{f(tx + ht)},{f(top_y)} "
+         f"Q{f(cx + hb - 1)},{f((base_y + top_y) / 2)} {f(cx + hb - 0.3)},{f(base_y - 8)} "
+         f"Q{f(cx + hb + 0.5)},{f(base_y - 1)} {f(cx + hb + flare)},{f(base_y + 1.5)} Z")
+    s.path(d, fill=P, stroke=K, w=1.6)
+    cid = s.uid()
+    s.add(f'<clipPath id="{cid}"><path d="{d}"/></clipPath>')
+    # shadow side: a wavy-edged black band on the right
+    edge = [(cx + lean * (base_y - y) / max(1.0, base_y - top_y) + w_base * 0.12 + 0.9 * math.sin(y / 2.6), y)
+            for y in [top_y - 1 + i * 2.0 for i in range(int((base_y - top_y) / 2) + 3)]]
+    band = edge + [(cx + w_base + flare, edge[-1][1]), (cx + w_base + flare, edge[0][1])]
+    s.add(f'<g clip-path="url(#{cid})">')
+    s.path(pts(band, True), fill=K)
+    s.add('</g>')
+    # bark flecks on the lit side
     for k in range(3):
-        y0 = base_y - 8 - k * (base_y - top_y) / 4
-        x0 = base_x + lean * (base_y - y0) / max(1, base_y - top_y) + (k - 1) * w_base * 0.18
-        s.ink.append(f'<path d="M{f(x0)},{f(y0)} l{f(0.3)},{f(-4)}" stroke-width="0.9"/>')
+        y0 = base_y - 7 - k * (base_y - top_y) / 3.6
+        x0 = cx - hb * 0.45 + (k % 2) * 1.2 + lean * (base_y - y0) / max(1.0, base_y - top_y)
+        s.line(x0, y0, x0 + 0.3, y0 - 3.2, 1.0)
 
 
-def branch(s, x0, y0, x1, y1, w, bend=0.0):
-    mx, my = (x0 + x1) / 2 + bend, (y0 + y1) / 2 - abs(bend) * 0.5
-    s.ink.append(f'<path d="M{f(x0)},{f(y0)} Q{f(mx)},{f(my)} {f(x1)},{f(y1)}" stroke-width="{f(w)}"/>')
-
-
-def canopy(s, lobes):
-    """lobes: list of (cx, cy, r). Union outline with soft shading."""
-    # shading: base, shadow under the lower half, white highlight on the upper left
-    clip_id = f"c{len(s.shade)}"
-    circles = "".join(f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(r)}"/>' for x, y, r in lobes)
-    s.shade.append(f'<clipPath id="{clip_id}">{circles}</clipPath>')
-    ys = [y for _, y, _ in lobes]
-    cy = sum(ys) / len(ys)
-    top = min(y - r for _, y, r in lobes)
-    bot = max(y + r for _, y, r in lobes)
-    s.shade.append(f'<g clip-path="url(#{clip_id})">'
-                   f'<rect x="0" y="0" width="{W}" height="{H}" fill="{grey(G_CANOPY)}"/>'
-                   f'<rect x="0" y="{f(cy + (bot - cy) * 0.35)}" width="{W}" height="{H}" fill="{grey(G_CANOPY_DARK)}"/>'
-                   + "".join(f'<circle cx="{f(x - r * 0.3)}" cy="{f(y - r * 0.35)}" r="{f(r * 0.45)}" fill="#fff"/>' for x, y, r in lobes if y < cy)
-                   + '</g>')
-    # outline of the union: thick strokes under, white fills on top
-    for x, y, r in lobes:
-        s.ink.append(f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(r)}" stroke-width="1.6"/>')
-    for x, y, r in lobes:
-        s.ink.append(f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(r - 0.85)}" fill="#fff" stroke="none"/>')
-    # a few leafy scallop marks inside for texture
-    return top, bot
-
-
-def leaf_marks(s, lobes, rng, n):
-    for _ in range(n):
-        x, y, r = rng.choice(lobes)
+def canopy(s, rng, cx, cy, A, B, bumps, bump_r, light=(-1.0, -1.0), marks=8):
+    """A leafy crown: scalloped outline, three tones of shading, small leaf marks."""
+    shapes = [f'<ellipse cx="{f(cx)}" cy="{f(cy)}" rx="{f(A)}" ry="{f(B)}"/>']
+    lobes = []
+    for k in range(bumps):
+        a = math.tau * k / bumps + rng.uniform(-0.1, 0.1) - math.pi / 2
+        r = bump_r * rng.uniform(0.85, 1.15)
+        # flatter underside, fuller top
+        x, y = cx + math.cos(a) * A * 0.96, cy + math.sin(a) * B * (0.96 if math.sin(a) < 0 else 0.86)
+        lobes.append((x, y, r))
+        shapes.append(f'<circle cx="{f(x)}" cy="{f(y)}" r="{f(r)}"/>')
+    body = "".join(shapes)
+    cid = s.uid()
+    s.add(f'<clipPath id="{cid}">{body}</clipPath>')
+    s.add(f'<g fill="{K}" stroke="{K}" stroke-width="3.2">{body}</g>')
+    s.add(f'<g fill="{P}">{body}</g>')
+    k1, k2 = min(A, B) * 0.16, min(A, B) * 0.42
+    s.add(f'<g clip-path="url(#{cid})">'
+          f'<rect x="-10" y="-10" width="{W + 20}" height="{H + 20}" fill="{G50}"/>'
+          f'<g fill="{G12}" transform="translate({f(light[0] * k1)},{f(light[1] * k1)})">{body}</g>'
+          f'<g fill="{P}" transform="translate({f(light[0] * k2)},{f(light[1] * k2)})">{body}</g>'
+          f'</g>')
+    # clumps of foliage: short arcs that echo the scallops, kept off the darkest edge
+    s.add(f'<g clip-path="url(#{cid})">')
+    placed = []
+    tries = 0
+    while len(placed) < marks and tries < 400:
+        tries += 1
         a = rng.uniform(0, math.tau)
-        d = rng.uniform(0.25, 0.7) * r
-        px, py = x + math.cos(a) * d, y + math.sin(a) * d
-        s.ink.append(f'<path d="M{f(px - 2.4)},{f(py)} q1.2,1.6 2.4,0 q1.2,1.6 2.4,0" stroke-width="1"/>')
+        d = math.sqrt(rng.uniform(0.02, 0.8))
+        x, y = cx + math.cos(a) * A * d - A * 0.08, cy + math.sin(a) * B * d - B * 0.08
+        if any(math.hypot(x - px, y - py) < 9.5 for px, py in placed):
+            continue
+        placed.append((x, y))
+        r = rng.uniform(3.4, 5.2)
+        s.path(f"M{f(x - r)},{f(y)} A{f(r)},{f(r)} 0 0 0 {f(x + r)},{f(y)}", stroke=K, w=1.2)
+        s.path(f"M{f(x + r)},{f(y)} a{f(r * 0.7)},{f(r * 0.7)} 0 0 0 {f(r * 1.2)},{f(-r * 0.5)}", stroke=K, w=1.2)
+    s.add('</g>')
+    return placed
 
+
+# ---------------------------------------------------------------- stages
 
 def sapling(s, month, rng):
-    """month 1..11: stem with branches and leaves."""
+    """month 1..11: a young stem that gains a branch or a leaf every month."""
     cx = W / 2
     gy = ground_y(cx)
-    height = 36 + month * 5.0
+    height = 30 + month * 4.3
     top = gy - height
-    sway = [(cx, gy), (cx + 1.2, gy - height * 0.35), (cx - 1.5, gy - height * 0.7), (cx + 0.5, top)]
-    stem_w = 2.2 + month * 0.14
-    stem(s, sway, stem_w)
 
     def stem_x(y):
         t = (gy - y) / height
-        return cx + 1.2 * math.sin(t * math.pi) - 1.0 * t
+        return cx + 2.4 * math.sin(t * math.pi * 1.15) - 1.2 * t
 
+    centre = [(stem_x(gy + 1 - i * (height + 1) / 16), gy + 1 - i * (height + 1) / 16) for i in range(17)]
+    stem_poly(s, centre, 3.0 + month * 0.22, 1.3)
     branches_at = [m for m in (1, 3, 6, 9) if m <= month]
-    nb = len(branches_at)
     tips = []
     for k, m in enumerate(branches_at):
         side = -1 if k % 2 == 0 else 1
-        by = gy - height * (0.38 + 0.13 * k)
+        by = gy - height * (0.34 + 0.14 * k)
         bx = stem_x(by)
         age = month - m
-        L = 12 + age * 1.8
-        ex, ey = bx + side * L, by - L * 0.55
-        branch(s, bx, by, ex, ey, 1.4 + age * 0.06, bend=side * 1.5)
+        L = 11 + age * 1.9
+        ex, ey = bx + side * L * 0.9, by - L * 0.62
+        limb(s, bx, by, ex, ey, 2.0 + age * 0.12, 1.1, bend=side * 1.2)
         tips.append((ex, ey, side, bx, by))
-    # leaf positions: branch tips first, then along branches and stem, then the stem top
-    spots = []
+    # leaf places, in the order they appear
+    spots = [None] * 11
+    order = []
     for ex, ey, side, bx, by in tips:
-        spots.append((ex, ey, -90 + side * 50))
-    spots.append((stem_x(top) + 0.5, top + 1, -95))
-    for ex, ey, side, bx, by in tips:
-        mx, my = (ex + bx) / 2, (ey + by) / 2
-        spots.append((mx, my, -90 + side * 95))
-    for k in range(6):
-        y = gy - height * (0.3 + 0.1 * k)
+        order.append((ex, ey, -90 + side * 48))
+    crown = (stem_x(top) + 0.2, top + 1.5, -92)
+    mids = [((ex + bx) / 2, (ey + by) / 2, -90 + side * 100) for ex, ey, side, bx, by in tips]
+    stem_spots = []
+    for k in range(4):
+        y = gy - height * (0.5 + 0.13 * k)
         side = 1 if k % 2 == 0 else -1
-        spots.append((stem_x(y), y, -90 + side * 65))
-    leaf_size = 12 + min(month, 8) * 0.4
-    for i in range(month):
-        x, y, ang = spots[i]
-        leaf(s, x, y, ang + rng.uniform(-6, 6), leaf_size, leaf_size * 0.45, dark=(i % 3 == 2))
-    if month <= 2:
-        cotyledons(s, stem_x(gy - 12), gy - 12, 6, 1.0)
+        stem_spots.append((stem_x(y), y, -90 + side * 62))
+    order = order + [crown] + mids + stem_spots
+    size = 12.5 + min(month, 9) * 0.45
+    for i in range(min(month, len(order))):
+        x, y, ang = order[i]
+        leaf(s, x, y, ang + rng.uniform(-7, 7), size * (1.0 if i < 5 else 0.9))
 
 
-def youth_tree(s, year, rng, apples):
-    cx = W / 2
+def youth_tree(s, year, rng):
+    cx = W / 2 + 1
     gy = ground_y(cx)
     g = year  # 1..4
-    tw = 6 + g * 0.9
-    canopy_bottom = gy - 30 - g * 2
-    trunk(s, cx, gy, canopy_bottom + 6, tw, tw * 0.65, lean=0.5)
-    # main forks into the canopy
-    branch(s, cx, canopy_bottom + 10, cx - 9 - g, canopy_bottom - 6, 1.8)
-    branch(s, cx + 0.5, canopy_bottom + 8, cx + 10 + g, canopy_bottom - 8, 1.8)
-    R = 19 + g * 2.6
-    ccy = canopy_bottom - R * 0.8
-    lobes = [(cx, ccy - R * 0.25, R * 0.72), (cx - R * 0.62, ccy + R * 0.1, R * 0.58), (cx + R * 0.62, ccy + R * 0.05, R * 0.6),
-             (cx - R * 0.25, ccy + R * 0.42, R * 0.55), (cx + R * 0.3, ccy + R * 0.45, R * 0.52)]
-    canopy(s, lobes)
-    leaf_marks(s, [l for l in lobes if l[1] < ccy], rng, g)
-    spots = [(cx + R * 0.5, ccy + R * 0.48), (cx - R * 0.42, ccy - R * 0.5), (cx - R * 0.7, ccy + R * 0.3),
-             (cx - R * 0.2, ccy + R * 0.7), (cx + R * 0.8, ccy - R * 0.25)]
-    for i in range(apples):
-        apple(s, *spots[i])
+    A, B = 21 + g * 3.6, 17 + g * 2.6
+    ccy = gy - 30 - g * 2.2 - B * 0.72
+    tw = 8 + g * 1.2
+    top_y = ccy + B * 0.55
+    limb(s, cx - 1, top_y + 9, cx - A * 0.5, ccy + B * 0.3, 2.6, 1.6, bend=-1.5)
+    limb(s, cx + 1, top_y + 8, cx + A * 0.55, ccy + B * 0.2, 2.6, 1.6, bend=1.5)
+    trunk(s, cx, gy, top_y, tw, tw * 0.7, lean=0.6)
+    canopy(s, rng, cx, ccy, A, B, bumps=9 + g, bump_r=7.2 + g * 0.5, marks=3 + g * 2)
+    # apples hang from the underside of the crown
+    hang = [(cx + A * 0.62, ccy + B * 0.98), (cx - A * 0.66, ccy + B * 0.9), (cx + A * 0.1, ccy + B * 1.12), (cx - A * 1.02, ccy + B * 0.32)]
+    for x, y in hang[:year]:
+        apple(s, x, y + 3)
 
 
 def mature_tree(s, ground_apples, rng):
-    cx = W / 2
+    cx = W / 2 + 1
     gy = ground_y(cx)
-    canopy_bottom = gy - 34
-    trunk(s, cx, gy, canopy_bottom + 4, 11, 7, lean=0.6)
-    for dx, dy, w in ((-20, -14, 2.6), (19, -16, 2.6), (-4, -22, 2.2), (9, -20, 2.0)):
-        branch(s, cx + 0.6, canopy_bottom + 8, cx + dx, canopy_bottom + dy, w, bend=dx * 0.08)
-    lobes = [(61, 26, 21), (40, 38, 17), (83, 37, 18), (27, 54, 13), (96, 53, 13), (48, 57, 15), (74, 58, 15), (61, 45, 18),
-             (61, 14, 12), (44, 21, 12), (79, 22, 12)]
-    canopy(s, lobes)
-    leaf_marks(s, lobes, rng, 12)
-    for x, y in ((39, 46), (74, 31), (88, 54), (53, 20), (64, 62)):
+    A, B = 44, 27
+    ccy = 36
+    top_y = ccy + B * 0.6
+    limb(s, cx - 2, top_y + 12, cx - 26, ccy + 14, 3.6, 2.0, bend=-2)
+    limb(s, cx + 2, top_y + 11, cx + 27, ccy + 12, 3.6, 2.0, bend=2)
+    trunk(s, cx, gy, top_y, 16, 11, lean=0.8)
+    # knot
+    s.ellipse(cx - 3, gy - 12, 1.6, 2.2, fill=K)
+    canopy(s, rng, cx, ccy, A, B, bumps=15, bump_r=9.5, marks=14)
+    for x, y in ((cx - 31, ccy + 8), (cx - 10, ccy - 12), (cx + 14, ccy + 3), (cx + 31, ccy + 20), (cx - 8, ccy + 22)):
         apple(s, x, y)
-    for i, x in enumerate((22, 99, 33, 88, 109)[:ground_apples]):
-        apple(s, x, ground_y(x) - 3.6, r=3.8, leafy=False)
+    for x in (24, 98, 37, 87, 110)[:ground_apples]:
+        apple(s, x, ground_y(x) - 4.0, stem=False)
 
 
 def draw(stage):
-    rng = random.Random(1000 + stage)
+    rng = random.Random(4200 + stage)
     s = Svg()
-    scene(s, random.Random(7), stage)
+    sky(s)
+    hills(s)
+    flowers = ()
+    if stage >= 8:
+        flowers = (14, 108, 30, 93, 44, 78)[:min(6, 1 + (stage - 8) // 3)]
+    if stage >= 20:  # keep clear of fallen apples
+        flowers = (11, 48, 76)
+    ground(s, random.Random(11), stage, flowers)
     cx = W / 2
     gy = ground_y(cx)
     if stage == 0:  # dry seed, planted
-        soil_pocket(s, cx, gy + 10, 7)
-        seed(s, cx, gy + 10, 7.0, 4.4, -12)
-    elif stage == 1:  # swollen, first root
-        soil_pocket(s, cx, gy + 10, 9)
-        roots(s, cx + 2, gy + 12, 6, 25, rng, n=1)
-        seed(s, cx, gy + 9, 9.0, 6.4, -10, swollen=True)
-        s.ink.append(f'<path d="M{f(cx - 1)},{f(gy + 5)} l2,3 l-1,2 l2,2" stroke-width="1"/>')
+        seed(s, cx, gy + 10.5, 5.4, 3.6, -14)
+    elif stage == 1:  # swollen, first root showing
+        roots(s, cx + 3, gy + 12, 6.5, 20, rng, n=1)
+        seed(s, cx, gy + 10, 7.0, 4.8, -12)
     elif stage == 2:  # sprout folded over: a hook breaking the soil
-        roots(s, cx - 3, gy + 6, 13, 30, rng, n=3)
-        stem(s, [(cx - 3, gy + 6), (cx - 4, gy - 8), (cx + 4, gy - 16), (cx + 8, gy - 7)], 2.2)
-        seed(s, cx + 8.5, gy - 4, 3.6, 2.6, 75)
+        roots(s, cx - 3, gy + 5, 13, 30, rng, n=3)
+        s.path(f"M{f(cx - 3)},{f(gy + 5)} C{f(cx - 4.5)},{f(gy - 12)} {f(cx + 6)},{f(gy - 15)} {f(cx + 7)},{f(gy - 6)}", stroke=K, w=2.6)
+        leaf(s, cx + 7, gy - 8, 80, 7.5, fat=0.7, vein=False)
     elif stage == 3:  # starting to stand
-        roots(s, cx, gy + 4, 15, 32, rng, n=3)
-        stem(s, [(cx, gy + 4), (cx + 1, gy - 12), (cx + 7, gy - 22), (cx + 9, gy - 23)], 2.2)
-        leaf(s, cx + 8.5, gy - 23, -55, 6, 3.2, rib=False)
-        leaf(s, cx + 8.5, gy - 23, -10, 6, 3.2, rib=False)
+        roots(s, cx, gy + 4, 15, 30, rng, n=3)
+        s.path(f"M{f(cx)},{f(gy + 4)} C{f(cx - 1)},{f(gy - 12)} {f(cx + 3)},{f(gy - 21)} {f(cx + 9)},{f(gy - 23)}", stroke=K, w=2.6)
+        leaf(s, cx + 8.5, gy - 23, -62, 8, fat=0.7, vein=False)
+        leaf(s, cx + 8.5, gy - 23, 8, 8, fat=0.7, vein=False)
     elif stage == 4:  # standing up, seed leaves open
-        roots(s, cx, gy + 3, 16, 30, rng, n=4)
-        stem(s, [(cx, gy + 3), (cx + 1.2, gy - 14), (cx - 0.8, gy - 26), (cx, gy - 30)], 2.2)
-        cotyledons(s, cx, gy - 30, 8.5, 1.0)
+        roots(s, cx, gy + 3, 16, 28, rng, n=4)
+        s.path(f"M{f(cx)},{f(gy + 3)} C{f(cx + 2.5)},{f(gy - 10)} {f(cx - 2)},{f(gy - 20)} {f(cx)},{f(gy - 30)}", stroke=K, w=2.6)
+        leaf(s, cx, gy - 29.5, -152, 11, fat=0.72, vein=False)
+        leaf(s, cx, gy - 29.5, -28, 11, fat=0.72, vein=False)
+        leaf(s, cx, gy - 30, -92, 5.5, fat=0.6, vein=False)
     elif 5 <= stage <= 15:
         sapling(s, stage - 4, rng)
     elif 16 <= stage <= 19:
-        youth_tree(s, stage - 15, rng, apples=stage - 15)
+        youth_tree(s, stage - 15, rng)
     else:
         mature_tree(s, stage - 20, rng)
     when, what = STAGES[stage]

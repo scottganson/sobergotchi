@@ -1,7 +1,7 @@
 """Turn SVG/PNG artwork into 1-bit bitmaps for the e-paper screen.
 
-SVG convention: put line work in <g id="ink"> and grey shading in <g id="shade">.
-Ink is thresholded (crisp lines). Shade greys become ordered-dither textures:
+SVGs are drawn like paint: later shapes cover earlier ones. Black becomes solid ink,
+white becomes paper, and greys become ordered-dither textures:
 light grey = sparse dots, mid grey = checkerboard, dark grey = dense.
 """
 import glob
@@ -17,6 +17,7 @@ BAYER4 = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
 GROUP_DIRS = ["tree", "rps"]          # each of these folders becomes an indexed group (frames)
 SINGLE_DIRS = ["icons", "legacy"]  # each file in these is its own image
 SCALE = 4
+INK_BELOW = 48  # darker than this is solid ink
 
 
 @dataclass
@@ -39,10 +40,6 @@ def dither_level(v):
     return min(levels, key=lambda l: abs(l - target))
 
 
-def _downsample(img, w, h):
-    return img.convert("L").resize((w, h), Image.BOX)
-
-
 def _svg_size(path):
     import re
     txt = open(path, encoding="utf8").read()
@@ -52,40 +49,48 @@ def _svg_size(path):
 
 
 def rasterize_svgs(paths, root):
-    """Return {path: (ink_img, shade_img)} greyscale images at 1x."""
+    """Return {path: greyscale image at SCALE x}, drawn without anti-aliasing."""
     if not paths:
         return {}
     tmp = tempfile.mkdtemp(prefix="sober_art_")
-    jobs, out = [], {}
-    for i, p in enumerate(paths):
-        jobs.append({"svg": p, "png": os.path.join(tmp, f"{i}_ink.png"), "scale": SCALE, "hide": "shade"})
-        jobs.append({"svg": p, "png": os.path.join(tmp, f"{i}_shade.png"), "scale": SCALE, "hide": "ink"})
+    jobs = [{"svg": p, "png": os.path.join(tmp, f"{i}.png"), "scale": SCALE} for i, p in enumerate(paths)]
     jf = os.path.join(tmp, "jobs.json")
     with open(jf, "w") as f:
         json.dump(jobs, f)
     # Needs Node.js with the "playwright" package (npm install playwright; npx playwright install chromium).
     subprocess.run(["node", os.path.join(root, "tools", "rasterize.js"), jf], check=True)
-    for i, p in enumerate(paths):
-        w, h = _svg_size(p)
-        ink = _downsample(Image.open(os.path.join(tmp, f"{i}_ink.png")), w, h)
-        shade = _downsample(Image.open(os.path.join(tmp, f"{i}_shade.png")), w, h)
-        out[p] = (ink, shade)
-    return out
+    return {p: Image.open(j["png"]).convert("L") for p, j in zip(paths, jobs)}
 
 
-def to_bits(ink_img, shade_img=None):
-    w, h = ink_img.size
+def svg_to_bits(big, w, h):
+    """Each screen pixel is SCALE x SCALE samples: mostly black = ink, otherwise the most common grey is dithered."""
+    data, stride, n = big.tobytes(), big.size[0], SCALE * SCALE
     rows = []
     for y in range(h):
         row = []
         for x in range(w):
-            on = ink_img.getpixel((x, y)) < 128
-            if not on and shade_img is not None:
-                lvl = dither_level(shade_img.getpixel((x, y)))
+            black, levels = 0, {}
+            for sy in range(SCALE):
+                base = (y * SCALE + sy) * stride + x * SCALE
+                for v in data[base:base + SCALE]:
+                    if v < INK_BELOW:
+                        black += 1
+                    else:
+                        lvl = dither_level(v)
+                        levels[lvl] = levels.get(lvl, 0) + 1
+            if black * 2 >= n:
+                on = True
+            else:
+                lvl = max(levels, key=levels.get)
                 on = BAYER4[y & 3][x & 3] < lvl
             row.append(1 if on else 0)
         rows.append(row)
     return rows
+
+
+def to_bits(ink_img):
+    w, h = ink_img.size
+    return [[1 if ink_img.getpixel((x, y)) < 128 else 0 for x in range(w)] for y in range(h)]
 
 
 def load_png(path):
@@ -104,8 +109,7 @@ def build(root):
     def make(path):
         name = os.path.splitext(os.path.basename(path))[0]
         if path.endswith(".svg"):
-            ink, shade = rendered[path]
-            rows = to_bits(ink, shade)
+            rows = svg_to_bits(rendered[path], *_svg_size(path))
         else:
             rows = load_png(path)
         return Art(name, len(rows[0]), len(rows), rows)

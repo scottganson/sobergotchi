@@ -72,4 +72,4 @@ Sample values for the previews live in `tools/preview_data.json`. To add a new v
 
 ## Art
 
-SVG files keep line work in `<g id="ink">` and grey areas in `<g id="shade">`. Ink becomes solid black; greys become dither textures (light grey = sparse dots, mid grey = checkerboard). PNG files are converted at a 50% threshold. Files in `art/tree/` and `art/rps/` form numbered groups in file-name order.
+SVG files are painted in order, so later shapes cover earlier ones. Black becomes solid ink, white becomes paper, and greys become dither textures (light grey = sparse dots, mid grey = checkerboard). PNG files are converted at a 50% threshold. Files in `art/tree/` and `art/rps/` form numbered groups in file-name order.
