@@ -11,11 +11,19 @@
 #include "src/app.h"
 
 void setup() {
+  Serial.begin(115200);
+  delay(300);  // a moment for the Serial Monitor to attach
+  LOG("Sobergotchi " FIRMWARE_VERSION);
   store::begin();      // before Bluetooth: first start uses the hardware random generator
+  LOG("storage ok, %d friends", store::friendCount);
   hw::begin();
+  LOG("inputs ok");
   display::begin();
+  LOG("display ok");
   exchange::begin();
+  LOG("bluetooth ok");
   app::begin();
+  LOG("home screen drawn");
 }
 
 void loop() {

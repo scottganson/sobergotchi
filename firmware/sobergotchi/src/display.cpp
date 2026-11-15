@@ -16,7 +16,7 @@ static bool awake = false;
 void begin() {
   pinMode(PIN_EPD_POWER, OUTPUT);
   digitalWrite(PIN_EPD_POWER, HIGH);
-  delay(10);
+  delay(50);  // let the panel supply settle before the reset pulse
   SPI.setPins(PIN_SPI_UNUSED_MISO, PIN_EPD_SCK, PIN_EPD_MOSI);
   epd.init(0, true, 2, false);
   epd.setRotation(0);  // portrait, 122 x 250
@@ -34,11 +34,13 @@ void show(uint8_t screenId, UiData& data, bool full) {
     epd.setPartialWindow(0, 0, epd.width(), epd.height());
     partials++;
   }
+  uint32_t t0 = millis();
   epd.firstPage();
   do {
     epd.fillScreen(GxEPD_WHITE);
     ui::draw(epd, screenId, data);
   } while (epd.nextPage());
+  LOG("screen %d %s refresh %lu ms", screenId, full ? "full" : "partial", (unsigned long)(millis() - t0));
   awake = true;
 }
 

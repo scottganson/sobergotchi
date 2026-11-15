@@ -50,3 +50,11 @@
 #define NAME_LEN               12
 #define PHONE_LEN              15
 #define BLE_COMPANY_ID         0xFFFF   // test company ID, fine for a personal project
+
+// Start-up and screen messages on Tools > Serial Monitor (115200 baud). Costs nothing when no computer is connected.
+#define DEBUG_LOG 1
+#if DEBUG_LOG
+#define LOG(...) do { if (Serial) { Serial.printf(__VA_ARGS__); Serial.println(); } } while (0)
+#else
+#define LOG(...) do { } while (0)
+#endif

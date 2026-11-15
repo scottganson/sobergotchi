@@ -56,9 +56,8 @@ uint32_t buildTime() {
 static float lastVolts = 0;
 static uint32_t lastRead = 0;
 
-float batteryVolts() {
-  if (lastVolts > 0 && millis() - lastRead < 10UL * 60UL * 1000UL) return lastVolts;
-  // P0.31 is also the display's DC line on the EN05, so borrow it only while the panel is idle.
+void readBattery() {
+  // P0.31 is also the display's DC line on the EN05: only call this while nothing is being sent to the panel.
   pinMode(PIN_BAT_SENSE, INPUT);
   analogReference(AR_INTERNAL_2_4);
   analogReadResolution(12);
@@ -69,10 +68,17 @@ float batteryVolts() {
   analogReference(AR_DEFAULT);
   analogReadResolution(10);
   pinMode(PIN_EPD_DC, OUTPUT);
+  digitalWrite(PIN_EPD_DC, HIGH);
   lastVolts = (sum / 8.0f) * (2.4f / 4095.0f) * (1510.0f / 510.0f);
   lastRead = millis();
+}
+
+float batteryVolts() {
+  if (lastRead == 0) readBattery();  // first use only; afterwards the app refreshes it between screens
   return lastVolts;
 }
+
+bool batteryStale() { return lastRead == 0 || millis() - lastRead > 10UL * 60UL * 1000UL; }
 
 int batteryPercent() {
   static const float v[] = {4.15f, 4.05f, 3.97f, 3.90f, 3.84f, 3.80f, 3.76f, 3.73f, 3.70f, 3.65f, 3.50f, 3.30f};

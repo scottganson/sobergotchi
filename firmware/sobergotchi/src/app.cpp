@@ -375,7 +375,7 @@ static int currentScreen() {
 }
 
 static void show(bool full) {
-  hw::batteryVolts();  // read before drawing: the battery pin is shared with the display
+  if (hw::batteryStale()) hw::readBattery();  // read before drawing: the battery pin is shared with the display
   int id = currentScreen();
   int pagesBefore = reflectPages;
   display::show(id, data, full);
@@ -594,6 +594,7 @@ void loop() {
   // At home: sleep until midnight. Elsewhere: until the idle timeout.
   uint32_t timeout = home ? hw::secondsToMidnight() * 1000UL + 2000UL : IDLE_TIMEOUT_MS;
   Event e = hw::wait(timeout);
+  LOG("event %d", (int)e);
 
   if (e == EV_TIMEOUT) {
     if (!home || today() != shownDay) {

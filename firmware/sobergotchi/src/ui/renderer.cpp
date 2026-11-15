@@ -33,7 +33,7 @@ static void expand(const char* tpl, char* out, size_t n) {
     if (*tpl == '{') {
       const char* end = strchr(tpl, '}');
       if (!end) break;
-      char key[40], fmt[24];
+      static char key[40], fmt[24];  // static: not re-entered, keeps the loop stack small
       const char* colon = (const char*)memchr(tpl, ':', end - tpl);
       size_t klen = (colon ? colon : end) - tpl - 1;
       if (klen >= sizeof key) klen = sizeof key - 1;
@@ -46,7 +46,7 @@ static void expand(const char* tpl, char* out, size_t n) {
         memcpy(fmt, colon + 1, flen);
         fmt[flen] = 0;
       }
-      char val[160];
+      static char val[160];
       val[0] = 0;
       g_data->value(key, colon ? fmt : nullptr, val, sizeof val);
       for (const char* v = val; *v && len + 1 < n; v++) out[len++] = *v;
@@ -111,7 +111,7 @@ static void drawText(int x, int baseline, const char* s, uint8_t font, uint16_t 
 static void fitText(char* s, uint8_t font, int w) {
   if (textWidth(font, s) <= w) return;
   size_t len = strlen(s);
-  char tmp[164];
+  static char tmp[164];  // static: keeps the small loop-task stack free
   while (len > 0) {
     s[--len] = 0;
     snprintf(tmp, sizeof tmp, "%s..", s);
@@ -209,7 +209,7 @@ static void drawNode(int i, int dy, bool inv) {
   decor(n, x, y, inv);
   if (n.flags & UI_F_INVERT) inv = !inv;
   const uint16_t ink = inv ? GxEPD_WHITE : GxEPD_BLACK;
-  char buf[164];
+  static char buf[164];  // only used by leaf text before any recursion; static keeps the 4 KB loop stack free
 
   switch (n.type) {
     case T_TEXT: {
