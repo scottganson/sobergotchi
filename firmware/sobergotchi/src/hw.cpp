@@ -57,6 +57,11 @@ static float lastVolts = 0;
 static uint32_t lastRead = 0;
 
 void readBattery() {
+#if !BATTERY_SENSE
+  lastVolts = 4.20f;
+  lastRead = millis();
+  return;
+#endif
   // P0.31 is also the display's DC line on the EN05: only call this while nothing is being sent to the panel.
   pinMode(PIN_BAT_SENSE, INPUT);
   analogReference(AR_INTERNAL_2_4);
@@ -74,6 +79,7 @@ void readBattery() {
 }
 
 float batteryVolts() {
+  if (lastRead == 0) readBattery();  // first use only; afterwards the app refreshes it between screens
   return lastVolts;
 }
 

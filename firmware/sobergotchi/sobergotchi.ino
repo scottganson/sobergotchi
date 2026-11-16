@@ -11,7 +11,7 @@
 #include "src/app.h"
 
 // 1 = at start-up, redraw a test label after each step and log which step stops the panel answering.
-#define BRINGUP_STEPS 1
+#define BRINGUP_STEPS 0
 
 void setup() {
   Serial.begin(115200);
@@ -22,18 +22,17 @@ void setup() {
   delay(300);
   LOG("Sobergotchi " FIRMWARE_VERSION);
 #if BRINGUP_STEPS
-  // Draw the real home screen after each start-up step; the label along the bottom names the step.
-  store::begin();
   display::begin();
-  app::bringupStep("1 display only");
+  display::probe("1 display");
+  store::begin();
+  display::probe("2 storage");
   hw::begin();
-  app::bringupStep("2 after buttons");
+  display::probe("3 buttons");
   hw::readBattery();
   LOG("battery %d mV", (int)(hw::batteryVolts() * 1000));
-  app::bringupStep("3 after battery");
+  display::probe("4 battery");
   exchange::begin();
-  app::bringupStep("4 after bluetooth");
-  LOG("steps done, starting the app");
+  display::probe("5 bluetooth");
 #else
   store::begin();      // before Bluetooth: first start uses the hardware random generator
   LOG("storage ok, %d friends", store::friendCount);

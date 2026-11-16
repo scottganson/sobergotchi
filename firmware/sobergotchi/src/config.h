@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.0"
+#define FIRMWARE_VERSION "1.0-fix1"
 
 // ---------------------------------------------------------------------------
 // Defaults used the very first time the device starts (change later in Settings)
@@ -36,6 +36,9 @@
 
 #define PIN_BAT_SENSE   PIN_VBAT       // 35 = P0.31 through a 1M/510k divider
 #define PIN_BAT_ENABLE  VBAT_ENABLE    // 14 = P0.14, keep LOW (Seeed: protects P0.31 while charging)
+// The battery sense input is the display DC line on the EN05. Reading it left the panel stuck busy,
+// so it stays off until a battery is fitted and the read is proven safe. Off = shows a nominal 4.20 V.
+#define BATTERY_SENSE   0
 #define PIN_CHARGING    23             // P0.17, LOW while the charger is charging
 
 // ---------------------------------------------------------------------------

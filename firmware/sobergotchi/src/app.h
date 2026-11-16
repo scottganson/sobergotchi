@@ -5,7 +5,6 @@
 namespace app {
 
 void begin();   // after hardware, storage and display are up
-void loop();
-bool bringupStep(const char* label);  // draws the home screen with a label (bring-up diagnostics)    // one turn: sleep until something happens, then react
+void loop();    // one turn: sleep until something happens, then react
 
 }  // namespace app

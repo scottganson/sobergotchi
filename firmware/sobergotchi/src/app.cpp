@@ -589,10 +589,6 @@ void begin() {
   goHome();
 }
 
-bool bringupStep(const char* label) {
-  return display::probe(label, ui::screenByName("main"), data);
-}
-
 void loop() {
   bool home = mode == M_CAROUSEL && carousel == 0 && !sessionDirty;
   // At home: sleep until midnight. Elsewhere: until the idle timeout.

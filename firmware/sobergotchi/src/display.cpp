@@ -34,8 +34,21 @@ void show(uint8_t screenId, UiData& data, bool full) {
     epd.setPartialWindow(0, 0, epd.width(), epd.height());
     partials++;
   }
+  if (digitalRead(PIN_EPD_BUSY) == HIGH) {
+    // Panel stuck busy (it ignored the wake-up reset): cut its power, start it fresh, force a full refresh.
+    LOG("screen %d: panel stuck busy, power-cycling it", screenId);
+    digitalWrite(PIN_EPD_POWER, LOW);
+    delay(200);
+    digitalWrite(PIN_EPD_POWER, HIGH);
+    delay(50);
+    epd.init(0, true, 2, false);
+    epd.setRotation(0);
+    epd.setFullWindow();
+    partials = 0;
+    full = true;
+    LOG("screen %d: busy pin %d after power-cycle", screenId, digitalRead(PIN_EPD_BUSY));
+  }
   uint32_t t0 = millis();
-  LOG("screen %d: busy pin %d before", screenId, digitalRead(PIN_EPD_BUSY));
   epd.firstPage();
   do {
     epd.fillScreen(GxEPD_WHITE);
@@ -45,33 +58,27 @@ void show(uint8_t screenId, UiData& data, bool full) {
   awake = true;
 }
 
-bool probe(const char* label, uint8_t screenId, UiData& data) {
-  // Fresh reset each time so one failed step cannot spoil the next.
-  epd.init(0, true, 2, false);
-  epd.setRotation(0);
+bool probe(const char* label) {
   pinMode(PIN_EPD_DC, OUTPUT);
-  int busy = digitalRead(PIN_EPD_BUSY);
+  LOG("probe '%s': busy pin %d before", label, digitalRead(PIN_EPD_BUSY));
   uint32_t t0 = millis();
   epd.setFullWindow();
   epd.firstPage();
   do {
     epd.fillScreen(GxEPD_WHITE);
-    ui::draw(epd, screenId, data);
-    epd.fillRect(0, 232, epd.width(), 18, GxEPD_BLACK);
-    epd.setTextColor(GxEPD_WHITE);
-    epd.setTextSize(1);
-    epd.setCursor(4, 237);
+    epd.setTextColor(GxEPD_BLACK);
+    epd.setTextSize(2);
+    epd.setCursor(6, 100);
     epd.print(label);
   } while (epd.nextPage());
   uint32_t ms = millis() - t0;
-  bool ok = ms > 1000 && ms < 9000;
-  LOG("step '%s': busy pin %d before, %lu ms, %s", label, busy, (unsigned long)ms, ok ? "ok" : "FAILED");
-  delay(1500);  // time to read the screen
-  return ok;
+  LOG("probe '%s': %lu ms %s", label, (unsigned long)ms, ms > 9000 ? "FAILED" : "ok");
+  return ms <= 9000;
 }
 
 void sleep() {
-  if (awake) epd.hibernate();
+  // powerOff, not hibernate: waking from deep sleep needs a reset pulse, and the panel never came back from it.
+  if (awake) epd.powerOff();
   awake = false;
 }
 
