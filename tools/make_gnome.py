@@ -715,23 +715,19 @@ def zoom_house(c):
     c.px(x0 + 10, F - 23)
     for dx, dy in ((9, -26), (10, -28), (12, -29), (12, -32), (10, -33)):
         c.px(x0 + dx, F + dy)
-    frame(c, x0 + 20, F - 33, x0 + 34, F - 19)                                        # window with curtains
-    c.line(x0 + 27, F - 33, x0 + 27, F - 19)
-    c.line(x0 + 20, F - 26, x0 + 34, F - 26)
-    c.line(x0 + 20, F - 33, x0 + 23, F - 27)
-    c.line(x0 + 34, F - 33, x0 + 31, F - 27)
-    c.line(x0 + 18, F - 34, x0 + 36, F - 34)
-    c.line(x0 + 38, F - 31, x0 + 46, F - 31)                                          # shelf with jars
-    for xx in (x0 + 39, x0 + 42, x0 + 45):
-        frame(c, xx - 1, F - 35, xx + 1, F - 32)
-    c.fill([(x0 + 22, F - 12), (x0 + 44, F - 12), (x0 + 44, F - 11), (x0 + 22, F - 11)])  # table
-    c.line(x0 + 24, F - 11, x0 + 24, F)
-    c.line(x0 + 42, F - 11, x0 + 42, F)
-    frame(c, x0 + 26, F - 17, x0 + 31, F - 13)                                        # teapot
-    c.line(x0 + 31, F - 15, x0 + 33, F - 17)
-    c.px(x0 + 28, F - 18)
-    frame(c, x0 + 35, F - 15, x0 + 38, F - 13)                                        # mug
-    c.disc(x0 + 41, F - 14, 1.5)                                                      # apple
+    frame(c, x0 + 17, F - 34, x0 + 29, F - 21)                                        # window with curtains
+    c.line(x0 + 23, F - 34, x0 + 23, F - 21)
+    c.line(x0 + 17, F - 27, x0 + 29, F - 27)
+    c.line(x0 + 17, F - 34, x0 + 20, F - 28)
+    c.line(x0 + 29, F - 34, x0 + 26, F - 28)
+    c.line(x0 + 15, F - 35, x0 + 31, F - 35)
+    c.fill([(x0 + 17, F - 12), (x0 + 31, F - 12), (x0 + 31, F - 11), (x0 + 17, F - 11)])  # table
+    c.line(x0 + 19, F - 11, x0 + 19, F)
+    c.line(x0 + 29, F - 11, x0 + 29, F)
+    frame(c, x0 + 19, F - 17, x0 + 24, F - 13)                                        # teapot
+    c.line(x0 + 24, F - 15, x0 + 26, F - 17)
+    c.px(x0 + 21, F - 18)
+    c.disc(x0 + 28, F - 14, 1.5)                                                      # apple
 
     # ---- living room (lower right)
     x0 = MID + 3
@@ -782,7 +778,7 @@ def zoom_house(c):
     c.disc(x0 + 28, F - 28, 1.6, 0)
     # ---- study (upper right)
     x0 = MID + 3
-    bx = R - 20
+    bx = R - 16
     frame(c, bx, F - 34, R - 3, F)
     rng = random.Random(9)
     for shelf in (F - 26, F - 17, F - 8, F):
@@ -790,12 +786,12 @@ def zoom_house(c):
         for xx in range(bx + 2, R - 4):
             if rng.random() < 0.8:
                 c.line(xx, shelf - 1, xx, shelf - rng.choice((4, 5, 6, 6)))
-    c.fill([(x0 + 2, F - 11), (x0 + 22, F - 11), (x0 + 22, F - 10), (x0 + 2, F - 10)])    # desk
+    c.fill([(x0 + 2, F - 11), (x0 + 16, F - 11), (x0 + 16, F - 10), (x0 + 2, F - 10)])    # desk
     c.line(x0 + 3, F - 10, x0 + 3, F)
-    c.line(x0 + 21, F - 10, x0 + 21, F)
-    frame(c, x0 + 5, F - 13, x0 + 12, F - 12)                                         # open book
-    c.line(x0 + 17, F - 12, x0 + 17, F - 20)                                          # desk lamp
-    c.fill([(x0 + 14, F - 20), (x0 + 20, F - 20), (x0 + 18, F - 24), (x0 + 16, F - 24)])
+    c.line(x0 + 15, F - 10, x0 + 15, F)
+    frame(c, x0 + 4, F - 13, x0 + 9, F - 12)                                          # open book
+    c.line(x0 + 13, F - 12, x0 + 13, F - 18)                                          # desk lamp
+    c.fill([(x0 + 10, F - 18), (x0 + 16, F - 18), (x0 + 14, F - 21), (x0 + 12, F - 21)])
     c.disc(x0 + 9, F - 28, 4)                                                         # globe on the wall shelf
     c.disc(x0 + 9, F - 28, 3, 0)
     c.line(x0 + 6, F - 28, x0 + 12, F - 28)
@@ -803,22 +799,22 @@ def zoom_house(c):
     # leaves peeking in at the sides
     for x, y, a in ((3, 60, -70), (4, 84, -110), (2, 100, -60), (118, 52, -100), (117, 78, -70), (119, 98, -120)):
         c.a[T.leaf_mask(x, y, a, 7, 0.5)] = 1
-    return {"kitchen": (38, F1 - 1), "living": (82, F1 - 1), "bed": (30, F2 - 12), "study": (76, F2 - 1), "hearth": (88, F1 - 1)}
+    return {"kitchen": (50, F1 - 1), "living": (82, F1 - 1), "bed": (30, F2 - 12), "study": (88, F2 - 1), "hearth": (88, F1 - 1)}
 
 
 def zoom_sheet(out):
     def home(c):       # both downstairs, cat on the bed, dog by the fire
         r = zoom_house(c)
         gnome(c, r["living"][0] - 1, r["living"][1], "sit", 1)
-        gnome(c, r["kitchen"][0] + 5, r["kitchen"][1], "stand", -1, partner=True)
+        gnome(c, r["kitchen"][0], r["kitchen"][1], "stand", -1, partner=True)
         stamp(c, CAT, r["bed"][0], r["bed"][1])
-        stamp(c, DOG, r["study"][0] + 10, r["study"][1] + 0)
+        stamp(c, DOG, r["study"][0], r["study"][1])
 
     def night(c):      # he reads upstairs, she naps by the fire
         r = zoom_house(c)
-        gnome(c, r["study"][0] + 8, r["study"][1], "read", -1)
+        gnome(c, r["study"][0], r["study"][1], "read", -1)
         gnome(c, r["living"][0] - 1, r["living"][1], "nap", 1, partner=True)
-        stamp(c, CAT, r["kitchen"][0] + 4, r["kitchen"][1])
+        stamp(c, CAT, r["kitchen"][0] - 2, r["kitchen"][1])
         stamp(c, DOG, r["bed"][0] + 14, r["bed"][1] + 11)
 
     ims = []
@@ -826,11 +822,240 @@ def zoom_sheet(out):
         c = T.Canvas()
         fn(c)
         ims.append(c.image())
+    if out is None:
+        return ims
     pad = 6
     sheet = Image.new("1", (2 * (W + pad) - pad, H), 1)
     for k, im in enumerate(ims):
         sheet.paste(im, (k * (W + pad), 0))
     sheet.convert("L").resize((sheet.width * 5, sheet.height * 5), Image.NEAREST).save(os.path.join(out, "house-zoomed@5x.png"))
+
+
+MID = [   # the gnome at the middle zoom, about two thirds of full size
+    "      #      ",
+    "     ###     ",
+    "      #      ",
+    "     ###     ",
+    "     ###     ",
+    "    #####    ",
+    "    #####    ",
+    "   #######   ",
+    "   #######   ",
+    "  #########  ",
+    " ########### ",
+    "  #.#...#.#  ",
+    "  #...#...#  ",
+    " ##.......## ",
+    "#.#.......#.#",
+    "#.#.......#.#",
+    " ###.....### ",
+    "   #.....#   ",
+    "   ###.###   ",
+    "   ### ###   ",
+    "  #### ####  ",
+]
+MID_PARTNER = [
+    "      #      ",
+    "     #.#     ",
+    "     #.#     ",
+    "    #...#    ",
+    "    #...#    ",
+    "   #.....#   ",
+    "   #.....#   ",
+    "  #.......#  ",
+    " ########### ",
+    "  #.#...#.#  ",
+    " ##...#...## ",
+    " # #.....# # ",
+    " #  #####  # ",
+    "   #######   ",
+    "  #.#####.#  ",
+    "  #.#####.#  ",
+    "   #######   ",
+    "  #########  ",
+    "  #########  ",
+    "   ##   ##   ",
+    "   ##   ##   ",
+]
+
+
+def mid_house(c, level=4):
+    """Middle zoom for years 7 and 8: the crooked house fills most of the screen, with the trunk below,
+    leaves at the sides and a strip of sky above. level 3: bedroom upstairs. 4: study as well."""
+    base, f2, f1 = 101, 72, 43
+    L, R, UL, UR = 10, 103, 21, 111
+    cx, ucx = 57, 66
+    px_, peak = 60, 15
+    # trunk
+    c.fill([(34, base + 2), (84, base + 2), (79, base + 7), (78, H - 1), (40, H - 1), (39, base + 7)])
+    c.poly([(52, base + 6), (51, H - 1)], 0)
+    c.poly([(66, base + 5), (67, H - 1)], 0)
+    c.disc(59, base + 9, 2, 0)
+    c.px(59, base + 9)
+    # shell
+    white(c, [(L - 2, base), (R + 2, base), (R, f2), (L, f2)])
+    white(c, [(UL, f2), (UR, f2), (UR - 1, f1), (UL + 1, f1)])
+    c.fill([(L - 5, f2 + 1), (UL, f2 + 1), (UL, f2 - 8)])            # skirt roof on the left
+    left, right = UL - 9, UR + 8
+    roof = [(left - 2, f1 + 1), (right + 2, f1 + 1), (right - 1, f1 - 2)]
+    for t in (0.2, 0.4, 0.6, 0.8):
+        roof.append((right + (px_ + 1 - right) * t - 4 * math.sin(math.pi * t), f1 + (peak - f1) * t + 3.5 * math.sin(math.pi * t)))
+    roof += [(px_ + 1, peak), (px_ - 1, peak)]
+    for t in (0.8, 0.6, 0.4, 0.2):
+        roof.append((left + (px_ - 1 - left) * t + 4 * math.sin(math.pi * t), f1 + (peak - f1) * t + 3.5 * math.sin(math.pi * t)))
+    roof.append((left + 1, f1 - 2))
+    tmp = T.Canvas()
+    tmp.fill(roof)
+    rm = tmp.a.astype(bool)
+    c.a[rm] = 1
+    for row in range(1, 9):                                          # shingles
+        yy = f1 - row * 3 + 1
+        for xx in range(max(left, 2), min(right, W - 2)):
+            if (xx + row * 2) % 5 == 0 and rm[yy, xx - 1] and rm[yy, xx + 2] and rm[yy - 1, xx]:
+                c.px(xx, yy, 0)
+                c.px(xx + 1, yy, 0)
+    c.px(px_, peak - 1)
+    c.px(px_, peak - 2)
+    c.px(px_, peak - 3)
+    c.disc(px_, f1 - 9, 5, 0)                                        # attic window
+    c.disc(px_, f1 - 9, 4)
+    c.disc(px_, f1 - 9, 3, 0)
+    c.line(px_, f1 - 12, px_, f1 - 6)
+    k, top = 90, 14                                                  # leaning chimney and smoke
+    c.fill([(k, f1 - 12), (k + 6, f1 - 9), (k + 9, top), (k + 3, top)])
+    c.line(k + 2, top - 1, k + 10, top - 1)
+    for dx, dy in ((7, -4), (8, -6), (10, -8), (10, -11), (12, -13)):
+        c.px(k + dx, top + dy)
+    # floors, walls, dividers
+    c.fill([(L - 3, base), (R + 3, base), (R + 3, base + 2), (L - 3, base + 2)])
+    c.fill([(L - 1, f2), (UR + 1, f2), (UR + 1, f2 + 1), (L - 1, f2 + 1)])
+    c.fill([(UL, f1), (UR, f1), (UR, f1 + 1), (UL, f1 + 1)])
+    for dx in (0, 1):
+        c.line(L - 2 + dx, base, L + dx, f2)
+        c.line(R + 2 - dx, base, R - dx, f2)
+        c.line(UL + dx, f2, UL + 1 + dx, f1)
+        c.line(UR - dx, f2, UR - 1 - dx, f1)
+        c.line(cx + dx, f2 + 2, cx + dx, base - 22)
+        c.line(ucx + dx, f1 + 2, ucx + dx, f2 - 22)
+
+    # kitchen
+    x0, F = L + 3, base - 1
+    c.fill([(x0, F - 11), (x0 + 11, F - 11), (x0 + 11, F), (x0, F)])
+    frame(c, x0 + 2, F - 8, x0 + 9, F - 2)
+    c.line(x0 + 2, F - 12, x0 + 2, f2 + 2)
+    c.line(x0 + 3, F - 12, x0 + 3, f2 + 2)
+    frame(c, x0 + 5, F - 16, x0 + 10, F - 12)
+    for dx, dy in ((7, -18), (8, -20), (9, -22)):
+        c.px(x0 + dx, F + dy)
+    frame(c, x0 + 14, F - 25, x0 + 24, F - 15)
+    c.line(x0 + 19, F - 25, x0 + 19, F - 15)
+    c.line(x0 + 14, F - 20, x0 + 24, F - 20)
+    c.fill([(x0 + 15, F - 9), (x0 + 27, F - 9), (x0 + 27, F - 8), (x0 + 15, F - 8)])
+    c.line(x0 + 16, F - 8, x0 + 16, F)
+    c.line(x0 + 26, F - 8, x0 + 26, F)
+    frame(c, x0 + 17, F - 13, x0 + 21, F - 10)
+    c.px(x0 + 22, F - 12)
+    c.disc(x0 + 24.5, F - 11, 1.3)
+    # living room
+    fx = R - 15
+    c.fill([(fx, F - 16), (fx + 12, F - 16), (fx + 12, F), (fx, F)])
+    c.fill([(fx + 2, F), (fx + 2, F - 8), (fx + 4, F - 10), (fx + 8, F - 10), (fx + 10, F - 8), (fx + 10, F)], 0)
+    for dx, dy in ((5, -1), (6, -1), (7, -1), (6, -2), (5, -3), (7, -3), (6, -5)):
+        c.px(fx + dx, F + dy)
+    c.fill([(fx - 2, F - 18), (fx + 14, F - 18), (fx + 14, F - 17), (fx - 2, F - 17)])
+    c.disc(fx + 6, F - 22, 2.5)
+    c.disc(fx + 6, F - 22, 1.5, 0)
+    c.px(fx + 6, F - 22)
+    frame(c, cx + 5, F - 25, cx + 14, F - 18)
+    c.line(cx + 9, F - 20, cx + 9, F - 22)
+    c.disc(cx + 9.5, F - 23, 1.5)
+    c.fill([(cx + 4, F - 13), (cx + 5, F - 13), (cx + 5, F), (cx + 4, F)])
+    frame(c, cx + 6, F - 7, cx + 13, F - 3)
+    c.line(cx + 12, F - 2, cx + 12, F)
+    for xx in range(cx + 16, fx - 2):
+        if xx % 3:
+            c.px(xx, F)
+    # bedroom
+    x0, F = UL + 4, f2 - 1
+    c.fill([(x0, F - 14), (x0 + 1, F - 14), (x0 + 1, F), (x0, F)])
+    frame(c, x0 + 2, F - 8, x0 + 26, F - 3)
+    for yy in (F - 7, F - 5):
+        for xx in range(x0 + 11, x0 + 26, 2):
+            c.px(xx + (yy // 2 % 2), yy)
+    frame(c, x0 + 3, F - 11, x0 + 9, F - 8)
+    c.line(x0 + 26, F - 10, x0 + 26, F)
+    frame(c, x0 + 30, F - 7, x0 + 36, F)
+    c.line(x0 + 33, F - 8, x0 + 33, F - 11)
+    c.px(x0 + 33, F - 13)
+    c.disc(x0 + 17, F - 19, 4.5)
+    c.disc(x0 + 17, F - 19, 3.5, 0)
+    c.disc(x0 + 18, F - 20, 1.6)
+    c.disc(x0 + 19, F - 21, 1.3, 0)
+    # study (year 8)
+    if level >= 4:
+        bx = UR - 17
+        frame(c, bx, F - 25, UR - 4, F)
+        rng = random.Random(9)
+        for shelf in (F - 18, F - 12, F - 6, F):
+            c.line(bx, shelf, UR - 4, shelf)
+            for xx in range(bx + 2, UR - 5):
+                if rng.random() < 0.75:
+                    c.line(xx, shelf - 1, xx, shelf - rng.choice((3, 4, 4)))
+        c.fill([(ucx + 4, F - 9), (ucx + 16, F - 9), (ucx + 16, F - 8), (ucx + 4, F - 8)])
+        c.line(ucx + 5, F - 8, ucx + 5, F)
+        c.line(ucx + 15, F - 8, ucx + 15, F)
+        c.line(ucx + 12, F - 10, ucx + 12, F - 15)
+        c.fill([(ucx + 9, F - 15), (ucx + 15, F - 15), (ucx + 13, F - 18), (ucx + 11, F - 18)])
+        frame(c, ucx + 5, F - 11, ucx + 9, F - 10)
+    else:                                                            # an empty room waiting to be filled
+        frame(c, ucx + 16, F - 22, ucx + 28, F - 10)
+        c.line(ucx + 22, F - 22, ucx + 22, F - 10)
+        c.line(ucx + 16, F - 16, ucx + 28, F - 16)
+        frame(c, ucx + 6, F - 6, ucx + 13, F)                        # a packing box
+        c.line(ucx + 6, F - 3, ucx + 13, F - 3)
+    return {"kitchen": (47, base - 1), "living": (79, base - 1), "bed": (39, f2 - 9), "study": (88, f2 - 1), "empty": (90, f2 - 1)}
+
+
+def mid_scene(level, sky, draw_fn):
+    """Compose the middle zoom: sky, leaves around the house, then the house and whoever is home."""
+    g = T.Canvas()
+    r = mid_house(g, level)
+    draw_fn(g, r)
+    region = T.grown(T.grown((g.a | g.keepout).astype(np.uint8))).astype(bool)
+    lv = T.Canvas()
+    rng = random.Random(31)
+    for y in range(34, H + 4, 7):
+        for x in range(-2, W + 4, 7):
+            if 24 < x < 104 and y < 100:
+                continue
+            if y < 60 and x > 60:
+                continue
+            m = T.leaf_mask(x + rng.randint(-2, 2), y + rng.randint(-2, 2), rng.uniform(-150, -30), 7, 0.5)
+            if not (m & region).any():
+                lv.a[m] = 1
+    lv.a |= g.a
+    mask = T.Canvas()
+    mask.a = T.grown(T.grown(lv.a | g.keepout.astype(np.uint8)))
+    return T.compose(T.draw_sky(sky), lv, mask)
+
+
+def stepped_zoom(out):
+    """Years 5 to 10: the whole scene, then closer, then right inside."""
+    gy = T.ground_y
+    y5 = scene(20, 1, lambda c: stamp(c, MINI, big_house(c, 62, 68, 1)["kitchen"][0] - 6, 67))
+    y6 = scene(20, 4, lambda c: (big_house(c, 62, 68, 2), gnome(c, 14, gy(14), "wave", 1)))
+    y7 = mid_scene(3, 3, lambda c, r: (stamp(c, MID, r["kitchen"][0], r["kitchen"][1]),
+                                       stamp(c, CAT, r["living"][0], r["living"][1])))
+    y8 = mid_scene(4, 8, lambda c, r: (stamp(c, MID, r["study"][0], r["study"][1]),
+                                       stamp(c, MID_PARTNER, r["kitchen"][0], r["kitchen"][1]),
+                                       stamp(c, CAT, r["bed"][0], r["bed"][1]),
+                                       stamp(c, DOG, r["living"][0], r["living"][1])))
+    y9, y10 = zoom_sheet(None)
+    pad = 6
+    sheet = Image.new("1", (3 * (W + pad) - pad, 2 * (H + pad) - pad), 1)
+    for k, im in enumerate((y5, y6, y7, y8, y9, y10)):
+        sheet.paste(im, ((k % 3) * (W + pad), (k // 3) * (H + pad)))
+    sheet.convert("L").resize((sheet.width * 4, sheet.height * 4), Image.NEAREST).save(os.path.join(out, "house-stepped-zoom@4x.png"))
 
 
 def main():
@@ -841,6 +1066,7 @@ def main():
     os.makedirs(out, exist_ok=True)
     house_years(out)
     zoom_sheet(out)
+    stepped_zoom(out)
     gy = lambda x: T.ground_y(x)
     panels = [
         scene(17, 1, lambda c: gnome(c, 98, gy(98), "stand", -1)),
