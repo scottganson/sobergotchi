@@ -42,7 +42,7 @@ Show only sometimes: `if="next.any"` or `if="!next.any"`.
 | `<rule>` | a line: `style="dotted"`, `dir="v"` for vertical |
 | `<list>` | repeats its children per item: `bind="friends"` or `"menu"`, `rowh`, `sel="{friends.sel}"` (that row is drawn inverted) |
 
-Text can contain `{key}` or `{key:format}`. Dates take formats built from `dddd ddd MMMM MMM MM M dd d yyyy yy` (for example `{today:ddd, MMM d}` gives "Sun, Nov 15"). Numbers take `,` for thousands. The characters `·` and `—` and `●` `◀` `▶` are available in every font that has them.
+Text can contain `{key}` or `{key:format}`. Dates take formats built from `dddd ddd MMMM MMM MM M dd d yyyy yy` (for example `{today:ddd, MMM d}` gives "Sun, Nov 15"). Numbers take `,` for thousands. The characters `·` and `—` and `●` `▲` `▼` are available in every font that has them.
 
 ## Fonts
 
@@ -58,7 +58,7 @@ Named in `fonts/fonts.json`: `small`, `small-b`, `label`, `label-b`, `body`, `ti
 | `sober.num`, `sober.unit` | 2 · YEARS (on celebration days) |
 | `tree.stage` | 0 to 25 |
 | `battery.pct`, `battery.charging` | 82 · (empty) |
-| `screen.index`, `hint` | 0 · "● open · hold ● back" |
+| `screen.index`, `hint` | 0 · "▲ ▼ move · ● open" |
 | `next.any`, `next.today`, `next.name`, `next.years`, `next.date`, `next.in` | the friend with the soonest anniversary |
 | `friends.any`, `friends.count`, `friends.sel` | |
 | list `friends`: `item.name`, `item.date`, `item.years`, `item.in`, `item.phone`, `item.today` | sorted by next anniversary |

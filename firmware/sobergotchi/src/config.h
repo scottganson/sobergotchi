@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.0-fix1"
+#define FIRMWARE_VERSION "1.0-fix5"
 
 // ---------------------------------------------------------------------------
 // Defaults used the very first time the device starts (change later in Settings)
@@ -28,10 +28,11 @@
 #define PIN_EPD_POWER   6    // D6, high = panel powered
 #define PIN_SPI_UNUSED_MISO 19 // the panel has no MISO; park SPI MISO on an unconnected pin (not D9!)
 
-// Buttons, left to right with the screen facing you (found with firmware/button_finder):
-#define PIN_KEY1        2    // left,   D2, active low: back / previous / minus
-#define PIN_KEY2        9    // middle, D9, active low: select / next field (hold = back)
-#define PIN_KEY3        1    // right,  D1, active low: forward / next / plus
+// Buttons. Physically, left to right with the screen facing you: D2, D9, D1.
+// Up / down / enter layout (2026-11-16):
+#define PIN_KEY1        2    // left,   D2, active low: UP    (previous item, value +1)
+#define PIN_KEY2        1    // right,  D1, active low: ENTER (select / next field; a long press counts as enter)
+#define PIN_KEY3        9    // middle, D9, active low: DOWN  (next item, value -1)
 #define PIN_REED        0    // D0, reed switch to GND (closes near a magnet)
 
 #define PIN_BAT_SENSE   PIN_VBAT       // 35 = P0.31 through a 1M/510k divider

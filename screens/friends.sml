@@ -1,4 +1,4 @@
-<!-- Friends, soonest anniversary first. KEY2 to pick a friend, KEY2 again to open the card. -->
+<!-- Friends, soonest anniversary first, then a "Back" row. KEY2 to pick a friend, KEY2 again to open the card. -->
 <screen id="friends">
   <row h="21" fill="ink" pad="0 4 0 5">
     <text w="*" font="label-b">Friends</text>
@@ -7,13 +7,13 @@
   <stack h="*">
     <list if="friends.any" bind="friends" rowh="32" sel="{friends.sel}">
       <row h="31" pad="3 4 2 4" gap="5">
-        <col w="27" border="1" radius="4">
+        <col if="!item.back" w="27" border="1" radius="4">
           <text h="11" font="small-b" align="center" fill="ink" radius="3">{item.date:MMM}</text>
           <text h="*" font="label-b" align="center">{item.date:d}</text>
         </col>
         <col w="*">
           <text h="14" font="label">{item.name}</text>
-          <text h="*" font="small">{item.years} yrs · {item.in}</text>
+          <text if="!item.back" h="*" font="small">{item.years} yrs · {item.in}</text>
         </col>
       </row>
       <rule h="1" style="dotted" margin="0 4"/>

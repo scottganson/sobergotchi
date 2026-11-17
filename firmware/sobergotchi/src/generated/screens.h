@@ -60,8 +60,8 @@ static const UiNode SCREEN_edit_date_nodes[] = {
   {1, 0, 4, 0, 0, 0, 14, 147, 44, 34, 0, 0, "{edit.l3}", nullptr, nullptr, 0}, // <text>
   {1, 8, 6, 0, 0, 0, 58, 147, 50, 34, 0, 0, "{edit.v3}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 183, 122, 37, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {1, 0, 5, 0, 0, 0, 0, 220, 122, 13, 0, 0, "\202 less more \203", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "\201 next hold \201 cancel", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 220, 122, 13, 0, 0, "{edit.hint1}", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{edit.hint2}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };
 static const UiNode SCREEN_edit_text_nodes[] = {
@@ -77,9 +77,9 @@ static const UiNode SCREEN_edit_text_nodes[] = {
   {1, 8, 21, 1, 0, 8, 39, 82, 44, 56, 0, 0, "{edit.cur}", nullptr, nullptr, 0}, // <text>
   {1, 8, 5, 0, 0, 0, 89, 82, 25, 56, 0, 0, "{edit.next}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 138, 122, 69, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {1, 0, 5, 0, 0, 0, 0, 207, 122, 13, 0, 0, "\202 \203 change letter", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 220, 122, 13, 0, 0, "\201 next letter", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "hold \201 save", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 207, 122, 13, 0, 0, "{edit.hint1}", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 220, 122, 13, 0, 0, "{edit.hint2}", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{edit.hint3}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };
 static const UiNode SCREEN_friend_nodes[] = {
@@ -111,12 +111,12 @@ static const UiNode SCREEN_friends_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, nullptr, 14}, // <stack>
   {7, 0, 4, 0, 0, 0, 0, 21, 122, 208, 32, 0, "friends", "{friends.sel}", "friends.any", 8}, // <list>
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 31, 0, 0, nullptr, nullptr, nullptr, 6}, // <row>
-  {0, 0, 4, 0, 1, 4, 4, 24, 27, 26, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
+  {0, 0, 4, 0, 1, 4, 4, 24, 27, 26, 0, 0, nullptr, nullptr, "!item.back", 2}, // <col>
   {1, 1, 21, 1, 0, 3, 4, 24, 27, 11, 0, 0, "{item.date:MMM}", nullptr, nullptr, 0}, // <text>
   {1, 3, 5, 0, 0, 0, 4, 35, 27, 15, 0, 0, "{item.date:d}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 36, 24, 82, 26, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
   {1, 2, 4, 0, 0, 0, 36, 24, 82, 14, 0, 0, "{item.name}", nullptr, nullptr, 0}, // <text>
-  {1, 0, 4, 0, 0, 0, 36, 38, 82, 12, 0, 0, "{item.years} yrs \177 {item.in}", nullptr, nullptr, 0}, // <text>
+  {1, 0, 4, 0, 0, 0, 36, 38, 82, 12, 0, 0, "{item.years} yrs \177 {item.in}", nullptr, "!item.back", 0}, // <text>
   {6, 0, 36, 0, 0, 0, 4, 52, 114, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, "!friends.any", 4}, // <col>
   {3, 0, 5, 0, 0, 0, 0, 21, 122, 122, 5, 1, nullptr, nullptr, nullptr, 0}, // <image>

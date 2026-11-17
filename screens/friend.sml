@@ -17,9 +17,9 @@
   <spacer h="*"/>
   <stack h="24" margin="0 4 4 4">
     <row if="!friend.confirm" gap="6">
-      <text w="*" font="small-b" align="center" border="1" radius="5">◀ Back</text>
-      <text w="*" font="small-b" align="center" border="1" radius="5">Delete ▶</text>
+      <text w="*" font="small-b" align="center" border="1" radius="5">▲ Back</text>
+      <text w="*" font="small-b" align="center" border="1" radius="5">Delete ▼</text>
     </row>
-    <text if="friend.confirm" font="small-b" align="center" fill="ink" radius="5">Press ▶ again to delete</text>
+    <text if="friend.confirm" font="small-b" align="center" fill="ink" radius="5">Press ▼ again to delete</text>
   </stack>
 </screen>
