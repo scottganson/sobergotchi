@@ -8,6 +8,7 @@
 #include "store.h"
 #include "ui/renderer.h"
 #include "generated/reflections.h"
+#include "generated/gnome_notes.h"
 
 namespace app {
 
@@ -23,8 +24,8 @@ enum Mode : uint8_t {
   M_EDIT_TEXT,
 };
 
-static const uint8_t CAROUSEL_COUNT = 4;  // main, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS;
+static const uint8_t CAROUSEL_COUNT = 5;  // main, reflection, friends, menu, gnome
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
@@ -50,6 +51,7 @@ static int editField;
 static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
 static int editPos;
+static int editChoice = -1;  // -1 editing; else the Save / Cancel (/ Space) option highlighted
 static const char NAME_CHARS[] = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'";
 static const char PHONE_CHARS[] = " 0123456789";
 
@@ -119,6 +121,36 @@ static Sober sober() {
   return s;
 }
 
+// The sky changes every day: the same all day, a new one tomorrow. Order matches art/sky (tools/make_tree_ink.py).
+enum Sky : uint8_t { SKY_CLEAR, SKY_FAIR, SKY_MORNING, SKY_PARTLY, SKY_BIRDS, SKY_OVERCAST, SKY_WINDY,
+                     SKY_DRIZZLE, SKY_RAIN, SKY_STORM, SKY_SNOW, SKY_FOG, SKY_RAINBOW, SKY_COUNT };
+
+static uint32_t dayHash(int32_t day, uint32_t salt) {
+  uint32_t h = (uint32_t)day * 2654435761u + salt * 0x9E3779B9u + 0x5bd1e995u;
+  h ^= h >> 15; h *= 0x2c1b3c6du; h ^= h >> 12; h *= 0x297a2d39u; h ^= h >> 15;
+  return h;
+}
+
+static int skyPick(int32_t day, uint32_t salt) {
+  const uint32_t h = dayHash(day, salt);
+  // chances out of 100: mostly gentle days, some rain, the odd storm or rainbow
+  static const uint8_t chance[SKY_COUNT] = {13, 17, 13, 13, 10, 8, 6, 8, 4, 2, 0, 3, 3};
+  int r = h % 100, sky = SKY_FAIR;
+  for (int i = 0; i < SKY_COUNT; i++) {
+    if (r < chance[i]) { sky = i; break; }
+    r -= chance[i];
+  }
+  const int month = civilFromDays(day).m;
+  if (WINTER_SNOW && (month == 12 || month <= 2) && (sky == SKY_DRIZZLE || sky == SKY_RAIN || sky == SKY_STORM)) sky = SKY_SNOW;
+  return sky;
+}
+
+static int skyFor(int32_t day) {
+  int sky = skyPick(day, 0);
+  if (sky == skyPick(day - 1, 0)) sky = skyPick(day, 1);  // avoid the same sky two days running
+  return sky;
+}
+
 static int treeStage(const Sober& s) {
   if (s.y >= 1) return 16 + (s.y > 10 ? 10 : s.y) - 1;  // youth tree 1-4 years, mature 5-10
   if (s.m >= 1) return 5 + s.m - 1;                       // months 1-11
@@ -137,6 +169,49 @@ static bool milestone(const Sober& s, int& num, const char*& unit) {
   return false;
 }
 
+// The gnome: what he is doing today and the note he has, if any. Pose order matches art/gnome (tools/make_gnome.py).
+enum Pose : uint8_t { P_STAND, P_WAVE, P_WATER, P_RAKE, P_READ, P_TEA, P_NAP, P_LANTERN, P_UMBRELLA, P_CHEER, P_COUNT };
+struct Gnome { const GnomeNote* note; int years; int pose; };
+
+static Gnome gnomeToday() {
+  const int32_t t = today();
+  const Sober s = sober();
+  const int sky = skyFor(t);
+  const uint32_t h = dayHash(t, 7);
+  const bool wet = sky == SKY_DRIZZLE || sky == SKY_RAIN || sky == SKY_STORM || sky == SKY_SNOW;
+  Gnome g = {nullptr, s.y, P_STAND};
+  bool cheer = false;
+  if (s.y >= 1 && s.m == 0 && s.d == 0) {            // a yearly birthday
+    g.note = &GNOME_YEARS[s.y == 1 ? 0 : s.y <= 4 ? 1 : s.y == 5 ? 2 : s.y <= 9 ? 3 : 4];
+    cheer = true;
+  } else if (s.y == 0 && s.m >= 1 && s.d == 0) {     // a monthly milestone in the first year
+    g.note = &GNOME_MONTHS[s.m - 1];
+    cheer = true;
+  } else if (s.days <= 30) {                         // a note every day for the first thirty
+    g.note = &GNOME_DAILY[s.days];
+    cheer = s.days > 0 && (s.days % 7 == 0 || s.days % 10 == 0);
+  } else if (wet || sky == SKY_FOG) {                // a gentle word for hard weather
+    static const uint8_t any[4] = {0, 1, 3, 5};
+    g.note = &GNOME_RAINY[sky == SKY_STORM ? 2 : sky == SKY_FOG ? 4 : any[h % 4]];
+  }
+  if (cheer) g.pose = P_CHEER;
+  else if (wet) g.pose = P_UMBRELLA;
+  else if (sky == SKY_FOG || sky == SKY_OVERCAST) g.pose = (h & 1) ? P_LANTERN : P_TEA;
+  else if (sky == SKY_WINDY) g.pose = P_RAKE;
+  else {
+    static const uint8_t fair[8] = {P_STAND, P_WAVE, P_WATER, P_RAKE, P_READ, P_TEA, P_NAP, P_WATER};
+    g.pose = fair[(h >> 3) % 8];
+  }
+  return g;
+}
+
+// Copies src, putting the number v where it says {n}.
+static void fillN(const char* src, int v, char* out, size_t n) {
+  const char* p = strstr(src, "{n}");
+  if (!p) snprintf(out, n, "%s", src);
+  else snprintf(out, n, "%.*s%d%s", (int)(p - src), src, v, p + 3);
+}
+
 static int nextFriend() {  // index into store::friends of the soonest anniversary, or -1
   if (orderToday != today()) sortFriends();
   return store::friendCount ? order[0] : -1;
@@ -145,8 +220,9 @@ static int nextFriend() {  // index into store::friends of the soonest anniversa
 // ---------------------------------------------------------------------------
 // values for the screens
 // ---------------------------------------------------------------------------
-static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Friends", "Clear friends", "Battery", "Version"};
-static const int MENU_COUNT = 8;
+static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Friends", "Clear friends", "Battery", "Version", "Back"};
+static const int MENU_COUNT = 9;
+static const int MENU_BACK = 8;
 
 class Data : public UiData {
  public:
@@ -156,7 +232,7 @@ class Data : public UiData {
   void wrapPages(int pages) override { reflectPages = pages; }
 
   int listCount(const char* name) override {
-    if (!strcmp(name, "friends")) return store::friendCount;
+    if (!strcmp(name, "friends")) return store::friendCount ? store::friendCount + 1 : 0;  // last row is "Back"
     if (!strcmp(name, "menu")) return MENU_COUNT;
     return 0;
   }
@@ -203,6 +279,16 @@ class Data : public UiData {
       if (!strcmp(k, "unit")) return str(unit);
     }
     if (!strcmp(key, "tree.stage")) return num(treeStage(sober()));
+    if (!strcmp(key, "sky.index")) return num(skyFor(t));
+    if (!strcmp(key, "gnome.pose")) return num(gnomeToday().pose);
+    if (!strncmp(key, "note.", 5)) {
+      const Gnome g = gnomeToday();
+      const char* k = key + 5;
+      if (!strcmp(k, "any")) return flag(g.note != nullptr);
+      if (!strcmp(k, "short")) { if (g.note) fillN(g.note->brief, g.years, out, n); return; }
+      if (!strcmp(k, "full")) return fillN(g.note ? g.note->full : GNOME_ACTIVITY[g.pose], g.years, out, n);
+      return;
+    }
 
     if (!strncmp(key, "next.", 5)) {
       int i = nextFriend();
@@ -264,6 +350,11 @@ class Data : public UiData {
  private:
   void itemValue(const char* k, const char* fmt, char* out, size_t n, int32_t t) {
     if (list && !strcmp(list, "menu")) return menuValue(k, out, n);
+    if (item == store::friendCount) {  // the "Back" row
+      if (!strcmp(k, "name")) snprintf(out, n, "Back");
+      else if (!strcmp(k, "back")) snprintf(out, n, "1");
+      return;
+    }
     if (item < 0 || item >= store::friendCount) return;
     if (orderToday != t) sortFriends();
     const Friend& f = store::friends[order[item]];
@@ -321,6 +412,28 @@ class Data : public UiData {
       return;
     }
     if (!strcmp(k, "has3")) { snprintf(out, n, "%s", editTarget == E_TODAY ? "1" : ""); return; }
+    if (!strncmp(k, "hint", 4)) {
+      const bool text = mode == M_EDIT_TEXT;
+      const char* h = "";
+      char opts[48];
+      if (editChoice >= 0) {
+        static const char* O[] = {"Save", "Cancel", "Space"};
+        int m = 0;
+        for (int i = 0; i < (text ? 3 : 2); i++)
+          m += snprintf(opts + m, sizeof opts - m, i == editChoice ? "%s[%s]" : "%s %s ", i ? " " : "", O[i]);
+        if (k[4] == '1') h = opts;
+        else if (k[4] == '2') h = "\202 \203 choose  \177  \201 ok";
+      } else if (text) {
+        if (k[4] == '1') h = "\202 \203 change letter";
+        else if (k[4] == '2') h = "\201 next letter";
+        else h = "pick _ then \201 to finish";
+      } else {
+        if (k[4] == '1') h = "\202 more  less \203";
+        else if (k[4] == '2') h = "\201 next";
+      }
+      snprintf(out, n, "%s", h);
+      return;
+    }
     const char* cs = editChars();
     int len = strlen(cs);
     const char* p = strchr(cs, editBuf[editPos] ? editBuf[editPos] : ' ');
@@ -338,8 +451,8 @@ class Data : public UiData {
 
   void hint(char* out, size_t n) {
     switch (mode) {
-      case M_FRIENDS: snprintf(out, n, "\201 open  \177  hold \201 back"); break;
-      case M_MENU: snprintf(out, n, "\201 change  \177  hold \201 back"); break;
+      case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
+      case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       default:
         if (carousel == 2 && store::friendCount) snprintf(out, n, "\201 choose a friend");
         else if (carousel == 3) snprintf(out, n, "\201 choose a setting");
@@ -370,12 +483,13 @@ static int currentScreen() {
     }
     case 1: return S_REFLECT;
     case 2: return S_FRIENDS;
-    default: return S_MENU;
+    case 3: return S_MENU;
+    default: return S_GNOME;
   }
 }
 
 static void show(bool full) {
-  if (hw::batteryStale()) hw::readBattery();  // read before drawing: the battery pin is shared with the display
+  if (hw::batteryStale()) hw::readBattery();
   int id = currentScreen();
   int pagesBefore = reflectPages;
   display::show(id, data, full);
@@ -399,6 +513,7 @@ static void showPopup(int screenId) {
 static void startEditDate(EditTarget target) {
   editTarget = target;
   editField = 0;
+  editChoice = -1;
   int32_t day = target == E_SOBER ? store::settings.soberDay : today();
   Ymd d = civilFromDays(day);
   editY = d.y; editM = d.m; editD = d.d;
@@ -411,6 +526,7 @@ static void startEditText(EditTarget target) {
   memset(editBuf, 0, sizeof editBuf);
   strncpy(editBuf, target == E_NAME ? store::settings.name : store::settings.phone, editMax());
   editPos = 0;
+  editChoice = -1;
   mode = M_EDIT_TEXT;
 }
 
@@ -457,6 +573,7 @@ static void stepDate(int dir) {
 }
 
 static void handleKey(Event e) {
+  if (e == EV_KEY2_LONG) e = EV_KEY2;  // no hold actions: a long press is just enter
   switch (mode) {
     case M_CAROUSEL:
       if (e == EV_KEY1) { carousel = (carousel + CAROUSEL_COUNT - 1) % CAROUSEL_COUNT; reflectPage = 0; }
@@ -470,7 +587,8 @@ static void handleKey(Event e) {
 
     case M_FRIENDS:
       if (e == EV_KEY1 && friendSel > 0) friendSel--;
-      else if (e == EV_KEY3 && friendSel < store::friendCount - 1) friendSel++;
+      else if (e == EV_KEY3 && friendSel < store::friendCount) friendSel++;  // friendCount = the Back row
+      else if (e == EV_KEY2 && friendSel >= store::friendCount) mode = M_CAROUSEL;
       else if (e == EV_KEY2 && store::friendCount) {
         popupFriend = store::friends[order[friendSel]];
         confirmDelete = false;
@@ -503,6 +621,7 @@ static void handleKey(Event e) {
           case 2: startEditText(E_NAME); break;
           case 3: startEditText(E_PHONE); break;
           case 4: carousel = 2; mode = store::friendCount ? M_FRIENDS : M_CAROUSEL; friendSel = 0; break;
+          case MENU_BACK: mode = M_CAROUSEL; break;
           case 5:
             if (!confirmClear) confirmClear = true;
             else { store::clearFriends(); sortFriends(); confirmClear = false; }
@@ -514,11 +633,16 @@ static void handleKey(Event e) {
 
     case M_EDIT_DATE: {
       int fields = editTarget == E_TODAY ? 4 : 3;
-      if (e == EV_KEY1) stepDate(-1);
-      else if (e == EV_KEY3) stepDate(+1);
-      else if (e == EV_KEY2) {
-        if (++editField >= fields) { saveEditDate(); mode = M_MENU; }
-      } else if (e == EV_KEY2_LONG) mode = M_MENU;  // cancel
+      if (editChoice >= 0) {  // after the last field: Save / Cancel
+        if (e == EV_KEY1 || e == EV_KEY3) editChoice ^= 1;
+        else if (e == EV_KEY2) {
+          if (editChoice == 0) saveEditDate();
+          editChoice = -1;
+          mode = M_MENU;
+        }
+      } else if (e == EV_KEY1) stepDate(+1);  // up
+      else if (e == EV_KEY3) stepDate(-1);    // down
+      else if (e == EV_KEY2 && ++editField >= fields) editChoice = 0;
       break;
     }
 
@@ -528,15 +652,32 @@ static void handleKey(Event e) {
       char c = editBuf[editPos] ? editBuf[editPos] : ' ';
       const char* p = strchr(cs, c);
       int ci = p ? (int)(p - cs) : 0;
-      if (e == EV_KEY1 || e == EV_KEY3) {
+      if (editChoice >= 0) {  // Save / Cancel / Space
+        if (e == EV_KEY1) editChoice = (editChoice + 2) % 3;
+        else if (e == EV_KEY3) editChoice = (editChoice + 1) % 3;
+        else if (e == EV_KEY2) {
+          if (editChoice == 2) {  // keep typing: the blank stays as a space
+            if (editPos < editMax()) {
+              editBuf[editPos] = ' ';
+              if (editPos < editMax() - 1) editPos++;
+            }
+          } else {
+            if (editChoice == 0) {
+              for (int i = editPos; i < (int)sizeof editBuf; i++) editBuf[i] = 0;  // drop old text after the cursor
+              saveEditText();
+            }
+            mode = M_MENU;
+          }
+          editChoice = -1;
+        }
+      } else if (e == EV_KEY1 || e == EV_KEY3) {
         ci = (ci + (e == EV_KEY3 ? 1 : -1) + len) % len;
         editBuf[editPos] = cs[ci];
         for (int i = 0; i < editPos; i++) if (!editBuf[i]) editBuf[i] = ' ';
       } else if (e == EV_KEY2) {
-        if (editPos < editMax() - 1) editPos++;
-      } else if (e == EV_KEY2_LONG) {
-        saveEditText();
-        mode = M_MENU;
+        if (c == ' ') editChoice = 0;  // enter on a blank: finish
+        else if (editPos < editMax() - 1) editPos++;
+        else { editPos++; editChoice = 0; }  // full: finish after the last letter
       }
       break;
     }
@@ -581,6 +722,7 @@ void begin() {
   S_EDIT_TEXT = ui::screenByName("edit-text");
   S_ADDED = ui::screenByName("added");
   S_RPS = ui::screenByName("rps");
+  S_GNOME = ui::screenByName("gnome");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();

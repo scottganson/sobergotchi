@@ -1,4 +1,4 @@
-<!-- Name / phone editor. KEY1/KEY3 change the letter, KEY2 next letter, hold KEY2 to save. -->
+<!-- Name / phone editor. KEY1/KEY3 (up/down) change the letter, KEY2 (enter) next letter; enter on a blank opens Save / Cancel / Space. -->
 <screen id="edit-text">
   <row h="21" fill="ink" pad="0 4 0 5">
     <text w="*" font="label-b">{edit.title}</text>
@@ -13,8 +13,8 @@
     <text w="*" font="phone" align="center">{edit.next}</text>
   </row>
   <spacer h="*"/>
-  <text h="13" font="small" align="center">◀ ▶ change letter</text>
-  <text h="13" font="small" align="center">● next letter</text>
-  <text h="13" font="small" align="center">hold ● save</text>
+  <text h="13" font="small" align="center">{edit.hint1}</text>
+  <text h="13" font="small" align="center">{edit.hint2}</text>
+  <text h="13" font="small" align="center">{edit.hint3}</text>
   <spacer h="4"/>
 </screen>

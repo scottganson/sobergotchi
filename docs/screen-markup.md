@@ -9,7 +9,7 @@ Each file in `screens/` describes one screen on the 122 x 250 portrait display. 
     <battery w="28" align="right"/>
   </row>
   <text h="27" font="name" align="center">{user.name}</text>
-  <image h="*" src="tree" index="{tree.stage}" valign="bottom"/>
+  <stack h="*"> sky, treemask (draw="paper") and tree images </stack>
 </screen>
 ```
 
@@ -42,7 +42,7 @@ Show only sometimes: `if="next.any"` or `if="!next.any"`.
 | `<rule>` | a line: `style="dotted"`, `dir="v"` for vertical |
 | `<list>` | repeats its children per item: `bind="friends"` or `"menu"`, `rowh`, `sel="{friends.sel}"` (that row is drawn inverted) |
 
-Text can contain `{key}` or `{key:format}`. Dates take formats built from `dddd ddd MMMM MMM MM M dd d yyyy yy` (for example `{today:ddd, MMM d}` gives "Sun, Nov 15"). Numbers take `,` for thousands. The characters `·` and `—` and `●` `◀` `▶` are available in every font that has them.
+Text can contain `{key}` or `{key:format}`. Dates take formats built from `dddd ddd MMMM MMM MM M dd d yyyy yy` (for example `{today:ddd, MMM d}` gives "Sun, Nov 15"). Numbers take `,` for thousands. The characters `·` and `—` and `●` `▲` `▼` are available in every font that has them.
 
 ## Fonts
 
@@ -57,8 +57,11 @@ Named in `fonts/fonts.json`: `small`, `small-b`, `label`, `label-b`, `body`, `ti
 | `sober.date` (date), `sober.days`, `sober.short` | Aug 19, 2024 · 818 · 2y 2m 27d |
 | `sober.num`, `sober.unit` | 2 · YEARS (on celebration days) |
 | `tree.stage` | 0 to 25 |
+| `sky.index` | 0 to 12, the sky for today (changes daily) |
+| `gnome.pose` | 0 to 9, what the gnome is doing today |
+| `note.any`, `note.short`, `note.full` | the gnome's note for today; `note.full` falls back to a line about his activity |
 | `battery.pct`, `battery.charging` | 82 · (empty) |
-| `screen.index`, `hint` | 0 · "● open · hold ● back" |
+| `screen.index`, `hint` | 0 · "▲ ▼ move · ● open" |
 | `next.any`, `next.today`, `next.name`, `next.years`, `next.date`, `next.in` | the friend with the soonest anniversary |
 | `friends.any`, `friends.count`, `friends.sel` | |
 | list `friends`: `item.name`, `item.date`, `item.years`, `item.in`, `item.phone`, `item.today` | sorted by next anniversary |

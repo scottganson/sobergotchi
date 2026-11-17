@@ -9,5 +9,5 @@
   <image h="11" src="sprig"/>
   <text h="15" font="small-b" align="center">{reflect.title}</text>
   <text h="11" font="small" align="center">{reflect.more}</text>
-  <dots h="9" count="4"/>
+  <dots h="9" count="5"/>
 </screen>

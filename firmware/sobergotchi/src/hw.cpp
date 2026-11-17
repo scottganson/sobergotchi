@@ -62,19 +62,19 @@ void readBattery() {
   lastRead = millis();
   return;
 #endif
-  // P0.31 is also the display's DC line on the EN05: only call this while nothing is being sent to the panel.
-  pinMode(PIN_BAT_SENSE, INPUT);
+  pinMode(PIN_BAT_ADC, INPUT);
+  digitalWrite(PIN_BAT_ADC_EN, HIGH);  // connect the divider
   analogReference(AR_INTERNAL_2_4);
   analogReadResolution(12);
-  delay(2);
-  analogRead(PIN_BAT_SENSE);
+  delay(10);                           // Seeed: let the divider settle before sampling
+  analogRead(PIN_BAT_ADC);             // first sample after switching references is thrown away
   uint32_t sum = 0;
-  for (int i = 0; i < 8; i++) sum += analogRead(PIN_BAT_SENSE);
+  for (int i = 0; i < 8; i++) sum += analogRead(PIN_BAT_ADC);
+  digitalWrite(PIN_BAT_ADC_EN, LOW);   // disconnect again so the divider does not drain the battery
   analogReference(AR_DEFAULT);
   analogReadResolution(10);
-  pinMode(PIN_EPD_DC, OUTPUT);
-  digitalWrite(PIN_EPD_DC, HIGH);
-  lastVolts = (sum / 8.0f) * (2.4f / 4095.0f) * (1510.0f / 510.0f);
+  lastVolts = (sum / 8.0f) * (2.4f / 4095.0f) * 2.0f;
+  LOG("battery raw %d = %d mV%s", (int)(sum / 8), (int)(lastVolts * 1000), charging() ? " (charging)" : "");
   lastRead = millis();
 }
 
@@ -101,6 +101,8 @@ bool charging() { return usbPower() && digitalRead(PIN_CHARGING) == LOW; }
 // ---- inputs ---------------------------------------------------------------
 void begin() {
   wakeSem = xSemaphoreCreateBinary();
+  pinMode(PIN_BAT_ADC_EN, OUTPUT);
+  digitalWrite(PIN_BAT_ADC_EN, LOW);  // battery divider off until a reading is taken
   pinMode(PIN_BAT_ENABLE, OUTPUT);
   digitalWrite(PIN_BAT_ENABLE, LOW);  // Seeed: keep low so P0.31 never sees the raw battery while charging
   pinMode(PIN_CHARGING, INPUT);

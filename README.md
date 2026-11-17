@@ -18,14 +18,14 @@ Hold two Sobergotchis back to back, both upright with screens facing out: each m
 
 ## Buttons
 
-| | Left (D2) | Middle (D9) | Right (D1) |
+| | Left (D2): up | Middle (D9): down | Right (D1): enter |
 | --- | --- | --- | --- |
-| Moving between screens | previous screen | select (turn the page on Reflection) | next screen |
-| In a list | up | open / change | down |
-| Editing a date | minus | next field (the last one saves) | plus |
-| Editing a name or phone | previous letter | next position | next letter |
+| Moving between screens | previous screen | next screen | select (turn the page on Reflection) |
+| In a list | up | down | open / change |
+| Editing a date | plus | minus | next field |
+| Editing a name or phone | previous letter | next letter | next position |
 
-Hold the middle button to go back (in the name/phone editor, holding it saves). After 30 seconds without a press the device returns to the home screen and sleeps.
+Settings and the friends list end with a **Back** item. After the last date field a **Save / Cancel** choice appears; in the name/phone editor, press enter on the blank `_` to get **Save / Cancel / Space**. There are no hold actions: a long press counts as enter. After 30 seconds without a press the device returns to the home screen and sleeps.
 
 ## Screens
 

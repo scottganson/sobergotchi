@@ -1,4 +1,4 @@
-<!-- Date editor. KEY1 minus, KEY3 plus, KEY2 next field (the last one saves). -->
+<!-- Date editor. KEY1 (up) plus, KEY3 (down) minus, KEY2 (enter) next field; after the last field a Save / Cancel choice. -->
 <screen id="edit-date">
   <row h="21" fill="ink" pad="0 4 0 5">
     <text w="*" font="label-b">{edit.title}</text>
@@ -21,7 +21,7 @@
     <row if="edit.s3" fill="ink" radius="6" pad="0 8"><text w="*" font="small">{edit.l3}</text><text w="50" font="phone" align="right">{edit.v3}</text></row>
   </stack>
   <spacer h="*"/>
-  <text h="13" font="small" align="center">◀ less    more ▶</text>
-  <text h="13" font="small" align="center">● next    hold ● cancel</text>
+  <text h="13" font="small" align="center">{edit.hint1}</text>
+  <text h="13" font="small" align="center">{edit.hint2}</text>
   <spacer h="4"/>
 </screen>

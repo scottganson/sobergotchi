@@ -4,7 +4,10 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.0-fix1"
+#define FIRMWARE_VERSION "1.2-gnome1"
+
+// 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
+#define WINTER_SNOW 1
 
 // ---------------------------------------------------------------------------
 // Defaults used the very first time the device starts (change later in Settings)
@@ -28,17 +31,19 @@
 #define PIN_EPD_POWER   6    // D6, high = panel powered
 #define PIN_SPI_UNUSED_MISO 19 // the panel has no MISO; park SPI MISO on an unconnected pin (not D9!)
 
-// Buttons, left to right with the screen facing you (found with firmware/button_finder):
-#define PIN_KEY1        2    // left,   D2, active low: back / previous / minus
-#define PIN_KEY2        9    // middle, D9, active low: select / next field (hold = back)
-#define PIN_KEY3        1    // right,  D1, active low: forward / next / plus
-#define PIN_REED        0    // D0, reed switch to GND (closes near a magnet)
+// Buttons. Physically, left to right with the screen facing you: D2, D9, D1.
+// Up / down / enter layout (2026-11-16):
+#define PIN_KEY1        2    // left,   D2, active low: UP    (previous item, value +1)
+#define PIN_KEY2        1    // right,  D1, active low: ENTER (select / next field; hold = cancel or save in editors)
+#define PIN_KEY3        9    // middle, D9, active low: DOWN  (next item, value -1)
+#define PIN_REED        4    // D4, reed switch to GND (closes near a magnet). Was D0 until fix8; D0 is the battery input.
 
-#define PIN_BAT_SENSE   PIN_VBAT       // 35 = P0.31 through a 1M/510k divider
-#define PIN_BAT_ENABLE  VBAT_ENABLE    // 14 = P0.14, keep LOW (Seeed: protects P0.31 while charging)
-// The battery sense input is the display DC line on the EN05. Reading it left the panel stuck busy,
-// so it stays off until a battery is fitted and the read is proven safe. Off = shows a nominal 4.20 V.
-#define BATTERY_SENSE   0
+// Battery, from Seeed's Ex05 schematic: the battery goes through a switch (on while D12 is high) and a
+// 10k/10k divider to D0/A0. Reading the XIAO's own battery pin (P0.31) is not possible here: it is the display DC line.
+#define PIN_BAT_ADC     0              // D0 / A0 (P0.02), half the battery voltage while the switch is on
+#define PIN_BAT_ADC_EN  31             // D12 (P0.19), high = battery divider connected
+#define PIN_BAT_ENABLE  VBAT_ENABLE    // 14 = P0.14, the XIAO's own divider; kept LOW as before
+#define BATTERY_SENSE   1              // 0 = no reading, show a nominal 4.20 V
 #define PIN_CHARGING    23             // P0.17, LOW while the charger is charging
 
 // ---------------------------------------------------------------------------
