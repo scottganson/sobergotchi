@@ -38,6 +38,76 @@ FACE = [  # '#' ink, '.' paper. Eyes, round nose, cheeks and moustache; sits bet
 ]
 
 
+FACE_PARTNER = [
+    "#...........#",
+    "#...........#",
+    "#..#.....#..#",
+    "#..#.....#..#",
+    "#.....#.....#",
+    "#.#.......#.#",
+    "#....###....#",
+]
+CAT = [
+    " #   #     ",
+    " ## ##     ",
+    " #####     ",
+    " #.#.#     ",
+    " #####     ",
+    "  ###      ",
+    "  ####     ",
+    " ######    ",
+    " #######  #",
+    " ####### # ",
+    " ####### # ",
+    " ########  ",
+]
+DOG = [
+    "      ###  ",
+    "    ##...# ",
+    "   ###.#..#",
+    "   ###...##",
+    "    #...#  ",
+    "    #...#  ",
+    "   #....#  ",
+    "#  #....#  ",
+    " # #....#  ",
+    " ##.....#  ",
+    "  #.#.#.#  ",
+    "  ### ###  ",
+]
+BIRD = [
+    "  ##   ",
+    " #.##  ",
+    "######  "[:7],
+    " ##### ",
+    "  #### ",
+    "  # ## ",
+]
+
+
+def tree_house(c, x, y):
+    """Little cabin in the crown with its floor at (x, y), and a ladder to the ground."""
+    white(c, [(x - 10, y), (x + 10, y), (x + 10, y - 11), (x - 10, y - 11)])
+    c.fill([(x - 13, y - 11), (x + 13, y - 11), (x, y - 21)])            # roof
+    for k in range(-9, 10, 3):                                           # shingle line
+        c.px(x + k, y - 13, 0)
+    c.fill([(x - 12, y), (x + 12, y), (x + 12, y + 1), (x - 12, y + 1)])  # floor beam
+    white(c, [(x - 7, y), (x - 7, y - 8), (x - 2, y - 8), (x - 2, y)])    # door
+    c.px(x - 3, y - 4)
+    white(c, [(x + 2, y - 8), (x + 8, y - 8), (x + 8, y - 3), (x + 2, y - 3)])  # window
+    c.line(x + 5, y - 8, x + 5, y - 3)
+    c.line(x + 2, y - 5.5, x + 8, y - 5.5)
+    c.line(x + 9, y - 18, x + 9, y - 23)                                  # chimney pipe
+    for k in range(3):
+        c.px(x + 10 + k, y - 25 - k * 2)
+    gy = int(T.ground_y(x + 12))
+    lx = x + 14                                                           # ladder
+    c.line(lx, y + 1, lx, gy)
+    c.line(lx + 4, y + 1, lx + 4, gy)
+    for yy in range(int(y) + 4, gy, 4):
+        c.line(lx, yy, lx + 4, yy)
+
+
 FACE_ASLEEP = FACE[:2] + ["#...........#", "#.##.###.##.#"] + FACE[4:]
 
 
@@ -69,7 +139,7 @@ def boot(c, x, y, d):
     c.fill([(x - d * 1.5, y - 3), (x + d * 1.5, y - 3), (x + d * 4.5, y - 1), (x + d * 4.5, y), (x - d * 1.5, y)])
 
 
-def gnome(c, x, y, pose="stand", face=1):
+def gnome(c, x, y, pose="stand", face=1, partner=False):
     """Gnome with his feet at (x, y). face = 1 looks right, -1 looks left."""
     f = face
     x, y = int(round(x)), int(round(y))
@@ -193,14 +263,31 @@ def gnome(c, x, y, pose="stand", face=1):
             c.px(cx + (k % 2), cy - 4 - k * 2)
     # beard: wide and soft, flowing over the tunic to a point
     top = sh - 2
-    white(c, [(x - 6, top), (x + 6, top), (x + 6, top + 3), (x + 4.5, top + 7), (x + 1.5, top + 9.5), (x, top + 11),
-              (x - 1.5, top + 9.5), (x - 4.5, top + 7), (x - 6, top + 3)])
-    for dx, y0, y1 in ((-3, 3, 6), (0, 4, 8), (3, 3, 6)):
-        c.line(x + dx, top + y0, x + dx * 0.6, top + y1)
+    if partner:   # no beard: a round chin and two long braids
+        white(c, [(x - 6, top), (x + 6, top), (x + 5, top + 3), (x + 2, top + 5), (x - 2, top + 5), (x - 5, top + 3)])
+        for s_ in (-1, 1):
+            for k in range(5):
+                c.disc(x + s_ * 7, top + 1 + k * 2.4, 1.5 if k % 2 == 0 else 1.1)
+            c.disc(x + s_ * 7, top + 13, 0.9)
+    else:
+        white(c, [(x - 6, top), (x + 6, top), (x + 6, top + 3), (x + 4.5, top + 7), (x + 1.5, top + 9.5), (x, top + 11),
+                  (x - 1.5, top + 9.5), (x - 4.5, top + 7), (x - 6, top + 3)])
+        for dx, y0, y1 in ((-3, 3, 6), (0, 4, 8), (3, 3, 6)):
+            c.line(x + dx, top + y0, x + dx * 0.6, top + y1)
     # face
-    stamp(c, FACE_ASLEEP if pose == "nap" else FACE, x, top, flip=f < 0)
+    stamp(c, FACE_PARTNER if partner else FACE_ASLEEP if pose == "nap" else FACE, x, top, flip=f < 0)
     # cap: wide soft brim line, tall cone, tip flopping over with a little bobble
     brim = top - 7
+    if partner:   # a pale cap with a dark band and a flower
+        white(c, [(x - 8, brim + 1), (x + 8, brim + 1), (x + 7, brim - 1), (x + 3.5, brim - 8), (x + 1, brim - 12),
+                  (x - f * 3, brim - 14), (x - f * 6, brim - 11), (x - 3.5, brim - 7), (x - 7, brim - 1)])
+        for xx in range(x - 7, x + 8):
+            c.px(xx, brim - 1)
+            c.px(xx, brim)
+        fx, fy = x + f * 5, brim - 4
+        for dx, dy in ((0, -2), (2, 0), (0, 2), (-2, 0), (-1, -1), (1, -1), (1, 1), (-1, 1)):
+            c.px(fx + dx, fy + dy)
+        return
     c.fill([(x - 8, brim + 1), (x + 8, brim + 1), (x + 7, brim - 1), (x + 3.5, brim - 9), (x + 1.5, brim - 14),
             (x - 1.5, brim - 14), (x - 3.5, brim - 9), (x - 7, brim - 1)])
     c.px(x - 9, brim)
@@ -248,12 +335,49 @@ def write_art(root):
         big.save(os.path.join(root, "art", "gnomebig", f"pose-{i:02d}-{name}.png"))
 
 
+def later_years(out):
+    """Concept sketches for years 5 to 10: tree house, bird, pets and a partner."""
+    gy = T.ground_y
+
+    def y5(c):
+        tree_house(c, 50, 62)
+        gnome(c, 24, gy(24), "wave", 1)
+
+    def y7(c):
+        tree_house(c, 50, 62)
+        gnome(c, 26, gy(26), "read", 1)
+        stamp(c, BIRD, 27, gy(26) - 37)
+        stamp(c, CAT, 8, gy(8))
+        stamp(c, DOG, 110, gy(110))
+
+    def y8(c):
+        tree_house(c, 50, 62)
+        gnome(c, 14, gy(14), "stand", 1)
+        stamp(c, BIRD, 15, gy(14) - 39)
+        gnome(c, 36, gy(36), "wave", -1, partner=True)
+
+    def y10(c):
+        tree_house(c, 50, 62)
+        gnome(c, 13, gy(13), "cheer", 1)
+        gnome(c, 36, gy(36), "stand", -1, partner=True)
+        stamp(c, BIRD, 36, gy(36) - 36)
+        stamp(c, CAT, 51, gy(51))
+
+    panels = [scene(20, 1, y5), scene(22, 4, y7), scene(23, 0, y8), scene(25, 12, y10)]
+    pad = 6
+    sheet = Image.new("1", (len(panels) * (W + pad) - pad, H), 1)
+    for k, im in enumerate(panels):
+        sheet.paste(im, (k * (W + pad), 0))
+    sheet.convert("L").resize((sheet.width * 4, sheet.height * 4), Image.NEAREST).save(os.path.join(out, "later-years@4x.png"))
+
+
 def main():
     write_art(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     if len(sys.argv) < 2:
         return
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
+    later_years(out)
     gy = lambda x: T.ground_y(x)
     panels = [
         scene(17, 1, lambda c: gnome(c, 98, gy(98), "stand", -1)),
