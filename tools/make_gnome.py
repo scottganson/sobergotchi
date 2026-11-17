@@ -62,18 +62,17 @@ CAT = [
     " ########  ",
 ]
 DOG = [
-    "      ###  ",
-    "    ##...# ",
-    "   ###.#..#",
-    "   ###...##",
-    "    #...#  ",
-    "    #...#  ",
-    "   #....#  ",
-    "#  #....#  ",
-    " # #....#  ",
-    " ##.....#  ",
-    "  #.#.#.#  ",
-    "  ### ###  ",
+    "  ###       ",
+    " ######     ",
+    "##.#####    ",
+    "####### #   ",
+    " ######     ",
+    "   #####    ",
+    "   ######  #",
+    "   ####### #",
+    "   ######## ",
+    "   ######## ",
+    "   ## ####  ",
 ]
 BIRD = [
     "  ##   ",
@@ -86,25 +85,61 @@ BIRD = [
 
 
 def tree_house(c, x, y):
-    """Little cabin in the crown with its floor at (x, y), and a ladder to the ground."""
-    white(c, [(x - 10, y), (x + 10, y), (x + 10, y - 11), (x - 10, y - 11)])
-    c.fill([(x - 13, y - 11), (x + 13, y - 11), (x, y - 21)])            # roof
-    for k in range(-9, 10, 3):                                           # shingle line
-        c.px(x + k, y - 13, 0)
-    c.fill([(x - 12, y), (x + 12, y), (x + 12, y + 1), (x - 12, y + 1)])  # floor beam
-    white(c, [(x - 7, y), (x - 7, y - 8), (x - 2, y - 8), (x - 2, y)])    # door
-    c.px(x - 3, y - 4)
-    white(c, [(x + 2, y - 8), (x + 8, y - 8), (x + 8, y - 3), (x + 2, y - 3)])  # window
-    c.line(x + 5, y - 8, x + 5, y - 3)
-    c.line(x + 2, y - 5.5, x + 8, y - 5.5)
-    c.line(x + 9, y - 18, x + 9, y - 23)                                  # chimney pipe
-    for k in range(3):
-        c.px(x + 10 + k, y - 25 - k * 2)
-    gy = int(T.ground_y(x + 12))
-    lx = x + 14                                                           # ladder
-    c.line(lx, y + 1, lx, gy)
-    c.line(lx + 4, y + 1, lx + 4, gy)
-    for yy in range(int(y) + 4, gy, 4):
+    """Cabin in the crown with its floor at (x, y): deck with railings, shingled roof, chimney, ladder."""
+    # braces down to the trunk, then the deck
+    c.line(x - 15, y + 2, x - 2, y + 13)
+    c.line(x + 15, y + 2, x + 6, y + 13)
+    c.fill([(x - 23, y), (x + 23, y), (x + 23, y + 1), (x - 23, y + 1)])
+    for k in range(-22, 23, 4):                 # plank ends under the deck
+        c.px(x + k, y + 2)
+    # walls with plank lines
+    white(c, [(x - 13, y), (x + 12, y), (x + 12, y - 17), (x - 13, y - 17)])
+    for yy in (y - 6, y - 12):
+        for xx in range(x - 12, x + 12):
+            if xx % 2 == 0:
+                c.px(xx, yy)
+    # arched door with a knob and a step
+    door = [(x - 10, y - 1), (x - 10, y - 9), (x - 9, y - 11), (x - 7, y - 12), (x - 5, y - 11), (x - 4, y - 9), (x - 4, y - 1)]
+    white(c, door)
+    c.line(x - 7, y - 11, x - 7, y - 1)
+    c.px(x - 5, y - 6)
+    # round window with a cross and a flower box
+    c.disc(x + 5, y - 10, 4.2)
+    c.disc(x + 5, y - 10, 3.0, 0)
+    c.line(x + 5, y - 13, x + 5, y - 7)
+    c.line(x + 2, y - 10, x + 8, y - 10)
+    c.line(x + 1, y - 4, x + 9, y - 4)
+    for k in (2, 4, 6, 8):
+        c.px(x + k, y - 5)
+    # chimney behind the roof, with smoke
+    c.fill([(x + 6, y - 22), (x + 9, y - 22), (x + 9, y - 30), (x + 6, y - 30)])
+    c.line(x + 5, y - 31, x + 10, y - 31)
+    for k, (dx, dy) in enumerate(((8, -34), (9, -36), (11, -38), (11, -41), (13, -43))):
+        c.px(x + dx, y + dy)
+    # shingled roof with wide eaves
+    c.fill([(x - 18, y - 17), (x + 17, y - 17), (x + 15, y - 19), (x, y - 32), (x - 1, y - 32), (x - 16, y - 19)])
+    for row, yy in enumerate((y - 20, y - 23, y - 26, y - 29)):
+        half = (32 - (y - yy)) * 1.15
+        for xx in range(int(x - half) + 1, int(x + half)):
+            if (xx + row) % 3 == 0:
+                c.px(xx, yy, 0)
+    c.px(x, y - 33)
+    c.px(x - 1, y - 33)
+    # railings either side of the cabin
+    for x0, x1 in ((x - 23, x - 14), (x + 13, x + 23)):
+        c.line(x0, y - 6, x1, y - 6)
+        for xx in range(x0, x1 + 1, 3):
+            c.line(xx, y - 6, xx, y - 1)
+    # lantern under the deck
+    c.line(x - 19, y + 2, x - 19, y + 4)
+    white(c, [(x - 21, y + 5), (x - 17, y + 5), (x - 17, y + 9), (x - 21, y + 9)])
+    c.px(x - 19, y + 7)
+    # ladder from the end of the deck to the grass
+    lx = x + 18
+    gy = int(T.ground_y(lx))
+    c.line(lx, y + 2, lx, gy)
+    c.line(lx + 4, y + 2, lx + 4, gy)
+    for yy in range(int(y) + 5, gy, 4):
         c.line(lx, yy, lx + 4, yy)
 
 
@@ -339,31 +374,39 @@ def later_years(out):
     """Concept sketches for years 5 to 10: tree house, bird, pets and a partner."""
     gy = T.ground_y
 
+    HX, HY = 59, 65
+
+    def bird(c):
+        stamp(c, BIRD, HX + 18, HY - 7)
+
     def y5(c):
-        tree_house(c, 50, 62)
-        gnome(c, 24, gy(24), "wave", 1)
+        tree_house(c, HX, HY)
+        gnome(c, 22, gy(22), "wave", 1)
 
     def y7(c):
-        tree_house(c, 50, 62)
-        gnome(c, 26, gy(26), "read", 1)
-        stamp(c, BIRD, 27, gy(26) - 37)
-        stamp(c, CAT, 8, gy(8))
-        stamp(c, DOG, 110, gy(110))
+        tree_house(c, HX, HY)
+        bird(c)
+        gnome(c, 24, gy(24), "read", 1)
+        stamp(c, CAT, 100, gy(100))
+        stamp(c, DOG, 113, gy(113))
 
     def y8(c):
-        tree_house(c, 50, 62)
-        gnome(c, 14, gy(14), "stand", 1)
-        stamp(c, BIRD, 15, gy(14) - 39)
+        tree_house(c, HX, HY)
+        bird(c)
+        gnome(c, 13, gy(13), "stand", 1)
         gnome(c, 36, gy(36), "wave", -1, partner=True)
+        stamp(c, CAT, 100, gy(100))
+        stamp(c, DOG, 113, gy(113))
 
     def y10(c):
-        tree_house(c, 50, 62)
+        tree_house(c, HX, HY)
+        bird(c)
         gnome(c, 13, gy(13), "cheer", 1)
         gnome(c, 36, gy(36), "stand", -1, partner=True)
-        stamp(c, BIRD, 36, gy(36) - 36)
-        stamp(c, CAT, 51, gy(51))
+        stamp(c, CAT, 98, gy(98))
+        stamp(c, DOG, 112, gy(112))
 
-    panels = [scene(20, 1, y5), scene(22, 4, y7), scene(23, 0, y8), scene(25, 12, y10)]
+    panels = [scene(20, 1, y5), scene(20, 4, y7), scene(20, 0, y8), scene(20, 12, y10)]
     pad = 6
     sheet = Image.new("1", (len(panels) * (W + pad) - pad, H), 1)
     for k, im in enumerate(panels):
