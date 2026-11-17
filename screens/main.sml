@@ -5,7 +5,12 @@
     <battery w="28" align="right"/>
   </row>
   <text h="27" font="name" align="center">{user.name}</text>
-  <image h="*" src="tree" index="{tree.stage}" valign="bottom"/>
+  <!-- Three layers: the day's sky, then the tree's outline cleared out of it, then the tree itself. -->
+  <stack h="*">
+    <image src="sky" index="{sky.index}" valign="bottom"/>
+    <image src="treemask" index="{tree.stage}" valign="bottom" draw="paper"/>
+    <image src="tree" index="{tree.stage}" valign="bottom"/>
+  </stack>
   <box h="52" margin="1 3 0 3" fill="ink" radius="10" pad="4 4 5 4">
     <text h="31" font="big" align="center" valign="top">{sober.days:,}</text>
     <text h="*" font="small-b" align="center">DAYS · {sober.short}</text>

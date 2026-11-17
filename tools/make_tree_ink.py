@@ -120,36 +120,220 @@ def arc_curve(p0, p1, bend, n=16):
 
 # ---------------------------------------------------------------- sky
 
-def sun(c, cx=104, cy=15):
-    for i in range(16):
-        a = math.radians(i * 22.5 + 11.25)
-        r0, r1 = 9.5, (14.5 if i % 2 == 0 else 11.5)
-        c.line(cx + r0 * math.cos(a), cy + r0 * math.sin(a), cx + r1 * math.cos(a), cy + r1 * math.sin(a))
+def sun(c, cx=104, cy=15, rays=True):
+    if rays:
+        for i in range(16):
+            a = math.radians(i * 22.5 + 11.25)
+            r0, r1 = 9.5, (14.5 if i % 2 == 0 else 11.5)
+            c.line(cx + r0 * math.cos(a), cy + r0 * math.sin(a), cx + r1 * math.cos(a), cy + r1 * math.sin(a))
     im = Image.new("1", (W, H), 0)
     d = ImageDraw.Draw(im)
     d.ellipse((cx - 6, cy - 6, cx + 6, cy + 6), outline=1)
     c.a[np.array(im, bool)] = 1
 
 
-def cloud(c, x, y, lobes, rules):
+BIG = ([(5, 4), (12, 7), (21, 5), (27, 3)], [(-2, 33, 0), (4, 38, 2), (12, 30, 4)])
+SMALL = ([(3, 2), (8, 4), (14, 3)], [(-3, 19, 0), (2, 24, 2)])
+WIDE = ([(4, 3), (11, 6), (20, 8), (30, 6), (38, 4), (44, 2)], [(-3, 49, 0), (2, 54, 2), (10, 46, 4), (18, 40, 6)])
+
+
+def cloud(c, x, y, shape, shade=False, clear=2):
     """Engraved cloud: fine scalloped top, ruled lines along the base.
-    lobes: [(dx, r)] circles whose upper outline forms the top; rules: [(dx0, dx1, dy)]."""
+    shape = (lobes [(dx, r)], rules [(dx0, dx1, dy)]); shade rules the body too, for rain clouds."""
+    lobes, rules = shape
     mask = np.zeros((H, W), bool)
     yy, xx = np.mgrid[0:H, 0:W]
     for dx, r in lobes:
         mask |= ((xx - (x + dx)) ** 2 + (yy - y) ** 2 <= r * r) & (yy <= y)
     edge = mask & ~(np.roll(mask, 1, 0) & np.roll(mask, -1, 1) & np.roll(mask, 1, 1))
     edge[y, :] = False
-    c.a[mask] = 0
+    # clear whatever is behind (sun rays, other clouds), with a little margin
+    lo = min(d0 for d0, _, _ in rules)
+    hi = max(d1 for _, d1, _ in rules)
+    deep = max(dy for _, _, dy in rules)
+    behind = mask.copy()
+    behind[max(0, y - 1):y + deep + clear, max(0, x + lo - clear):min(W, x + hi + clear + 1)] = True
+    for _ in range(clear):
+        behind = grown(behind.astype(np.uint8)).astype(bool)
+    c.a[behind] = 0
     c.a[edge] = 1
+    if shade:
+        inner = mask & np.roll(mask, 1, 1) & np.roll(mask, -1, 1) & np.roll(mask, 1, 0) & np.roll(mask, 2, 0)
+        inner &= ((y - yy) % 2 == 0) & (yy < y)
+        c.a[inner] = 1
     for dx0, dx1, dy in rules:
         c.line(x + dx0, y + dy, x + dx1, y + dy)
 
 
-def sky(c):
+def rain(c, rng, top, gx, gy, ln, slant):
+    y = top
+    row = 0
+    while y < GROUND + 6:
+        x = -4 + (row % 2) * gx / 2
+        while x < W + 6:
+            px, py = x + rng.uniform(-1.5, 1.5), y + rng.uniform(-1.5, 1.5)
+            c.line(px, py, px - slant, py + ln)
+            x += gx
+        y += gy
+        row += 1
+
+
+def snow(c, rng, top):
+    y, row = top, 0
+    while y < GROUND + 6:
+        x = 2 + (row % 2) * 6
+        while x < W:
+            px, py = int(x + rng.uniform(-2, 2)), int(y + rng.uniform(-2, 2))
+            if (row + int(x)) % 3 == 0:
+                for dx, dy in ((0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)):
+                    c.px(px + dx, py + dy)
+            else:
+                c.px(px, py)
+            x += 12
+        y += 8
+        row += 1
+
+
+def wind(c, x0, x1, y, r=3, up=True):
+    c.line(x0, y, x1, y)
+    s = -1 if up else 1
+    pts = []
+    for i in range(15):
+        a = math.radians(90 - i * 19)
+        pts.append((x1 + r * math.cos(a), y + s * (r - r * math.sin(a))))
+    c.poly(pts)
+
+
+def bird(c, x, y, span=3):
+    for i in range(-span, span + 1):
+        c.px(x + i, y - (1 if abs(i) in (1, span) else 2 if abs(i) > 1 else 0))
+
+
+def rainbow(c, cx=61, cy=97):
+    for k, r in enumerate((62, 59, 56)):
+        n = 0
+        last = None
+        for i in range(0, 1801):
+            a = math.radians(180 + i / 10)
+            p = (int(round(cx + r * math.cos(a))), int(round(cy + r * math.sin(a))))
+            if p != last:
+                last = p
+                n += 1
+                if k != 1 or n % 2 == 0:
+                    c.px(*p)
+
+
+def storm_clouds(c, shade):
+    cloud(c, 74, 17, WIDE, shade)
+    cloud(c, -6, 14, WIDE, shade)
+    cloud(c, 36, 22, WIDE, shade)
+
+
+def sky_clear(c, rng):
     sun(c)
-    cloud(c, 5, 15, [(5, 4), (12, 7), (21, 5), (27, 3)], [(-2, 33, 0), (4, 38, 2), (12, 30, 4)])
-    cloud(c, 50, 7, [(3, 2), (8, 4), (14, 3)], [(-3, 19, 0), (2, 24, 2)])
+    cloud(c, 12, 9, SMALL)
+
+
+def sky_fair(c, rng):
+    sun(c)
+    cloud(c, 5, 15, BIG)
+    cloud(c, 50, 7, SMALL)
+
+
+def sky_morning(c, rng):
+    sun(c, 18, 15)
+    cloud(c, 82, 17, BIG)
+    cloud(c, 48, 8, SMALL)
+
+
+def sky_partly(c, rng):
+    sun(c, 98, 14)
+    cloud(c, 66, 24, WIDE)
+    cloud(c, 6, 12, BIG)
+
+
+def sky_birds(c, rng):
+    sun(c)
+    cloud(c, 8, 12, SMALL)
+    bird(c, 38, 24)
+    bird(c, 50, 17, 2)
+    bird(c, 62, 27, 2)
+
+
+def sky_overcast(c, rng):
+    cloud(c, 70, 12, WIDE)
+    cloud(c, -8, 11, WIDE)
+    cloud(c, 30, 20, WIDE)
+    cloud(c, 88, 27, BIG)
+    cloud(c, 2, 29, SMALL)
+
+
+def sky_windy(c, rng):
+    sun(c)
+    cloud(c, 6, 9, SMALL)
+    wind(c, 4, 44, 26)
+    wind(c, 22, 70, 34, 4, up=False)
+    wind(c, 2, 30, 44, 3)
+    wind(c, 78, 108, 42, 3)
+    for x, y, a in ((52, 50, 20), (84, 30, -30), (100, 56, 35)):
+        c.a[leaf_mask(x, y, a, 5, 0.5)] = 1
+
+
+def sky_drizzle(c, rng):
+    storm_clouds(c, False)
+    rain(c, rng, 34, 15, 11, 3, 1)
+
+
+def sky_rain(c, rng):
+    storm_clouds(c, True)
+    rain(c, rng, 33, 10, 8, 4, 2)
+
+
+def sky_storm(c, rng):
+    storm_clouds(c, True)
+    rain(c, rng, 33, 10, 8, 4, 2)
+    bolt = [(31, 29), (25, 41), (31, 41), (22, 58)]
+    yy, xx = np.mgrid[0:H, 0:W]
+    c.a[(xx > 16) & (xx < 38) & (yy > 28) & (yy < 62)] = 0
+    for dx in (0, 1):
+        c.poly([(x + dx, y) for x, y in bolt])
+
+
+def sky_snow(c, rng):
+    storm_clouds(c, False)
+    snow(c, rng, 34)
+
+
+def sky_fog(c, rng):
+    sun(c, rays=False)
+    cloud(c, 10, 12, BIG)
+    for k, y in enumerate((52, 60, 68, 76, 84)):
+        x = -rng.randint(0, 14) + (k % 2) * 9
+        while x < W:
+            ln = rng.randint(18, 40)
+            for xx in range(max(0, x), min(W, x + ln)):
+                if k % 2 == 0 or xx % 2 == 0:
+                    c.px(xx, y)
+            x += ln + rng.randint(6, 12)
+
+
+def sky_rainbow(c, rng):
+    rainbow(c)
+    sun(c)
+    cloud(c, 2, 20, WIDE)
+
+
+SKIES = [  # order matters: the firmware picks by index (see skyFor in app.cpp)
+    ("clear", sky_clear), ("fair", sky_fair), ("morning", sky_morning), ("partly", sky_partly),
+    ("birds", sky_birds), ("overcast", sky_overcast), ("windy", sky_windy), ("drizzle", sky_drizzle),
+    ("rain", sky_rain), ("storm", sky_storm), ("snow", sky_snow), ("fog", sky_fog), ("rainbow", sky_rainbow),
+]
+
+
+def draw_sky(i):
+    c = Canvas()
+    SKIES[i][1](c, random.Random(900 + i))
+    return c
 
 
 # ---------------------------------------------------------------- ground
@@ -474,7 +658,6 @@ def tree(c, rng, scale, apples, base_x=W / 2):
 def draw(stage, tree_seed=7100):
     rng = random.Random(7100 + stage)
     back = Canvas()
-    sky(back)
     hills(back, random.Random(5))
     cx = W / 2
     gy = ground_y(cx)
@@ -526,22 +709,51 @@ def draw(stage, tree_seed=7100):
             halo[int(round(ground_y(x))):, x] = False
     if stage >= 16:
         halo[:int(gy) - 2, :] |= c.keepout[:int(gy) - 2, :]
+    scenery = grown(back.a).astype(bool)
     back.a[halo] = 0
     back.a[m] = 1
-    return back.image()
+    halo |= scenery
+    # mask: where the sky must not show (around the plant, and everything below the ground line)
+    mask = Canvas()
+    mask.a[halo] = 1
+    for x in range(W):
+        mask.a[int(round(ground_y(x))):, x] = 1
+    return back, mask
+
+
+def compose(sky_c, plant, mask):
+    out = Canvas()
+    out.a = (sky_c.a & (1 - mask.a)) | plant.a
+    return out.image()
 
 
 def main():
-    out = sys.argv[1]
-    os.makedirs(out, exist_ok=True)
-    imgs = [draw(i) for i in range(26)]
-    for i, im in enumerate(imgs):
-        im.save(os.path.join(out, f"stage-{i + 1:02d}.png"))
-    cols, pad = 7, 4
-    sheet = Image.new("1", (cols * (W + pad), 4 * (H + pad)), 1)
-    for k, im in enumerate(imgs):
-        sheet.paste(im, ((k % cols) * (W + pad), (k // cols) * (H + pad)))
-    sheet.save(os.path.join(out, "sheet.png"))
+    """No argument: write the firmware art into art/sky, art/tree and art/treemask.
+    With a folder: also write composed previews there."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    skies = [draw_sky(i) for i in range(len(SKIES))]
+    stages = [draw(i) for i in range(26)]
+    for d in ("sky", "tree", "treemask"):
+        os.makedirs(os.path.join(root, "art", d), exist_ok=True)
+    for i, c in enumerate(skies):
+        c.image().save(os.path.join(root, "art", "sky", f"sky-{i:02d}-{SKIES[i][0]}.png"))
+    for i, (plant, mask) in enumerate(stages):
+        plant.image().save(os.path.join(root, "art", "tree", f"stage-{i + 1:02d}.png"))
+        mask.image().save(os.path.join(root, "art", "treemask", f"stage-{i + 1:02d}.png"))
+    if len(sys.argv) > 1:
+        out = sys.argv[1]
+        os.makedirs(out, exist_ok=True)
+        pad = 4
+
+        def sheet(pairs, cols, name):
+            sh = Image.new("1", (cols * (W + pad), ((len(pairs) + cols - 1) // cols) * (H + pad)), 1)
+            for k, (sk, st) in enumerate(pairs):
+                sh.paste(compose(skies[sk], *stages[st]), ((k % cols) * (W + pad), (k // cols) * (H + pad)))
+            sh.save(os.path.join(out, name))
+
+        sheet([(1, st) for st in range(26)], 7, "stages.png")
+        sheet([(sk, 12) for sk in range(len(SKIES))], 5, "skies-sapling.png")
+        sheet([(sk, 20) for sk in range(len(SKIES))], 5, "skies-tree.png")
 
 
 if __name__ == "__main__":

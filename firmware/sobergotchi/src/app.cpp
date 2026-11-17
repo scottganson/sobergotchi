@@ -120,6 +120,31 @@ static Sober sober() {
   return s;
 }
 
+// The sky changes every day: the same all day, a new one tomorrow. Order matches art/sky (tools/make_tree_ink.py).
+enum Sky : uint8_t { SKY_CLEAR, SKY_FAIR, SKY_MORNING, SKY_PARTLY, SKY_BIRDS, SKY_OVERCAST, SKY_WINDY,
+                     SKY_DRIZZLE, SKY_RAIN, SKY_STORM, SKY_SNOW, SKY_FOG, SKY_RAINBOW, SKY_COUNT };
+
+static int skyPick(int32_t day, uint32_t salt) {
+  uint32_t h = (uint32_t)day * 2654435761u + salt * 0x9E3779B9u + 0x5bd1e995u;
+  h ^= h >> 15; h *= 0x2c1b3c6du; h ^= h >> 12; h *= 0x297a2d39u; h ^= h >> 15;
+  // chances out of 100: mostly gentle days, some rain, the odd storm or rainbow
+  static const uint8_t chance[SKY_COUNT] = {13, 17, 13, 13, 10, 8, 6, 8, 4, 2, 0, 3, 3};
+  int r = h % 100, sky = SKY_FAIR;
+  for (int i = 0; i < SKY_COUNT; i++) {
+    if (r < chance[i]) { sky = i; break; }
+    r -= chance[i];
+  }
+  const int month = civilFromDays(day).m;
+  if (WINTER_SNOW && (month == 12 || month <= 2) && (sky == SKY_DRIZZLE || sky == SKY_RAIN || sky == SKY_STORM)) sky = SKY_SNOW;
+  return sky;
+}
+
+static int skyFor(int32_t day) {
+  int sky = skyPick(day, 0);
+  if (sky == skyPick(day - 1, 0)) sky = skyPick(day, 1);  // avoid the same sky two days running
+  return sky;
+}
+
 static int treeStage(const Sober& s) {
   if (s.y >= 1) return 16 + (s.y > 10 ? 10 : s.y) - 1;  // youth tree 1-4 years, mature 5-10
   if (s.m >= 1) return 5 + s.m - 1;                       // months 1-11
@@ -205,6 +230,7 @@ class Data : public UiData {
       if (!strcmp(k, "unit")) return str(unit);
     }
     if (!strcmp(key, "tree.stage")) return num(treeStage(sober()));
+    if (!strcmp(key, "sky.index")) return num(skyFor(t));
 
     if (!strncmp(key, "next.", 5)) {
       int i = nextFriend();
@@ -404,7 +430,7 @@ static int currentScreen() {
 }
 
 static void show(bool full) {
-  if (hw::batteryStale()) hw::readBattery();  // read before drawing: the battery pin is shared with the display
+  if (hw::batteryStale()) hw::readBattery();
   int id = currentScreen();
   int pagesBefore = reflectPages;
   display::show(id, data, full);

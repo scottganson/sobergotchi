@@ -199,6 +199,8 @@ def flatten(n, layout):
         rec["flags"] |= VALIGN[n.attrs.get("valign", "middle" if n.tag != "wrap" else "top")] << 2
         if rec["fill"] == 1:
             rec["flags"] |= F_INVERT
+        if n.tag == "image" and n.attrs.get("draw") == "paper":  # knock a shape out of what is behind
+            rec["flags"] |= F_INVERT
         if n.tag in ("text", "wrap"):
             rec["font"] = layout.font(n)[0]
             rec["text"] = n.text

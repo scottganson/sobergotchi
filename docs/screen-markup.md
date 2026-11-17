@@ -9,7 +9,7 @@ Each file in `screens/` describes one screen on the 122 x 250 portrait display. 
     <battery w="28" align="right"/>
   </row>
   <text h="27" font="name" align="center">{user.name}</text>
-  <image h="*" src="tree" index="{tree.stage}" valign="bottom"/>
+  <stack h="*"> sky, treemask (draw="paper") and tree images </stack>
 </screen>
 ```
 
@@ -57,6 +57,7 @@ Named in `fonts/fonts.json`: `small`, `small-b`, `label`, `label-b`, `body`, `ti
 | `sober.date` (date), `sober.days`, `sober.short` | Aug 19, 2024 · 818 · 2y 2m 27d |
 | `sober.num`, `sober.unit` | 2 · YEARS (on celebration days) |
 | `tree.stage` | 0 to 25 |
+| `sky.index` | 0 to 12, the sky for today (changes daily) |
 | `battery.pct`, `battery.charging` | 82 · (empty) |
 | `screen.index`, `hint` | 0 · "▲ ▼ move · ● open" |
 | `next.any`, `next.today`, `next.name`, `next.years`, `next.date`, `next.in` | the friend with the soonest anniversary |

@@ -18,7 +18,7 @@ Event wait(uint32_t timeoutMs);
 
 // Battery
 int batteryPercent();
-void readBattery();   // touches the display's DC pin: call only between screen updates
+void readBattery();   // takes about 15 ms
 bool batteryStale();
 float batteryVolts();  // cached
 bool charging();     // USB connected and the charger is charging
