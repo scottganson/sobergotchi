@@ -38,6 +38,9 @@ FACE = [  # '#' ink, '.' paper. Eyes, round nose, cheeks and moustache; sits bet
 ]
 
 
+FACE_ASLEEP = FACE[:2] + ["#...........#", "#.##.###.##.#"] + FACE[4:]
+
+
 def stamp(c, rows, cx, bottom, flip=False):
     """Place a hand-drawn sprite with its centre column at cx and last row at `bottom`."""
     h, w = len(rows), len(rows[0])
@@ -70,7 +73,7 @@ def gnome(c, x, y, pose="stand", face=1):
     """Gnome with his feet at (x, y). face = 1 looks right, -1 looks left."""
     f = face
     x, y = int(round(x)), int(round(y))
-    sit = pose == "sit"
+    sit = pose in ("sit", "read", "nap")
     if pose == "cheer":
         y -= 2
         for dx in (-7, -4, 4, 7):          # little hop marks
@@ -93,6 +96,12 @@ def gnome(c, x, y, pose="stand", face=1):
         "water": ([(-6, 1), (-9, 4), (-9, 7)], [(6, 2), (10, 5), (13, 4)]),
         "cheer": ([(-6, 1), (-11, -1), (-14, -6)], [(6, 1), (11, -1), (14, -6)]),
         "sit": ([(-6, 1), (-8, 5), (-7, 8)], [(6, 2), (9, 6), (13, 5)]),
+        "read": ([(-6, 1), (-8, 5), (-7, 8)], [(6, 2), (9, 6), (12, 4)]),
+        "nap": ([(-6, 1), (-8, 5), (-6, 8)], [(6, 1), (8, 5), (6, 8)]),
+        "wave": ([(-6, 1), (-9, 4), (-9, 7)], [(6, 1), (11, -2), (13, -8)]),
+        "rake": ([(-6, 1), (-9, 4), (-9, 7)], [(6, 2), (10, 4), (12, 2)]),
+        "lantern": ([(-6, 1), (-9, 4), (-9, 7)], [(6, 2), (10, 2), (13, 0)]),
+        "umbrella": ([(-6, 1), (-9, 4), (-9, 7)], [(6, 2), (9, 2), (10, -1)]),
     }[pose]
     hands = []
     for arm in arms:
@@ -125,7 +134,56 @@ def gnome(c, x, y, pose="stand", face=1):
         c.line(hx, hy, hx, hy - 20)
         white(c, [(hx, hy - 20), (hx + f * 12, hy - 16), (hx, hy - 12)])
         c.disc(hx + f * 4, hy - 16, 1.2)
-    elif sit:
+    elif pose == "wave":
+        hx, hy = hands[1]
+        for dx, dy in ((3, -3), (4, -1), (-3, -4)):       # little motion ticks
+            c.px(hx + f * dx, hy + dy)
+            c.px(hx + f * (dx + (1 if dx > 0 else -1)), hy + dy - 1)
+    elif pose == "rake":
+        hx, hy = hands[1]
+        tx, ty = hx + f * 9, y              # rake head on the ground
+        c.line(hx - f * 4, hy - 12, tx, ty - 1)
+        c.line(tx - 3, ty - 1, tx + 3, ty - 1)
+        for dx in (-3, -1, 1, 3):
+            c.px(tx + dx, ty)
+        for dx, dy, a in ((8, -2, 20), (12, -1, -30), (15, -3, 160), (11, -5, 80)):   # raked leaves
+            c.a[T.leaf_mask(tx + f * dx, ty + dy, a, 5, 0.5)] = 1
+    elif pose == "lantern":
+        hx, hy = hands[1]
+        lx, ly = hx + f * 1, hy + 3
+        c.line(lx, hy, lx, ly)
+        white(c, [(lx - 2, ly), (lx + 2, ly), (lx + 2, ly + 6), (lx - 2, ly + 6)])
+        c.line(lx - 3, ly, lx + 3, ly)
+        c.line(lx - 3, ly + 6, lx + 3, ly + 6)
+        c.px(lx, ly + 3)
+        c.px(lx, ly + 4)
+        for a in range(0, 360, 45):          # glow
+            c.px(lx + 6.5 * math.cos(math.radians(a + 22)), ly + 3 + 6.5 * math.sin(math.radians(a + 22)))
+    elif pose == "umbrella":
+        hx, hy = hands[1]
+        ux, top_y = hx, sh - 29
+        c.line(ux, hy, ux, top_y + 7)
+        dome = [(ux - f * 6 + 18 * math.cos(math.radians(a)), top_y + 7 + 8 * math.sin(math.radians(a))) for a in range(180, 361, 12)]
+        white(c, dome)
+        for k in (-9, 0, 9):                 # ribs
+            c.line(ux - f * 6, top_y - 1, ux - f * 6 + k, top_y + 7)
+        c.line(ux - f * 6, top_y - 1, ux - f * 6, top_y - 3)
+    elif pose == "read":
+        hx, hy = hands[1]
+        bx_, by_ = hx + f * 1, hy - 3
+        white(c, [(bx_ - 5, by_ - 3), (bx_, by_ - 1), (bx_ + 5, by_ - 3), (bx_ + 5, by_ + 2), (bx_, by_ + 4), (bx_ - 5, by_ + 2)])
+        c.line(bx_, by_ - 1, bx_, by_ + 4)
+        for dx in (-3, 3):
+            c.px(bx_ + dx, by_)
+            c.px(bx_ + dx, by_ + 2)
+    elif pose == "nap":
+        for k, (dx, dy) in enumerate(((10, -22), (14, -27), (19, -33))):   # z z Z
+            n = 2 + (k > 1)
+            zx, zy = x + f * dx, sh + dy + 12
+            c.line(zx, zy, zx + n, zy)
+            c.line(zx + n, zy, zx, zy + n)
+            c.line(zx, zy + n, zx + n, zy + n)
+    elif pose == "sit":
         hx, hy = hands[1]
         cx, cy = hx + f * 4, hy - 1
         white(c, [(cx - 2, cy - 2), (cx + 2, cy - 2), (cx + 2, cy + 2), (cx - 2, cy + 2)])
@@ -140,7 +198,7 @@ def gnome(c, x, y, pose="stand", face=1):
     for dx, y0, y1 in ((-3, 3, 6), (0, 4, 8), (3, 3, 6)):
         c.line(x + dx, top + y0, x + dx * 0.6, top + y1)
     # face
-    stamp(c, FACE, x, top, flip=f < 0)
+    stamp(c, FACE_ASLEEP if pose == "nap" else FACE, x, top, flip=f < 0)
     # cap: wide soft brim line, tall cone, tip flopping over with a little bobble
     brim = top - 7
     c.fill([(x - 8, brim + 1), (x + 8, brim + 1), (x + 7, brim - 1), (x + 3.5, brim - 9), (x + 1.5, brim - 14),
@@ -186,6 +244,14 @@ def main():
         sheet.paste(im, (k * (W + pad), 0))
     sheet.save(os.path.join(out, "gnome-poses.png"))
     sheet.convert("L").resize((sheet.width * 3, sheet.height * 3), Image.NEAREST).save(os.path.join(out, "gnome-poses@3x.png"))
+    names = ["stand", "wave", "water", "rake", "read", "sit", "nap", "lantern", "umbrella", "cheer"]
+    cw, ch = 62, 60
+    sh_ = Image.new("1", (cw * 5, ch * 2), 1)
+    for k, name in enumerate(names):
+        c = T.Canvas()
+        gnome(c, 22, 56, name, 1)
+        sh_.paste(c.image().crop((0, 0, cw, ch)), ((k % 5) * cw, (k // 5) * ch))
+    sh_.convert("L").resize((sh_.width * 5, sh_.height * 5), Image.NEAREST).save(os.path.join(out, "gnome-activities@5x.png"))
     # close-up of the standing gnome
     c = T.Canvas()
     gnome(c, 18, 46, "stand", 1)
