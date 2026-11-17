@@ -1,0 +1,235 @@
+{
+ "_comment": "The gnome's notes. 'daily' is indexed by days sober (0 = the sober date, up to 30). 'months' is 1 to 11 months. 'years' is: 1 year, 2-4, 5, 6-9, 10 and up ({n} becomes the number). 'rainy' rotates on wet or foggy days after the first month; index 2 is used for storms and 4 for fog. 'activity' is one line per pose, in pose order, shown on his page on ordinary days.",
+ "daily": [
+  {
+   "short": "You began today.",
+   "full": "The hardest step is the first one. You took it. I'm glad you're here."
+  },
+  {
+   "short": "One day. Well done",
+   "full": "One full day behind you. That first one is the biggest of all."
+  },
+  {
+   "short": "Two days. Well done",
+   "full": "Yesterday you did it once. Today you get to do it again."
+  },
+  {
+   "short": "Three days strong",
+   "full": "Day three can feel rough. Rest, eat something good, and go easy on yourself."
+  },
+  {
+   "short": "Still here. Good.",
+   "full": "You kept showing up. That's the whole trick, really."
+  },
+  {
+   "short": "Five days of care",
+   "full": "I watered the seed this morning. You've been tending something too."
+  },
+  {
+   "short": "Almost a week",
+   "full": "Six days. Tomorrow makes a week, but today is the one that counts."
+  },
+  {
+   "short": "One whole week!",
+   "full": "A full week. Seven mornings you chose this. I'm proud of you."
+  },
+  {
+   "short": "A new week begins",
+   "full": "Week two starts here. Same plan as before: just today."
+  },
+  {
+   "short": "Nine days. Steady.",
+   "full": "Slow and steady grows the strongest roots."
+  },
+  {
+   "short": "Double digits!",
+   "full": "Ten days. Look how far the little sprout has come already."
+  },
+  {
+   "short": "Keep it simple",
+   "full": "When today feels like a lot, shrink it. The next hour is enough."
+  },
+  {
+   "short": "Twelve days in",
+   "full": "Cravings pass, like weather. You've outlasted every one so far."
+  },
+  {
+   "short": "You're not alone",
+   "full": "Someone would love to hear from you today. Maybe give them a call."
+  },
+  {
+   "short": "Two weeks!",
+   "full": "Fourteen days. The sprout is standing up, and so are you."
+  },
+  {
+   "short": "Halfway to thirty",
+   "full": "Fifteen days. You don't have to do the next fifteen today. Only this one."
+  },
+  {
+   "short": "One day at a time",
+   "full": "It's an old saying because it works. Today is all there is to do."
+  },
+  {
+   "short": "Be kind to you",
+   "full": "Talk to yourself the way you'd talk to a friend who was trying this hard."
+  },
+  {
+   "short": "Progress, quietly",
+   "full": "Roots grow where nobody can see them. A lot is happening in you."
+  },
+  {
+   "short": "Nineteen days",
+   "full": "You're building something real, one ordinary day after another."
+  },
+  {
+   "short": "Twenty days!",
+   "full": "Twenty. I had to count on my fingers and my boots."
+  },
+  {
+   "short": "Three weeks!",
+   "full": "Three weeks of mornings. This is starting to look like a habit."
+  },
+  {
+   "short": "Rest counts too",
+   "full": "Tired is allowed. Resting is part of growing, not a break from it."
+  },
+  {
+   "short": "Ask for help",
+   "full": "Asking isn't weakness. Even I need a hand with the heavy watering can."
+  },
+  {
+   "short": "Easy does it",
+   "full": "No need to rush anything today. Easy does it."
+  },
+  {
+   "short": "Twenty-five days",
+   "full": "Twenty-five days ago this felt impossible. Here you are."
+  },
+  {
+   "short": "Thankful today",
+   "full": "Name one small good thing from today. I'll go first: you're here."
+  },
+  {
+   "short": "Nearly a month",
+   "full": "Three days from a month. Keep your eyes on today all the same."
+  },
+  {
+   "short": "Four weeks!",
+   "full": "Four full weeks. The first leaf is nearly ready to open."
+  },
+  {
+   "short": "One more sleep",
+   "full": "Tomorrow is a big one. Tonight, just rest."
+  },
+  {
+   "short": "Thirty days!",
+   "full": "Thirty days. Look back at day one for a second. Then carry on, same as ever."
+  }
+ ],
+ "months": [
+  {
+   "short": "One month!!",
+   "full": "One whole month, and the first leaf is out. Wonderful work."
+  },
+  {
+   "short": "Two months!",
+   "full": "Sixty days or so, and a second leaf. You're growing, plain as day."
+  },
+  {
+   "short": "Three months!",
+   "full": "A quarter of a year. A new branch today. That takes real strength."
+  },
+  {
+   "short": "Four months!",
+   "full": "Four months of showing up. The little tree is looking sure of itself."
+  },
+  {
+   "short": "Five months!",
+   "full": "Five leaves for five months. I polished each one this morning."
+  },
+  {
+   "short": "Half a year!!",
+   "full": "Six months. Half a year of days, each one chosen. I'm so proud of you."
+  },
+  {
+   "short": "Seven months!",
+   "full": "Seven months. Lucky number, though luck had nothing to do with it."
+  },
+  {
+   "short": "Eight months!",
+   "full": "Eight months in. Your roots go deeper than you think."
+  },
+  {
+   "short": "Nine months!",
+   "full": "Nine months. A new branch, and so much new in you too."
+  },
+  {
+   "short": "Ten months!",
+   "full": "Ten months. I've run out of fingers again. Keep going."
+  },
+  {
+   "short": "Eleven months!",
+   "full": "Eleven months. The big one is close. Today still comes first."
+  }
+ ],
+ "years": [
+  {
+   "short": "ONE YEAR!!!",
+   "full": "A whole year. The tree gave its first apple today, and it's yours. Happy birthday."
+  },
+  {
+   "short": "{n} years!!",
+   "full": "{n} years, and a new apple on the tree. Look what your days added up to."
+  },
+  {
+   "short": "Five years!!!",
+   "full": "Five years. The tree is fully grown, and it's a beauty. So are these years."
+  },
+  {
+   "short": "{n} years!!",
+   "full": "{n} years. Another apple for the grass. Thank you for letting me watch this grow."
+  },
+  {
+   "short": "{n} years!!!",
+   "full": "{n} years. I've loved every single day of tending this with you."
+  }
+ ],
+ "rainy": [
+  {
+   "short": "Rain helps us grow",
+   "full": "Trees need rainy days too. This one is doing its work."
+  },
+  {
+   "short": "I'm right here",
+   "full": "Grey day. I'll sit here with you until it passes."
+  },
+  {
+   "short": "Storms always pass",
+   "full": "I've never met a storm that stayed. This one won't either."
+  },
+  {
+   "short": "Tea and patience",
+   "full": "Kettle's on. Nothing to fix today, only to get through."
+  },
+  {
+   "short": "Mist will lift",
+   "full": "Can't see far in the fog. You only need to see today anyway."
+  },
+  {
+   "short": "Call a friend",
+   "full": "Wet days are good days to ring someone who gets it."
+  }
+ ],
+ "activity": [
+  "Just keeping an eye on things today.",
+  "Good to see you. I was hoping you'd stop by.",
+  "A little water, a little patience. That's all it takes.",
+  "Tidying up under the tree. It likes a neat lawn.",
+  "A quiet day with a good book.",
+  "Tea time. Pull up a patch of grass.",
+  "Resting my eyes. Only for a minute.",
+  "A bit of light for a grey day.",
+  "Rain is good for the tree. I brought the umbrella.",
+  "What a day! I'm so proud of you."
+ ]
+}

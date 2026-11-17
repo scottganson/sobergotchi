@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from PIL import Image
 
 BAYER4 = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
-GROUP_DIRS = ["tree", "treemask", "sky", "rps"]          # each of these folders becomes an indexed group (frames)
+GROUP_DIRS = ["tree", "treemask", "sky", "gnome", "gnomemask", "gnomebig", "rps"]          # each of these folders becomes an indexed group (frames)
 SINGLE_DIRS = ["icons", "legacy"]  # each file in these is its own image
 SCALE = 4
 INK_BELOW = 48  # darker than this is solid ink

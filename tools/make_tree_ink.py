@@ -665,7 +665,7 @@ def draw(stage, tree_seed=7100):
     ground(back, random.Random(11), shadow=shadow)
     skip = [(cx - 9, cx + 9)]
     if stage >= 21:
-        skip += [(70, 120), (24, 50)]
+        skip += [(66, 120)]
     grass(back, random.Random(3), skip)
     if stage >= 8:
         for x in (13, 109, 31, 92)[:min(4, 1 + (stage - 8) // 3)]:
@@ -699,7 +699,7 @@ def draw(stage, tree_seed=7100):
         scale = (0.62, 0.72, 0.8, 0.88)[years - 1] if years <= 4 else 1.0
         tree(c, random.Random(tree_seed), scale, min(years, 5))
         for i in range(max(0, years - 5)):
-            x = (78, 96, 30, 110, 44)[i]
+            x = (80, 98, 112, 89, 71)[i]
             apple(c, x, ground_y(x) - 3, halo=False)
     # keep a clear margin of paper between the plant and whatever is behind it
     m = c.a.astype(bool)

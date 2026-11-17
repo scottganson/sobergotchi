@@ -10,12 +10,18 @@
     <image src="sky" index="{sky.index}" valign="bottom"/>
     <image src="treemask" index="{tree.stage}" valign="bottom" draw="paper"/>
     <image src="tree" index="{tree.stage}" valign="bottom"/>
+    <image src="gnomemask" index="{gnome.pose}" valign="bottom" draw="paper"/>
+    <image src="gnome" index="{gnome.pose}" valign="bottom"/>
   </stack>
   <box h="52" margin="1 3 0 3" fill="ink" radius="10" pad="4 4 5 4">
     <text h="31" font="big" align="center" valign="top">{sober.days:,}</text>
     <text h="*" font="small-b" align="center">DAYS · {sober.short}</text>
   </box>
-  <text h="14" font="small" align="center">sober since {sober.date:MMM d, yyyy}</text>
+  <!-- On days the gnome has a note, its short line takes the place of the "sober since" line. -->
+  <stack h="14">
+    <text if="!note.any" font="small" align="center">sober since {sober.date:MMM d, yyyy}</text>
+    <text if="note.any" font="small-b" align="center">{note.short}</text>
+  </stack>
   <stack h="21" margin="0 3 1 3">
     <row if="!next.today" pad="2 2 1 2" gap="5" border="1" radius="5">
       <image w="16" src="cake"/>
@@ -29,5 +35,5 @@
       <text w="*" font="small-b">{next.name} · {next.years} yrs!</text>
     </row>
   </stack>
-  <dots h="9" count="4"/>
+  <dots h="9" count="5"/>
 </screen>

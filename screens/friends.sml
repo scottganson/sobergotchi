@@ -26,5 +26,5 @@
     </col>
   </stack>
   <text h="12" font="small" align="center">{hint}</text>
-  <dots h="9" count="4"/>
+  <dots h="9" count="5"/>
 </screen>

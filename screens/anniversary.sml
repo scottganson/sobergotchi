@@ -13,5 +13,5 @@
   <image h="10" src="sprig"/>
   <text h="13" font="small" align="center">sober since {sober.date:MMM d, yyyy}</text>
   <text h="*" font="small-b" align="center">One day at a time</text>
-  <dots h="9" count="4"/>
+  <dots h="9" count="5"/>
 </screen>

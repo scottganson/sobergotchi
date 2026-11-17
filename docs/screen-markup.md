@@ -58,6 +58,8 @@ Named in `fonts/fonts.json`: `small`, `small-b`, `label`, `label-b`, `body`, `ti
 | `sober.num`, `sober.unit` | 2 · YEARS (on celebration days) |
 | `tree.stage` | 0 to 25 |
 | `sky.index` | 0 to 12, the sky for today (changes daily) |
+| `gnome.pose` | 0 to 9, what the gnome is doing today |
+| `note.any`, `note.short`, `note.full` | the gnome's note for today; `note.full` falls back to a line about his activity |
 | `battery.pct`, `battery.charging` | 82 · (empty) |
 | `screen.index`, `hint` | 0 · "▲ ▼ move · ● open" |
 | `next.any`, `next.today`, `next.name`, `next.years`, `next.date`, `next.in` | the friend with the soonest anniversary |

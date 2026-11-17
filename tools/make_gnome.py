@@ -146,7 +146,7 @@ def gnome(c, x, y, pose="stand", face=1):
         c.line(tx - 3, ty - 1, tx + 3, ty - 1)
         for dx in (-3, -1, 1, 3):
             c.px(tx + dx, ty)
-        for dx, dy, a in ((8, -2, 20), (12, -1, -30), (15, -3, 160), (11, -5, 80)):   # raked leaves
+        for dx, dy, a in ((5, -2, 20), (9, -1, -30), (11, -3, 160), (7, -5, 80)):   # raked leaves
             c.a[T.leaf_mask(tx + f * dx, ty + dy, a, 5, 0.5)] = 1
     elif pose == "lantern":
         hx, hy = hands[1]
@@ -227,7 +227,31 @@ def scene(stage, sky, draw_fn):
     return T.compose(T.draw_sky(sky), plant, mask)
 
 
+POSES = ["stand", "wave", "water", "rake", "read", "sit", "nap", "lantern", "umbrella", "cheer"]  # order = firmware Pose enum
+HOME_X = 24   # where he stands on the home screen, left of the tree
+
+
+def write_art(root):
+    """Firmware art: full-frame gnome layers for the home screen, their knock-out masks, and 2x close-ups for his page."""
+    for d in ("gnome", "gnomemask", "gnomebig"):
+        os.makedirs(os.path.join(root, "art", d), exist_ok=True)
+    for i, name in enumerate(POSES):
+        c = T.Canvas()
+        gnome(c, HOME_X, T.ground_y(HOME_X), name, 1)
+        c.image().save(os.path.join(root, "art", "gnome", f"pose-{i:02d}-{name}.png"))
+        m = T.Canvas()
+        m.a[T.grown(T.grown((c.a | c.keepout).astype(np.uint8))).astype(bool)] = 1
+        m.image().save(os.path.join(root, "art", "gnomemask", f"pose-{i:02d}-{name}.png"))
+        b = T.Canvas()
+        gnome(b, 22, 56, name, 1)
+        big = b.image().crop((0, 0, 60, 60)).convert("L").resize((120, 120), Image.NEAREST).convert("1")
+        big.save(os.path.join(root, "art", "gnomebig", f"pose-{i:02d}-{name}.png"))
+
+
 def main():
+    write_art(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if len(sys.argv) < 2:
+        return
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
     gy = lambda x: T.ground_y(x)
