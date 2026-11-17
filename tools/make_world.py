@@ -171,9 +171,13 @@ def bridge(c):
         xs = [x for x in range(W) if water[y, x] and water[y, x - 1] and water[y, x + 1]]
         if len(xs) < 3:
             continue
+        # follow the river: its slope here, from the centre of the water a few rows down
+        below = [x for x in range(W) if water[min(H - 1, y + 4), x]]
+        dx = ((below[0] + below[-1]) / 2 - (xs[0] + xs[-1]) / 2) / 4 if below else -0.8
         for x in range(xs[0] + 1 + (y % 2) * 2, xs[-1] - 1, 4):
-            if rng.random() < 0.6 and water[y + 2, x - 1]:
-                c.line(x, y, x - 1, y + 2)
+            x1, y1 = x + dx * 3, y + 3
+            if rng.random() < 0.6 and y1 < H and water[int(y1), int(round(x1))]:
+                c.line(x, y, x1, y1)
     # footbridge: an arched deck with the water flowing underneath, posts and a rail
     xs = list(range(BRIDGE_X0, BRIDGE_X1 + 1))
     top = [(x, deck_y(x)) for x in xs]
