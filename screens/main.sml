@@ -5,14 +5,17 @@
     <battery w="28" align="right"/>
   </row>
   <text h="27" font="name" align="center">{user.name}</text>
-  <!-- Layers: the day's sky, the tree's outline cleared out of it, the tree (or from five years the house), the gnome outside, and whoever is in the house. -->
+  <!-- Layers: the day's sky, the tree's outline cleared out of it, the tree, from five years the day's view of the gnome's world, the gnome himself, and who is where. -->
   <stack h="*">
     <image src="sky" index="{sky.index}" valign="bottom"/>
     <image src="treemask" index="{tree.stage}" valign="bottom" draw="paper"/>
     <image src="tree" index="{tree.stage}" valign="bottom"/>
+    <!-- From five years: today's view of the gnome's world (wide, middle or close); frame 0 is empty. -->
+    <image src="worldmask" index="{world.index}" valign="bottom" draw="paper"/>
+    <image src="world" index="{world.index}" valign="bottom"/>
     <image src="gnomemask" index="{gnome.home}" valign="bottom" draw="paper"/>
     <image src="gnome" index="{gnome.home}" valign="bottom"/>
-    <!-- From five years: who is at home in the tree house today (frame 0 is empty). -->
+    <!-- From five years: who is where today (frame 0 is empty). -->
     <image src="homemask" index="{home.index}" valign="bottom" draw="paper"/>
     <image src="home" index="{home.index}" valign="bottom"/>
   </stack>

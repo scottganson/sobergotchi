@@ -205,27 +205,49 @@ static Gnome gnomeToday() {
   return g;
 }
 
-// From five years the tree holds the gnome's house, and it grows each year until ten. Frames match art/home
-// (tools/make_gnome.py write_house_art): 0 nobody inside, 1 year 5, 2 year 6, then three daily scenes each for
-// years 7, 8, 9 and 10. In years 5 and 6 he is out in the garden most days and indoors on wet ones; from year 7
-// the picture is a close look inside, so everyone is at home.
-static const int HOME_NONE = P_COUNT;  // the blank pose: nobody outside
-struct Home { int frame; int pose; };
+// From five years the gnome has a house in the tree, and each day the picture is one of three views. The years
+// decide what exists (the house grows until ten; then a bridge, a well and a friend's cottage arrive); the day decides
+// the view. Frame numbers match art/world and art/home (tools/make_world.py write_world_art).
+enum View : uint8_t { V_WIDE, V_MIDDLE, V_CLOSE };
+static const int POSE_NONE = P_COUNT;   // blank gnome layer: he is drawn in the home layer instead
+static const int TREE_BLANK = 26;       // blank tree layer: the world layers take over
+static const int BRIDGE_YEAR = 11, WELL_YEAR = 13, COTTAGE_YEAR = 15;
+struct World { int tree; int world; int home; int pose; };
 
-static Home homeToday() {
+static World worldToday() {
   const Sober s = sober();
   const Gnome g = gnomeToday();
-  if (s.y < 5) return {0, g.pose};
-  const int level = (s.y > 10 ? 10 : s.y) - 4;  // 1..6
+  World w = {treeStage(s), 0, 0, g.pose};
+  if (s.y < 5) return w;
   const int32_t t = today();
-  const uint32_t h = dayHash(t, 11);
-  if (level <= 2) {
-    const int sky = skyFor(t);
-    const bool wet = sky == SKY_DRIZZLE || sky == SKY_RAIN || sky == SKY_STORM || sky == SKY_SNOW;
-    const bool inside = g.pose != P_CHEER && (wet || h % 3 == 0);
-    return inside ? Home{level, HOME_NONE} : Home{0, g.pose};
+  const int sky = skyFor(t);
+  const bool wet = sky == SKY_DRIZZLE || sky == SKY_RAIN || sky == SKY_STORM || sky == SKY_SNOW;
+  int view = (int)(dayHash(t, 13) % 3);
+  if (view == (int)(dayHash(t - 1, 13) % 3)) view = (view + 1) % 3;   // a change of scene from yesterday
+  const bool arrival = (s.y == BRIDGE_YEAR || s.y == WELL_YEAR || s.y == COTTAGE_YEAR) && s.m == 0 && s.d < 7;
+  if (g.pose == P_CHEER || arrival) view = V_WIDE;     // celebrations and new arrivals: show the whole place
+  else if (wet) view = V_CLOSE;                        // wet days: everyone indoors, rain on the windows
+  const int level = (s.y > 10 ? 10 : s.y) - 4;          // house size 1-6
+  const int household = s.y < 7 ? 0 : s.y == 7 ? 1 : 2; // gnome alone, with the cat, with partner and dog
+  const int pick = (int)(dayHash(t, 17) % 3);
+  w.tree = TREE_BLANK;
+  w.pose = POSE_NONE;
+  if (view == V_WIDE) {
+    const int era = s.y >= COTTAGE_YEAR ? 3 : s.y >= WELL_YEAR ? 2 : s.y >= BRIDGE_YEAR ? 1 : 0;
+    w.world = era ? 6 + era : level;
+    w.home = 10 + 2 * (era ? 2 + era : household) + (pick & 1);
+  } else if (view == V_MIDDLE) {
+    w.world = 9 + level;
+    w.home = household ? 21 + household : 0;
+    w.pose = g.pose;
+  } else {
+    // the weather drawn in the windows: fine, rain, storm, snow, grey; the robin has the attic window from ten years
+    const int pane = (sky == SKY_DRIZZLE || sky == SKY_RAIN) ? 1 : sky == SKY_STORM ? 2 : sky == SKY_SNOW ? 3
+                   : (sky == SKY_OVERCAST || sky == SKY_FOG) ? 4 : 0;
+    w.world = 16 + 2 * pane + (s.y >= 10 ? 1 : 0);
+    w.home = 1 + household * 3 + pick;
   }
-  return {3 + (level - 3) * 3 + (int)(h % 3), HOME_NONE};
+  return w;
 }
 
 // Copies src, putting the number v where it says {n}.
@@ -301,11 +323,12 @@ class Data : public UiData {
       if (!strcmp(k, "num")) return num(mnum);
       if (!strcmp(k, "unit")) return str(unit);
     }
-    if (!strcmp(key, "tree.stage")) return num(treeStage(sober()));
+    if (!strcmp(key, "tree.stage")) return num(worldToday().tree);
     if (!strcmp(key, "sky.index")) return num(skyFor(t));
     if (!strcmp(key, "gnome.pose")) return num(gnomeToday().pose);
-    if (!strcmp(key, "gnome.home")) return num(homeToday().pose);
-    if (!strcmp(key, "home.index")) return num(homeToday().frame);
+    if (!strcmp(key, "gnome.home")) return num(worldToday().pose);
+    if (!strcmp(key, "world.index")) return num(worldToday().world);
+    if (!strcmp(key, "home.index")) return num(worldToday().home);
     if (!strncmp(key, "note.", 5)) {
       const Gnome g = gnomeToday();
       const char* k = key + 5;

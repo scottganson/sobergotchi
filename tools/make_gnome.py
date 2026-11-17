@@ -1216,12 +1216,10 @@ def house_device_sheet(root, out):
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     write_art(root)
-    write_house_art(root)
     if len(sys.argv) < 2:
         return
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    house_device_sheet(root, out)
     house_years(out)
     zoom_sheet(out)
     stepped_zoom(out)
