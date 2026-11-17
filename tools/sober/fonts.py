@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from PIL import Image, ImageDraw, ImageFont
 
 
-EXTRA = ["\u00b7", "\u2014", "\u25cf", "\u25c0", "\u25b6"]  # extra glyphs at codes 127..131: middle dot, em dash, dot, left and right triangles
+EXTRA = ["\u00b7", "\u2014", "\u25cf", "\u25b2", "\u25bc"]  # extra glyphs at codes 127..131: middle dot, em dash, dot, up and down triangles (up / down buttons)
 
 
 def to_device(s):

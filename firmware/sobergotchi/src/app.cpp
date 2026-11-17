@@ -50,6 +50,7 @@ static int editField;
 static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
 static int editPos;
+static int editChoice = -1;  // -1 editing; else the Save / Cancel (/ Space) option highlighted
 static const char NAME_CHARS[] = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'";
 static const char PHONE_CHARS[] = " 0123456789";
 
@@ -145,8 +146,9 @@ static int nextFriend() {  // index into store::friends of the soonest anniversa
 // ---------------------------------------------------------------------------
 // values for the screens
 // ---------------------------------------------------------------------------
-static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Friends", "Clear friends", "Battery", "Version"};
-static const int MENU_COUNT = 8;
+static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Friends", "Clear friends", "Battery", "Version", "Back"};
+static const int MENU_COUNT = 9;
+static const int MENU_BACK = 8;
 
 class Data : public UiData {
  public:
@@ -156,7 +158,7 @@ class Data : public UiData {
   void wrapPages(int pages) override { reflectPages = pages; }
 
   int listCount(const char* name) override {
-    if (!strcmp(name, "friends")) return store::friendCount;
+    if (!strcmp(name, "friends")) return store::friendCount ? store::friendCount + 1 : 0;  // last row is "Back"
     if (!strcmp(name, "menu")) return MENU_COUNT;
     return 0;
   }
@@ -264,6 +266,11 @@ class Data : public UiData {
  private:
   void itemValue(const char* k, const char* fmt, char* out, size_t n, int32_t t) {
     if (list && !strcmp(list, "menu")) return menuValue(k, out, n);
+    if (item == store::friendCount) {  // the "Back" row
+      if (!strcmp(k, "name")) snprintf(out, n, "Back");
+      else if (!strcmp(k, "back")) snprintf(out, n, "1");
+      return;
+    }
     if (item < 0 || item >= store::friendCount) return;
     if (orderToday != t) sortFriends();
     const Friend& f = store::friends[order[item]];
@@ -321,6 +328,28 @@ class Data : public UiData {
       return;
     }
     if (!strcmp(k, "has3")) { snprintf(out, n, "%s", editTarget == E_TODAY ? "1" : ""); return; }
+    if (!strncmp(k, "hint", 4)) {
+      const bool text = mode == M_EDIT_TEXT;
+      const char* h = "";
+      char opts[48];
+      if (editChoice >= 0) {
+        static const char* O[] = {"Save", "Cancel", "Space"};
+        int m = 0;
+        for (int i = 0; i < (text ? 3 : 2); i++)
+          m += snprintf(opts + m, sizeof opts - m, i == editChoice ? "%s[%s]" : "%s %s ", i ? " " : "", O[i]);
+        if (k[4] == '1') h = opts;
+        else if (k[4] == '2') h = "\202 \203 choose  \177  \201 ok";
+      } else if (text) {
+        if (k[4] == '1') h = "\202 \203 change letter";
+        else if (k[4] == '2') h = "\201 next letter";
+        else h = "pick _ then \201 to finish";
+      } else {
+        if (k[4] == '1') h = "\202 more  less \203";
+        else if (k[4] == '2') h = "\201 next";
+      }
+      snprintf(out, n, "%s", h);
+      return;
+    }
     const char* cs = editChars();
     int len = strlen(cs);
     const char* p = strchr(cs, editBuf[editPos] ? editBuf[editPos] : ' ');
@@ -338,8 +367,8 @@ class Data : public UiData {
 
   void hint(char* out, size_t n) {
     switch (mode) {
-      case M_FRIENDS: snprintf(out, n, "\201 open  \177  hold \201 back"); break;
-      case M_MENU: snprintf(out, n, "\201 change  \177  hold \201 back"); break;
+      case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
+      case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       default:
         if (carousel == 2 && store::friendCount) snprintf(out, n, "\201 choose a friend");
         else if (carousel == 3) snprintf(out, n, "\201 choose a setting");
@@ -399,6 +428,7 @@ static void showPopup(int screenId) {
 static void startEditDate(EditTarget target) {
   editTarget = target;
   editField = 0;
+  editChoice = -1;
   int32_t day = target == E_SOBER ? store::settings.soberDay : today();
   Ymd d = civilFromDays(day);
   editY = d.y; editM = d.m; editD = d.d;
@@ -411,6 +441,7 @@ static void startEditText(EditTarget target) {
   memset(editBuf, 0, sizeof editBuf);
   strncpy(editBuf, target == E_NAME ? store::settings.name : store::settings.phone, editMax());
   editPos = 0;
+  editChoice = -1;
   mode = M_EDIT_TEXT;
 }
 
@@ -457,6 +488,7 @@ static void stepDate(int dir) {
 }
 
 static void handleKey(Event e) {
+  if (e == EV_KEY2_LONG) e = EV_KEY2;  // no hold actions: a long press is just enter
   switch (mode) {
     case M_CAROUSEL:
       if (e == EV_KEY1) { carousel = (carousel + CAROUSEL_COUNT - 1) % CAROUSEL_COUNT; reflectPage = 0; }
@@ -470,7 +502,8 @@ static void handleKey(Event e) {
 
     case M_FRIENDS:
       if (e == EV_KEY1 && friendSel > 0) friendSel--;
-      else if (e == EV_KEY3 && friendSel < store::friendCount - 1) friendSel++;
+      else if (e == EV_KEY3 && friendSel < store::friendCount) friendSel++;  // friendCount = the Back row
+      else if (e == EV_KEY2 && friendSel >= store::friendCount) mode = M_CAROUSEL;
       else if (e == EV_KEY2 && store::friendCount) {
         popupFriend = store::friends[order[friendSel]];
         confirmDelete = false;
@@ -503,6 +536,7 @@ static void handleKey(Event e) {
           case 2: startEditText(E_NAME); break;
           case 3: startEditText(E_PHONE); break;
           case 4: carousel = 2; mode = store::friendCount ? M_FRIENDS : M_CAROUSEL; friendSel = 0; break;
+          case MENU_BACK: mode = M_CAROUSEL; break;
           case 5:
             if (!confirmClear) confirmClear = true;
             else { store::clearFriends(); sortFriends(); confirmClear = false; }
@@ -514,11 +548,16 @@ static void handleKey(Event e) {
 
     case M_EDIT_DATE: {
       int fields = editTarget == E_TODAY ? 4 : 3;
-      if (e == EV_KEY1) stepDate(-1);
-      else if (e == EV_KEY3) stepDate(+1);
-      else if (e == EV_KEY2) {
-        if (++editField >= fields) { saveEditDate(); mode = M_MENU; }
-      } else if (e == EV_KEY2_LONG) mode = M_MENU;  // cancel
+      if (editChoice >= 0) {  // after the last field: Save / Cancel
+        if (e == EV_KEY1 || e == EV_KEY3) editChoice ^= 1;
+        else if (e == EV_KEY2) {
+          if (editChoice == 0) saveEditDate();
+          editChoice = -1;
+          mode = M_MENU;
+        }
+      } else if (e == EV_KEY1) stepDate(+1);  // up
+      else if (e == EV_KEY3) stepDate(-1);    // down
+      else if (e == EV_KEY2 && ++editField >= fields) editChoice = 0;
       break;
     }
 
@@ -528,15 +567,32 @@ static void handleKey(Event e) {
       char c = editBuf[editPos] ? editBuf[editPos] : ' ';
       const char* p = strchr(cs, c);
       int ci = p ? (int)(p - cs) : 0;
-      if (e == EV_KEY1 || e == EV_KEY3) {
+      if (editChoice >= 0) {  // Save / Cancel / Space
+        if (e == EV_KEY1) editChoice = (editChoice + 2) % 3;
+        else if (e == EV_KEY3) editChoice = (editChoice + 1) % 3;
+        else if (e == EV_KEY2) {
+          if (editChoice == 2) {  // keep typing: the blank stays as a space
+            if (editPos < editMax()) {
+              editBuf[editPos] = ' ';
+              if (editPos < editMax() - 1) editPos++;
+            }
+          } else {
+            if (editChoice == 0) {
+              for (int i = editPos; i < (int)sizeof editBuf; i++) editBuf[i] = 0;  // drop old text after the cursor
+              saveEditText();
+            }
+            mode = M_MENU;
+          }
+          editChoice = -1;
+        }
+      } else if (e == EV_KEY1 || e == EV_KEY3) {
         ci = (ci + (e == EV_KEY3 ? 1 : -1) + len) % len;
         editBuf[editPos] = cs[ci];
         for (int i = 0; i < editPos; i++) if (!editBuf[i]) editBuf[i] = ' ';
       } else if (e == EV_KEY2) {
-        if (editPos < editMax() - 1) editPos++;
-      } else if (e == EV_KEY2_LONG) {
-        saveEditText();
-        mode = M_MENU;
+        if (c == ' ') editChoice = 0;  // enter on a blank: finish
+        else if (editPos < editMax() - 1) editPos++;
+        else { editPos++; editChoice = 0; }  // full: finish after the last letter
       }
       break;
     }
