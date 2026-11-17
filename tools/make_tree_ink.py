@@ -740,6 +740,8 @@ def main():
     for i, (plant, mask) in enumerate(stages):
         plant.image().save(os.path.join(root, "art", "tree", f"stage-{i + 1:02d}.png"))
         mask.image().save(os.path.join(root, "art", "treemask", f"stage-{i + 1:02d}.png"))
+    import make_gnome               # stages 20-25 (five to ten years) are the gnome's growing house
+    make_gnome.write_house_art(root)
     if len(sys.argv) > 1:
         out = sys.argv[1]
         os.makedirs(out, exist_ok=True)

@@ -168,7 +168,9 @@
     "next.today": true,
     "next.name": "Maria",
     "next.years": 9,
-    "sober.short": "10y 2m 27d"
+    "sober.short": "10y 2m 27d",
+    "home.index": 13,
+    "gnome.home": 10
    },
    {
     "tree.stage": 2,
@@ -179,6 +181,22 @@
     "battery.pct": 30,
     "battery.charging": true,
     "sober.short": "9 days"
+   },
+   {
+    "tree.stage": 22,
+    "sober.days": 2600,
+    "sober.short": "7y 1m 3d",
+    "home.index": 3,
+    "gnome.home": 10,
+    "note.any": false
+   },
+   {
+    "tree.stage": 20,
+    "sober.days": 1830,
+    "sober.short": "5y 0m 5d",
+    "home.index": 0,
+    "gnome.home": 1,
+    "note.any": false
    }
   ],
   "reflection": [
@@ -238,5 +256,7 @@
    }
   ]
  },
- "sober.short": "2y 2m 27d"
+ "sober.short": "2y 2m 27d",
+ "gnome.home": 2,
+ "home.index": 0
 }

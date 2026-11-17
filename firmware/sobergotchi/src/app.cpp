@@ -205,6 +205,29 @@ static Gnome gnomeToday() {
   return g;
 }
 
+// From five years the tree holds the gnome's house, and it grows each year until ten. Frames match art/home
+// (tools/make_gnome.py write_house_art): 0 nobody inside, 1 year 5, 2 year 6, then three daily scenes each for
+// years 7, 8, 9 and 10. In years 5 and 6 he is out in the garden most days and indoors on wet ones; from year 7
+// the picture is a close look inside, so everyone is at home.
+static const int HOME_NONE = P_COUNT;  // the blank pose: nobody outside
+struct Home { int frame; int pose; };
+
+static Home homeToday() {
+  const Sober s = sober();
+  const Gnome g = gnomeToday();
+  if (s.y < 5) return {0, g.pose};
+  const int level = (s.y > 10 ? 10 : s.y) - 4;  // 1..6
+  const int32_t t = today();
+  const uint32_t h = dayHash(t, 11);
+  if (level <= 2) {
+    const int sky = skyFor(t);
+    const bool wet = sky == SKY_DRIZZLE || sky == SKY_RAIN || sky == SKY_STORM || sky == SKY_SNOW;
+    const bool inside = g.pose != P_CHEER && (wet || h % 3 == 0);
+    return inside ? Home{level, HOME_NONE} : Home{0, g.pose};
+  }
+  return {3 + (level - 3) * 3 + (int)(h % 3), HOME_NONE};
+}
+
 // Copies src, putting the number v where it says {n}.
 static void fillN(const char* src, int v, char* out, size_t n) {
   const char* p = strstr(src, "{n}");
@@ -281,6 +304,8 @@ class Data : public UiData {
     if (!strcmp(key, "tree.stage")) return num(treeStage(sober()));
     if (!strcmp(key, "sky.index")) return num(skyFor(t));
     if (!strcmp(key, "gnome.pose")) return num(gnomeToday().pose);
+    if (!strcmp(key, "gnome.home")) return num(homeToday().pose);
+    if (!strcmp(key, "home.index")) return num(homeToday().frame);
     if (!strncmp(key, "note.", 5)) {
       const Gnome g = gnomeToday();
       const char* k = key + 5;

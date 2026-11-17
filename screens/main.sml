@@ -5,13 +5,16 @@
     <battery w="28" align="right"/>
   </row>
   <text h="27" font="name" align="center">{user.name}</text>
-  <!-- Three layers: the day's sky, then the tree's outline cleared out of it, then the tree itself. -->
+  <!-- Layers: the day's sky, the tree's outline cleared out of it, the tree (or from five years the house), the gnome outside, and whoever is in the house. -->
   <stack h="*">
     <image src="sky" index="{sky.index}" valign="bottom"/>
     <image src="treemask" index="{tree.stage}" valign="bottom" draw="paper"/>
     <image src="tree" index="{tree.stage}" valign="bottom"/>
-    <image src="gnomemask" index="{gnome.pose}" valign="bottom" draw="paper"/>
-    <image src="gnome" index="{gnome.pose}" valign="bottom"/>
+    <image src="gnomemask" index="{gnome.home}" valign="bottom" draw="paper"/>
+    <image src="gnome" index="{gnome.home}" valign="bottom"/>
+    <!-- From five years: who is at home in the tree house today (frame 0 is empty). -->
+    <image src="homemask" index="{home.index}" valign="bottom" draw="paper"/>
+    <image src="home" index="{home.index}" valign="bottom"/>
   </stack>
   <box h="52" margin="1 3 0 3" fill="ink" radius="10" pad="4 4 5 4">
     <text h="31" font="big" align="center" valign="top">{sober.days:,}</text>

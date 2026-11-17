@@ -3,6 +3,7 @@
 
     python3 tools/make_gnome.py OUT_DIR     # writes gnome-poses.png (preview only, not firmware art)
 """
+import glob
 import math
 import os
 import random
@@ -368,6 +369,9 @@ def write_art(root):
         gnome(b, 22, 56, name, 1)
         big = b.image().crop((0, 0, 60, 60)).convert("L").resize((120, 120), Image.NEAREST).convert("1")
         big.save(os.path.join(root, "art", "gnomebig", f"pose-{i:02d}-{name}.png"))
+    blank = T.Canvas().image()   # index len(POSES): nobody outside (he is in the house)
+    blank.save(os.path.join(root, "art", "gnome", f"pose-{len(POSES):02d}-none.png"))
+    blank.save(os.path.join(root, "art", "gnomemask", f"pose-{len(POSES):02d}-none.png"))
 
 
 MINI = [   # the gnome seen at a distance, inside the house
@@ -1016,11 +1020,12 @@ def mid_house(c, level=4):
     return {"kitchen": (47, base - 1), "living": (79, base - 1), "bed": (39, f2 - 9), "study": (88, f2 - 1), "empty": (90, f2 - 1)}
 
 
-def mid_scene(level, sky, draw_fn):
-    """Compose the middle zoom: sky, leaves around the house, then the house and whoever is home."""
+def mid_layers(level, draw_fn=None):
+    """The middle zoom as firmware layers: (house and leaves, knock-out mask, room positions)."""
     g = T.Canvas()
     r = mid_house(g, level)
-    draw_fn(g, r)
+    if draw_fn:
+        draw_fn(g, r)
     region = T.grown(T.grown((g.a | g.keepout).astype(np.uint8))).astype(bool)
     lv = T.Canvas()
     rng = random.Random(31)
@@ -1036,6 +1041,12 @@ def mid_scene(level, sky, draw_fn):
     lv.a |= g.a
     mask = T.Canvas()
     mask.a = T.grown(T.grown(lv.a | g.keepout.astype(np.uint8)))
+    return lv, mask, r
+
+
+def mid_scene(level, sky, draw_fn):
+    """Compose the middle zoom: sky, leaves around the house, then the house and whoever is home."""
+    lv, mask, _ = mid_layers(level, draw_fn)
     return T.compose(T.draw_sky(sky), lv, mask)
 
 
@@ -1058,12 +1069,159 @@ def stepped_zoom(out):
     sheet.convert("L").resize((sheet.width * 4, sheet.height * 4), Image.NEAREST).save(os.path.join(out, "house-stepped-zoom@4x.png"))
 
 
+# ---------------------------------------------------------------------------
+# Firmware art for the house years (5 to 10). Tree stages 20-25 become the house; a "home" layer adds who is
+# inside today. Frame order must match homeToday() in app.cpp:
+#   0 nobody (or the gnome is outside), 1 year 5 inside, 2 year 6 inside, 3-5 year 7, 6-8 year 8, 9-11 year 9, 12-14 year 10
+# ---------------------------------------------------------------------------
+HOUSE_STAGE0 = 20          # tree stage for 5 years; 21 is 6 years ... 25 is 10 years
+
+
+def house_layers(level):
+    """Tree and treemask canvases for house level 1-6, plus the room positions."""
+    if level <= 2:
+        plant, mask = T.draw(20)
+        g = T.Canvas()
+        r = big_house(g, 62, 68, level)
+        region = T.grown(T.grown((g.a | g.keepout).astype(np.uint8))).astype(bool)
+        plant.a[region] = 0
+        plant.a[g.a.astype(bool)] = 1
+        mask.a[region] = 1
+        return plant, mask, r
+    if level <= 4:
+        return mid_layers(level)
+    c = T.Canvas()
+    r = zoom_house(c)
+    if level == 6:          # ten years: a robin has moved in too, on the attic window sill
+        c.disc(58, 15, 6.5, 0)
+        stamp(c, BIRD, 58, 20)
+    mask = T.Canvas()
+    mask.a[:, :] = 1
+    return c, mask, r
+
+
+def _mid(sprite, r, room, dx=0):
+    return lambda c: stamp(c, sprite, r[room][0] + dx, r[room][1])
+
+
+def home_scenes():
+    """Who is home, frame by frame. Each entry is (house level, [draw functions taking (canvas, rooms)])."""
+    S = []
+    S.append((1, [lambda c, r: stamp(c, MINI, r["kitchen"][0] - 6, r["kitchen"][1])]))
+    S.append((2, [lambda c, r: stamp(c, MINI, r["living"][0], r["living"][1])]))
+    # year 7: the gnome and the cat
+    S.append((3, [lambda c, r: stamp(c, MID, r["kitchen"][0], r["kitchen"][1]),
+                  lambda c, r: stamp(c, CAT, r["living"][0], r["living"][1])]))
+    S.append((3, [lambda c, r: stamp(c, MID, r["empty"][0] + 12, r["empty"][1]),
+                  lambda c, r: stamp(c, CAT, r["bed"][0], r["bed"][1])]))
+    S.append((3, [lambda c, r: stamp(c, MID, r["living"][0], r["living"][1]),
+                  lambda c, r: stamp(c, CAT, r["kitchen"][0], r["kitchen"][1])]))
+    # year 8: the partner and the dog arrive
+    S.append((4, [lambda c, r: stamp(c, MID, r["study"][0], r["study"][1]),
+                  lambda c, r: stamp(c, MID_PARTNER, r["kitchen"][0], r["kitchen"][1]),
+                  lambda c, r: stamp(c, CAT, r["bed"][0], r["bed"][1]),
+                  lambda c, r: stamp(c, DOG, r["living"][0], r["living"][1])]))
+    S.append((4, [lambda c, r: stamp(c, MID, r["living"][0], r["living"][1]),
+                  lambda c, r: stamp(c, MID_PARTNER, r["study"][0], r["study"][1]),
+                  lambda c, r: stamp(c, CAT, r["kitchen"][0], r["kitchen"][1]),
+                  lambda c, r: stamp(c, DOG, r["bed"][0] + 16, r["bed"][1] + 8)]))
+    S.append((4, [lambda c, r: stamp(c, MID, r["kitchen"][0], r["kitchen"][1]),
+                  lambda c, r: stamp(c, MID_PARTNER, r["living"][0], r["living"][1]),
+                  lambda c, r: stamp(c, CAT, r["bed"][0], r["bed"][1]),
+                  lambda c, r: stamp(c, DOG, r["study"][0], r["study"][1])]))
+    # years 9 and 10: the close-up, everyone at full size
+    zoom = [
+        [lambda c, r: gnome(c, r["living"][0] - 1, r["living"][1], "sit", 1),
+         lambda c, r: gnome(c, r["kitchen"][0], r["kitchen"][1], "stand", -1, partner=True),
+         lambda c, r: stamp(c, CAT, r["bed"][0], r["bed"][1]),
+         lambda c, r: stamp(c, DOG, r["study"][0], r["study"][1])],
+        [lambda c, r: gnome(c, r["study"][0], r["study"][1], "read", -1),
+         lambda c, r: gnome(c, r["living"][0] - 1, r["living"][1], "nap", 1, partner=True),
+         lambda c, r: stamp(c, CAT, r["kitchen"][0] - 2, r["kitchen"][1]),
+         lambda c, r: stamp(c, DOG, r["bed"][0] + 14, r["bed"][1] + 11)],
+        [lambda c, r: gnome(c, r["kitchen"][0], r["kitchen"][1], "wave", 1),
+         lambda c, r: gnome(c, r["study"][0], r["study"][1], "read", -1, partner=True),
+         lambda c, r: stamp(c, CAT, r["hearth"][0], r["hearth"][1]),
+         lambda c, r: stamp(c, DOG, r["bed"][0] + 14, r["bed"][1] + 11)],
+    ]
+    for level in (5, 6):
+        for sc in zoom:
+            S.append((level, sc))
+    return S
+
+
+def write_house_art(root):
+    """Overwrite tree stages 20-25 with the house, and write art/home + art/homemask."""
+    layers = {lv: house_layers(lv) for lv in range(1, 7)}
+    for lv, (plant, mask, _) in layers.items():
+        n = HOUSE_STAGE0 + lv - 1 + 1        # files are numbered from 1
+        plant.image().save(os.path.join(root, "art", "tree", f"stage-{n:02d}.png"))
+        mask.image().save(os.path.join(root, "art", "treemask", f"stage-{n:02d}.png"))
+    for d in ("home", "homemask"):
+        os.makedirs(os.path.join(root, "art", d), exist_ok=True)
+        for f in glob.glob(os.path.join(root, "art", d, "*.png")):
+            os.remove(f)
+    frames = [(None, [])] + home_scenes()
+    for i, (lv, fns) in enumerate(frames):
+        g = T.Canvas()
+        for fn in fns:
+            fn(g, layers[lv][2])
+        g.image().save(os.path.join(root, "art", "home", f"home-{i:02d}.png"))
+        m = T.Canvas()
+        m.a[(g.a | g.keepout).astype(bool)] = 1
+        m.image().save(os.path.join(root, "art", "homemask", f"home-{i:02d}.png"))
+    return layers, frames
+
+
+def house_device_sheet(root, out):
+    """Preview of every home frame as the device will compose it (sky, house, gnome outside or nobody)."""
+    layers, frames = write_house_art(root)
+    ims = []
+    for i, (lv, fns) in enumerate(frames):
+        if lv is None:
+            continue
+        plant, mask, r = layers[lv]
+        p2 = T.Canvas()
+        p2.a = plant.a.copy()
+        g = T.Canvas()
+        for fn in fns:
+            fn(g, r)
+        hit = (g.a | g.keepout).astype(bool)
+        p2.a[hit] = 0
+        p2.a[g.a.astype(bool)] = 1
+        m2 = T.Canvas()
+        m2.a = mask.a | hit.astype(mask.a.dtype)
+        ims.append(T.compose(T.draw_sky(i % 13), p2, m2))
+    # the gnome outside in years 5 and 6
+    for lv in (1, 2):
+        plant, mask, _ = layers[lv]
+        g = T.Canvas()
+        gnome(g, HOME_X, T.ground_y(HOME_X), "wave", 1)
+        region = T.grown(T.grown((g.a | g.keepout).astype(np.uint8))).astype(bool)
+        p2 = T.Canvas()
+        p2.a = plant.a.copy()
+        p2.a[region] = 0
+        p2.a[g.a.astype(bool)] = 1
+        m2 = T.Canvas()
+        m2.a = mask.a | region.astype(mask.a.dtype)
+        ims.append(T.compose(T.draw_sky(lv), p2, m2))
+    pad, cols = 6, 4
+    rows = (len(ims) + cols - 1) // cols
+    sheet = Image.new("1", (cols * (W + pad) - pad, rows * (H + pad) - pad), 1)
+    for k, im in enumerate(ims):
+        sheet.paste(im, ((k % cols) * (W + pad), (k // cols) * (H + pad)))
+    sheet.convert("L").resize((sheet.width * 3, sheet.height * 3), Image.NEAREST).save(os.path.join(out, "house-device@3x.png"))
+
+
 def main():
-    write_art(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    write_art(root)
+    write_house_art(root)
     if len(sys.argv) < 2:
         return
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
+    house_device_sheet(root, out)
     house_years(out)
     zoom_sheet(out)
     stepped_zoom(out)
