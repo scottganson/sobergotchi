@@ -370,48 +370,269 @@ def write_art(root):
         big.save(os.path.join(root, "art", "gnomebig", f"pose-{i:02d}-{name}.png"))
 
 
-def later_years(out):
-    """Concept sketches for years 5 to 10: tree house, bird, pets and a partner."""
-    gy = T.ground_y
+MINI = [   # the gnome seen at a distance, inside the house
+    "    #    ",
+    "   ###   ",
+    "   ###   ",
+    "  #####  ",
+    "  #####  ",
+    " ####### ",
+    "#########",
+    " #.....# ",
+    " #..#..# ",
+    " #.....# ",
+    "  #...#  ",
+    "  ##.##  ",
+    "  ## ##  ",
+]
+MINI_PARTNER = [
+    "    #    ",
+    "   #.#   ",
+    "   #.#   ",
+    "  #...#  ",
+    "  #...#  ",
+    " #.....# ",
+    "#########",
+    " #.....# ",
+    "##.#.#.##",
+    "# #...# #",
+    "  #####  ",
+    "  #####  ",
+    "  ## ##  ",
+]
+MINI_CAT = [
+    "# #    ",
+    "###   #",
+    "###  # ",
+    "#####  ",
+    "#####  ",
+]
+MINI_DOG = [
+    " ##     ",
+    "####   #",
+    "#.##  # ",
+    " ###### ",
+    " ###### ",
+    " #    # ",
+]
 
-    HX, HY = 59, 65
 
-    def bird(c):
-        stamp(c, BIRD, HX + 18, HY - 7)
+def rect(c, x0, y0, x1, y1):
+    c.line(x0, y0, x1, y0)
+    c.line(x1, y0, x1, y1)
+    c.line(x1, y1, x0, y1)
+    c.line(x0, y1, x0, y0)
 
-    def y5(c):
-        tree_house(c, HX, HY)
-        gnome(c, 22, gy(22), "wave", 1)
 
-    def y7(c):
-        tree_house(c, HX, HY)
-        bird(c)
-        gnome(c, 24, gy(24), "read", 1)
-        stamp(c, CAT, 100, gy(100))
-        stamp(c, DOG, 113, gy(113))
+def big_house(c, cx, base, level=6):
+    """A cutaway house that grows with the years until it fills the crown.
+    level 1: one room. 2: two rooms. 3: upper floor with a bedroom. 4: study. 5: attic. 6: deck.
+    base = y of the bottom floor beam. Returns the floor positions of the rooms for placing figures."""
+    half = 16 if level == 1 else 32
+    if level == 1:
+        cx -= 6
+    L, R = cx - half, cx + half
+    f2 = base - 19                          # floor line of the upper floor
+    f1 = base - 38 if level >= 3 else f2    # underside of the roof
+    rise = 21 if half == 32 else 13
+    peak = f1 - rise
+    # braces, shell and floors
+    c.line(cx - 20, base + 2, cx - 3, base + 14)
+    c.line(cx + 20, base + 2, cx + 5, base + 14)
+    white(c, [(L, base), (R, base), (R, f1), (L, f1)])
+    e = half + 6
+    c.fill([(cx - e - 2, f1 + 1), (cx + e + 2, f1 + 1), (cx + e, f1 - 1), (cx + 1, peak), (cx - 1, peak), (cx - e, f1 - 1)])
+    for row in range(1, rise // 3 + 1):     # shingles
+        yy = f1 - row * 3 + 1
+        hw = e * (yy - peak) / (f1 - peak)
+        for xx in range(int(cx - hw) + 1, int(cx + hw)):
+            if (xx + row * 2) % 4 == 0:
+                c.px(xx, yy, 0)
+    if level >= 5:
+        white(c, [(cx - 19, f1 - 1), (cx + 19, f1 - 1), (cx, peak + 9)])
+    for yy in sorted({base, f2, f1}):
+        c.fill([(L - 1, yy), (R + 1, yy), (R + 1, yy + 1), (L - 1, yy + 1)])
+    c.line(L, f1, L, base)
+    c.line(L + 1, f1, L + 1, base)
+    c.line(R, f1, R, base)
+    c.line(R - 1, f1, R - 1, base)
+    if half == 32:                          # room dividers with doorways
+        c.line(cx - 1, f2 + 2, cx - 1, base - 9)
+        if level >= 3:
+            c.line(cx - 1, f1 + 2, cx - 1, f2 - 9)
+    # chimney and smoke
+    k = cx + (22 if half == 32 else 10)
+    top = f1 - (17 if half == 32 else 11)
+    c.fill([(k, f1 - 5), (k + 4, f1 - 5), (k + 4, top), (k, top)])
+    c.line(k - 1, top - 1, k + 5, top - 1)
+    for dx, dy in ((3, -4), (4, -6), (6, -8), (6, -11), (8, -13)):
+        c.px(k + dx, top + dy)
+    rooms = {}
+    if level >= 5:
+        attic_room(c, cx, f1)
+        rooms["attic"] = (cx - 1, f1 - 1)
+    if level >= 3:
+        bedroom(c, L, f2)
+        rooms["bed"] = (L + 12, f2 - 7)
+    if level >= 4:
+        study(c, cx, R, f2)
+        rooms["study"] = (cx + 9, f2 - 1)
+    kitchen(c, L, base)
+    rooms["kitchen"] = (L + 30, base - 1)
+    if half == 32:
+        living(c, cx, R, f2, base)
+        rooms["living"] = (cx + 10, base - 1)
+    ladder_x = R + 2
+    if level >= 6:                          # deck and railing on the right
+        dx0, dx1 = R + 1, R + 12
+        c.fill([(dx0, base), (dx1, base), (dx1, base + 1), (dx0, base + 1)])
+        c.line(dx0, base - 6, dx1, base - 6)
+        for xx in range(dx0 + 2, dx1 + 1, 3):
+            c.line(xx, base - 6, xx, base - 1)
+        ladder_x = dx1 - 4
+        rooms["deck"] = (R + 7, base - 1)
+    c.fill([(R - 1, base - 9), (R, base - 9), (R, base - 1), (R - 1, base - 1)], 0)        # doorway
+    gy = int(T.ground_y(ladder_x))
+    c.fill([(R, base), (ladder_x + 5, base), (ladder_x + 5, base + 1), (R, base + 1)])
+    c.line(ladder_x, base + 2, ladder_x, gy)
+    c.line(ladder_x + 4, base + 2, ladder_x + 4, gy)
+    for yy in range(int(base) + 5, gy, 4):
+        c.line(ladder_x, yy, ladder_x + 4, yy)
+    return rooms
 
-    def y8(c):
-        tree_house(c, HX, HY)
-        bird(c)
-        gnome(c, 13, gy(13), "stand", 1)
-        gnome(c, 36, gy(36), "wave", -1, partner=True)
-        stamp(c, CAT, 100, gy(100))
-        stamp(c, DOG, 113, gy(113))
 
-    def y10(c):
-        tree_house(c, HX, HY)
-        bird(c)
-        gnome(c, 13, gy(13), "cheer", 1)
-        gnome(c, 36, gy(36), "stand", -1, partner=True)
-        stamp(c, CAT, 98, gy(98))
-        stamp(c, DOG, 112, gy(112))
+def attic_room(c, cx, f1):
+    """A chest, a telescope and a star."""
+    rect(c, cx - 12, f1 - 6, cx - 5, f1 - 2)
+    c.line(cx - 12, f1 - 4, cx - 5, f1 - 4)
+    c.px(cx - 8, f1 - 3)
+    c.line(cx + 3, f1 - 3, cx + 10, f1 - 9)
+    c.line(cx + 4, f1 - 3, cx + 11, f1 - 9)
+    c.line(cx + 6, f1 - 5, cx + 4, f1 - 1)
+    c.line(cx + 6, f1 - 5, cx + 9, f1 - 1)
+    for dx, dy in ((0, -11), (-1, -10), (1, -10), (0, -9), (0, -10)):
+        c.px(cx + dx, f1 + dy, 1 if (dx, dy) != (0, -10) else 0)
 
-    panels = [scene(20, 1, y5), scene(20, 4, y7), scene(20, 0, y8), scene(20, 12, y10)]
+
+
+def bedroom(c, L, f2):
+    x0 = L + 3
+    c.fill([(x0, f2 - 10), (x0 + 1, f2 - 10), (x0 + 1, f2 - 1), (x0, f2 - 1)])           # headboard
+    rect(c, x0 + 1, f2 - 6, x0 + 18, f2 - 3)                                                # mattress
+    c.line(x0 + 18, f2 - 3, x0 + 18, f2 - 1)
+    for xx in range(x0 + 8, x0 + 18):                                                      # quilt
+        if xx % 2 == 0:
+            c.px(xx, f2 - 5)
+        else:
+            c.px(xx, f2 - 4)
+    c.line(x0 + 3, f2 - 7, x0 + 6, f2 - 7)                                                 # pillow
+    rect(c, x0 + 21, f2 - 5, x0 + 25, f2 - 1)                                              # night stand
+    c.line(x0 + 23, f2 - 8, x0 + 23, f2 - 6)                                               # candle
+    c.px(x0 + 23, f2 - 10)
+    rect(c, x0 + 9, f2 - 16, x0 + 15, f2 - 11)                                             # picture: a little tree
+    c.px(x0 + 12, f2 - 13)
+    c.px(x0 + 12, f2 - 14)
+    c.px(x0 + 11, f2 - 14)
+    c.px(x0 + 13, f2 - 14)
+
+
+
+def study(c, cx, R, f2):
+    """Bookshelves, a lamp and an armchair."""
+    bx = R - 15
+    rect(c, bx, f2 - 16, R - 3, f2 - 1)
+    for yy in (f2 - 11, f2 - 6):
+        c.line(bx, yy, R - 3, yy)
+    rng = random.Random(4)
+    for shelf in (f2 - 12, f2 - 7, f2 - 2):
+        for xx in range(bx + 2, R - 4):
+            if rng.random() < 0.7:
+                c.line(xx, shelf, xx, shelf - rng.choice((2, 3, 3)))
+    ax = cx + 4
+    c.fill([(ax, f2 - 9), (ax + 1, f2 - 9), (ax + 1, f2 - 1), (ax, f2 - 1)])               # armchair back
+    rect(c, ax + 1, f2 - 5, ax + 7, f2 - 2)
+    c.line(ax + 7, f2 - 2, ax + 7, f2 - 1)
+    lx = cx + 14
+    c.line(lx, f2 - 1, lx, f2 - 11)                                                         # floor lamp
+    c.fill([(lx - 3, f2 - 11), (lx + 3, f2 - 11), (lx + 1, f2 - 14), (lx - 1, f2 - 14)])
+
+
+
+def kitchen(c, L, base):
+    x0 = L + 3
+    c.fill([(x0, base - 7), (x0 + 7, base - 7), (x0 + 7, base - 1), (x0, base - 1)])       # stove
+    c.px(x0 + 2, base - 4, 0)
+    c.px(x0 + 5, base - 4, 0)
+    rect(c, x0 + 1, base - 11, x0 + 6, base - 8)                                           # pot
+    for dx, dy in ((2, -13), (3, -15), (5, -14)):
+        c.px(x0 + dx, base + dy)
+    c.line(x0 + 10, base - 13, x0 + 22, base - 13)                                         # shelf with jars
+    for xx in (x0 + 11, x0 + 14, x0 + 17, x0 + 20):
+        c.line(xx, base - 14, xx, base - 16)
+        c.px(xx + 1, base - 14)
+    c.line(x0 + 12, base - 7, x0 + 23, base - 7)                                           # table
+    c.line(x0 + 13, base - 7, x0 + 13, base - 1)
+    c.line(x0 + 22, base - 7, x0 + 22, base - 1)
+    rect(c, x0 + 15, base - 10, x0 + 17, base - 8)                                         # mug
+    c.px(x0 + 18, base - 9)
+    c.disc(x0 + 20.5, base - 9, 1.2)                                                       # apple on the table
+
+
+
+def living(c, cx, R, f2, base):
+    """A fire, a rug and a hanging lamp."""
+    fx = R - 12
+    c.fill([(fx, base - 12), (fx + 9, base - 12), (fx + 9, base - 1), (fx, base - 1)])     # fireplace
+    c.fill([(fx + 2, base - 8), (fx + 7, base - 8), (fx + 7, base - 1), (fx + 2, base - 1)], 0)
+    for dx, dy in ((4, -2), (5, -2), (4, -3), (5, -4), (3, -2), (6, -3), (4, -5)):
+        c.px(fx + dx, base + dy)
+    c.line(fx - 2, base - 13, fx + 10, base - 13)                                          # mantel
+    rect(c, fx + 3, base - 17, fx + 6, base - 14)                                          # clock
+    for xx in range(cx + 3, fx - 3):                                                       # rug
+        if xx % 2 == 0:
+            c.px(xx, base - 1)
+    c.line(cx + 2, base - 16, cx + 8, base - 16)                                           # hanging lamp
+    c.line(cx + 5, f2 + 2, cx + 5, base - 16)
+    c.px(cx + 5, base - 15)
+
+
+
+def house_years(out):
+    """Concept: the house grows a room at a time from year 5 to year 10, and you can see into the rooms."""
+    CX, BASE = 60, 68
+
+    def year(level):
+        def draw(c):
+            r = big_house(c, CX, BASE, level)
+            if level == 1:
+                stamp(c, MINI, r["kitchen"][0] - 6, r["kitchen"][1])
+            elif level == 2:
+                stamp(c, MINI, r["living"][0] - 3, r["living"][1])
+            elif level == 3:
+                stamp(c, MINI, r["kitchen"][0] - 4, r["kitchen"][1])
+                stamp(c, MINI_CAT, r["living"][0] + 2, r["living"][1])
+            elif level == 4:
+                stamp(c, MINI, r["study"][0] + 1, r["study"][1])
+                stamp(c, MINI_PARTNER, r["kitchen"][0] - 4, r["kitchen"][1])
+                stamp(c, MINI_CAT, r["living"][0] + 2, r["living"][1])
+            elif level == 5:
+                stamp(c, MINI, r["attic"][0] - 1, r["attic"][1])
+                stamp(c, MINI_PARTNER, r["study"][0] + 1, r["study"][1])
+                stamp(c, MINI_CAT, r["bed"][0] + 3, r["bed"][1])
+                stamp(c, MINI_DOG, r["living"][0] + 2, r["living"][1])
+            else:
+                stamp(c, MINI, r["living"][0] - 4, r["living"][1])
+                stamp(c, MINI_PARTNER, r["living"][0] + 6, r["living"][1])
+                stamp(c, MINI_CAT, r["bed"][0] + 3, r["bed"][1])
+                stamp(c, MINI_DOG, r["deck"][0], r["deck"][1])
+        return draw
+
+    panels = [scene(20, sky, year(lv)) for lv, sky in ((1, 1), (2, 4), (3, 0), (4, 2), (5, 3), (6, 12))]
     pad = 6
-    sheet = Image.new("1", (len(panels) * (W + pad) - pad, H), 1)
+    sheet = Image.new("1", (3 * (W + pad) - pad, 2 * (H + pad) - pad), 1)
     for k, im in enumerate(panels):
-        sheet.paste(im, (k * (W + pad), 0))
-    sheet.convert("L").resize((sheet.width * 4, sheet.height * 4), Image.NEAREST).save(os.path.join(out, "later-years@4x.png"))
+        sheet.paste(im, ((k % 3) * (W + pad), (k // 3) * (H + pad)))
+    sheet.convert("L").resize((sheet.width * 4, sheet.height * 4), Image.NEAREST).save(os.path.join(out, "house-grows@4x.png"))
 
 
 def main():
@@ -420,7 +641,7 @@ def main():
         return
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    later_years(out)
+    house_years(out)
     gy = lambda x: T.ground_y(x)
     panels = [
         scene(17, 1, lambda c: gnome(c, 98, gy(98), "stand", -1)),
