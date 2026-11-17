@@ -56,9 +56,12 @@ Named in `fonts/fonts.json`: `small`, `small-b`, `label`, `label-b`, `body`, `ti
 | `user.name`, `user.phone` | Scott, 416-555-0134 |
 | `sober.date` (date), `sober.days`, `sober.short` | Aug 19, 2024 · 818 · 2y 2m 27d |
 | `sober.num`, `sober.unit` | 2 · YEARS (on celebration days) |
-| `tree.stage` | 0 to 25 |
+| `tree.stage` | 0 to 26 (26 is blank: from five years the world layers take over) |
 | `sky.index` | 0 to 12, the sky for today (changes daily) |
 | `gnome.pose` | 0 to 9, what the gnome is doing today |
+| `gnome.home` | the gnome layer on the home screen: his pose (in the middle view and before five years), else 10 (blank) |
+| `world.index` | 0 to 25, today's view of the gnome's world from five years (wide, middle or close; 0 nothing) |
+| `home.index` | 0 to 23, who is where in today's view (0 nobody) |
 | `note.any`, `note.short`, `note.full` | the gnome's note for today; `note.full` falls back to a line about his activity |
 | `battery.pct`, `battery.charging` | 82 · (empty) |
 | `screen.index`, `hint` | 0 · "▲ ▼ move · ● open" |

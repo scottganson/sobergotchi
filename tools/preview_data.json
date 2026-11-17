@@ -162,13 +162,16 @@
   "main": [
    {},
    {
-    "tree.stage": 25,
+    "tree.stage": 26,
     "sober.days": 3725,
     "sober.ymd": "10 years \u00b7 2 months",
     "next.today": true,
     "next.name": "Maria",
     "next.years": 9,
-    "sober.short": "10y 2m 27d"
+    "sober.short": "10y 2m 27d",
+    "home.index": 9,
+    "gnome.home": 10,
+    "world.index": 19
    },
    {
     "tree.stage": 2,
@@ -179,6 +182,33 @@
     "battery.pct": 30,
     "battery.charging": true,
     "sober.short": "9 days"
+   },
+   {
+    "tree.stage": 26,
+    "sober.days": 2600,
+    "sober.short": "7y 1m 3d",
+    "home.index": 22,
+    "gnome.home": 3,
+    "note.any": false,
+    "world.index": 12
+   },
+   {
+    "tree.stage": 26,
+    "sober.days": 1830,
+    "sober.short": "5y 0m 5d",
+    "home.index": 10,
+    "gnome.home": 10,
+    "note.any": false,
+    "world.index": 1
+   },
+   {
+    "tree.stage": 26,
+    "world.index": 9,
+    "home.index": 20,
+    "gnome.home": 10,
+    "sober.days": 5480,
+    "sober.short": "15y 0m 2d",
+    "note.any": false
    }
   ],
   "reflection": [
@@ -238,5 +268,8 @@
    }
   ]
  },
- "sober.short": "2y 2m 27d"
+ "sober.short": "2y 2m 27d",
+ "gnome.home": 2,
+ "home.index": 0,
+ "world.index": 0
 }
