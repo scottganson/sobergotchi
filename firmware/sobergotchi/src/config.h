@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.5-world2"
+#define FIRMWARE_VERSION "1.6-world3"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1
@@ -52,7 +52,6 @@
 #define IDLE_TIMEOUT_MS        30000UL  // back to the home screen after this long without a press
 #define LONG_PRESS_MS          700UL
 #define POPUP_MS               6000UL   // how long "Friend added" / rock-paper-scissors stay up
-#define FULL_REFRESH_EVERY     10       // partial refreshes before a cleaning full refresh
 #define EXCHANGE_MS            4000UL   // how long to swap cards after the reed closes
 #define EXCHANGE_MIN_RSSI      (-60)    // ignore devices further than a few centimetres away
 #define MAX_FRIENDS            200

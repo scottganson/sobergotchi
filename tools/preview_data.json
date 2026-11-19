@@ -9,7 +9,7 @@
   "date": "2024-08-19"
  },
  "sober.days": 818,
- "sober.ymd": "2 years \u00b7 2 months \u00b7 27 days",
+ "sober.ymd": "2 years · 2 months · 27 days",
  "sober.num": "2",
  "sober.unit": "YEARS",
  "tree.stage": 17,
@@ -112,14 +112,6 @@
    "value": "416-555-0134"
   },
   {
-   "label": "Friends",
-   "value": "6"
-  },
-  {
-   "label": "Clear friends",
-   "value": ""
-  },
-  {
    "label": "Battery",
    "value": "82%"
   },
@@ -164,7 +156,7 @@
    {
     "tree.stage": 26,
     "sober.days": 3725,
-    "sober.ymd": "10 years \u00b7 2 months",
+    "sober.ymd": "10 years · 2 months",
     "next.today": true,
     "next.name": "Maria",
     "next.years": 9,
@@ -223,7 +215,7 @@
    {},
    {
     "friends.sel": 2,
-    "hint": "\u25cf open  \u00b7  hold \u25cf back"
+    "hint": "● open  ·  hold ● back"
    },
    {
     "friends.any": false,
