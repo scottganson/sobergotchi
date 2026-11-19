@@ -1,7 +1,7 @@
 <!-- Settings. KEY2 to pick an item, KEY2 again to change it. -->
 <screen id="menu">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">Settings</text>
+    <text w="*" font="label-b">{menu.title}</text>
   </row>
   <list h="*" bind="menu" rowh="27" sel="{menu.sel}" margin="2 0 0 0">
     <col h="26" pad="2 5 2 6">

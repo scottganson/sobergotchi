@@ -306,11 +306,14 @@ static int nextFriend() {  // index into store::friends of the soonest anniversa
 // ---------------------------------------------------------------------------
 // values for the screens
 // ---------------------------------------------------------------------------
-static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "System info", "Factory reset", "Back"};
-static const int MENU_COUNT = 7;
-static const int MENU_SYSINFO = 4;
-static const int MENU_RESET = 5;
-static const int MENU_BACK = 6;
+// Settings has a User settings submenu; rows are named by item so both lists share one screen.
+enum MenuItem : uint8_t { MI_SOBER, MI_TODAY, MI_NAME, MI_PHONE, MI_USER, MI_SYSINFO, MI_RESET, MI_BACK };
+static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "User settings", "System info", "Factory reset", "Back"};
+static const uint8_t MENU_TOP[] = {MI_USER, MI_SYSINFO, MI_RESET, MI_BACK};
+static const uint8_t MENU_USER[] = {MI_NAME, MI_PHONE, MI_SOBER, MI_TODAY, MI_BACK};
+static bool menuUser = false;  // in the User settings submenu
+static int menuCount() { return menuUser ? sizeof MENU_USER : sizeof MENU_TOP; }
+static uint8_t menuItem(int i) { return menuUser ? MENU_USER[i] : MENU_TOP[i]; }
 
 class Data : public UiData {
  public:
@@ -321,7 +324,7 @@ class Data : public UiData {
 
   int listCount(const char* name) override {
     if (!strcmp(name, "friends")) return store::friendCount ? store::friendCount + 1 : 0;  // last row is "Back"
-    if (!strcmp(name, "menu")) return MENU_COUNT;
+    if (!strcmp(name, "menu")) return menuCount();
     return 0;
   }
   void setListItem(const char* name, int index) override {
@@ -399,6 +402,7 @@ class Data : public UiData {
     if (!strcmp(key, "friends.count")) return num(store::friendCount);
     if (!strcmp(key, "friends.sel")) return num(mode == M_FRIENDS ? friendSel : -1);
     if (!strcmp(key, "menu.sel")) return num(mode == M_MENU ? menuSel : -1);
+    if (!strcmp(key, "menu.title")) return str(menuUser ? "User settings" : "Settings");
     if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
     if (!strcmp(key, "confirm.title")) return str(confirmWhat == C_RESET ? "Factory reset" : "Sobriety date");
     if (!strcmp(key, "confirm.text"))
@@ -513,15 +517,18 @@ class Data : public UiData {
   }
 
   void menuValue(const char* k, char* out, size_t n) {
-    if (!strcmp(k, "label")) { snprintf(out, n, "%s", MENU_LABELS[item]); return; }
+    if (item < 0 || item >= menuCount()) return;
+    const uint8_t it = menuItem(item);
+    if (!strcmp(k, "label")) { snprintf(out, n, "%s", MENU_LABELS[it]); return; }
     if (strcmp(k, "value")) return;
-    switch (item) {
-      case 0: formatDate(store::settings.soberDay, "MMM d, yyyy", out, n); break;
-      case 1: formatDate(today(), "MMM d, yyyy", out, n); break;
-      case 2: snprintf(out, n, "%s", store::settings.name); break;
-      case 3: if (store::settings.phone[0]) formatPhone(store::settings.phone, out, n); else snprintf(out, n, "not set"); break;
-      case MENU_SYSINFO: snprintf(out, n, "battery, version"); break;
-      case MENU_RESET: snprintf(out, n, "start over with Pip"); break;
+    switch (it) {
+      case MI_SOBER: formatDate(store::settings.soberDay, "MMM d, yyyy", out, n); break;
+      case MI_TODAY: formatDate(today(), "MMM d, yyyy", out, n); break;
+      case MI_NAME: snprintf(out, n, "%s", store::settings.name); break;
+      case MI_PHONE: if (store::settings.phone[0]) formatPhone(store::settings.phone, out, n); else snprintf(out, n, "not set"); break;
+      case MI_USER: snprintf(out, n, "name, phone, dates"); break;
+      case MI_SYSINFO: snprintf(out, n, "battery, version"); break;
+      case MI_RESET: snprintf(out, n, "start over with Pip"); break;
     }
   }
 
@@ -771,7 +778,7 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2) {
         if (carousel == 2) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
         else if (carousel == 3 && store::friendCount) { mode = M_FRIENDS; friendSel = 0; }
-        else if (carousel == 4) { mode = M_MENU; menuSel = 0; }
+        else if (carousel == 4) { mode = M_MENU; menuUser = false; menuSel = 0; }
       }
       break;
 
@@ -806,17 +813,20 @@ static void handleKey(Event e) {
 
     case M_MENU:
       if (e == EV_KEY1 && menuSel > 0) menuSel--;
-      else if (e == EV_KEY3 && menuSel < MENU_COUNT - 1) menuSel++;
-      else if (e == EV_KEY2_LONG) mode = M_CAROUSEL;
+      else if (e == EV_KEY3 && menuSel < menuCount() - 1) menuSel++;
       else if (e == EV_KEY2) {
-        switch (menuSel) {
-          case 0: mode = M_CONFIRM; confirmWhat = C_SOBER; confirmYes = false; break;
-          case 1: startEditDate(E_TODAY); break;
-          case 2: startEditText(E_NAME); break;
-          case 3: startEditText(E_PHONE); break;
-          case MENU_SYSINFO: mode = M_SYSINFO; break;
-          case MENU_RESET: mode = M_CONFIRM; confirmWhat = C_RESET; confirmAgain = false; confirmYes = false; break;
-          case MENU_BACK: mode = M_CAROUSEL; break;
+        switch (menuItem(menuSel)) {
+          case MI_SOBER: mode = M_CONFIRM; confirmWhat = C_SOBER; confirmYes = false; break;
+          case MI_TODAY: startEditDate(E_TODAY); break;
+          case MI_NAME: startEditText(E_NAME); break;
+          case MI_PHONE: startEditText(E_PHONE); break;
+          case MI_USER: menuUser = true; menuSel = 0; break;
+          case MI_SYSINFO: mode = M_SYSINFO; break;
+          case MI_RESET: mode = M_CONFIRM; confirmWhat = C_RESET; confirmAgain = false; confirmYes = false; break;
+          case MI_BACK:
+            if (menuUser) { menuUser = false; menuSel = 0; }  // back up to Settings, on User settings
+            else mode = M_CAROUSEL;
+            break;
           default: break;
         }
       }
@@ -832,6 +842,7 @@ static void handleKey(Event e) {
           store::factoryReset();
           sortFriends();
           menuSel = -1;
+          menuUser = false;
           startIntro();
         }
       }
@@ -894,6 +905,7 @@ static int32_t shownDay = -1;
 static void goHome(bool full) {
   mode = M_CAROUSEL;
   carousel = 0;
+  menuUser = false;
   reflectPage = 0;
   confirmDelete = false;
   show(full);

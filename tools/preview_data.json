@@ -96,20 +96,8 @@
  "menu.sel": 0,
  "menu": [
   {
-   "label": "Sober date",
-   "value": "Aug 19, 2024"
-  },
-  {
-   "label": "Today",
-   "value": "Nov 15, 2026"
-  },
-  {
-   "label": "Name",
-   "value": "Scott"
-  },
-  {
-   "label": "Phone",
-   "value": "416-555-0134"
+   "label": "User settings",
+   "value": "name, phone, dates"
   },
   {
    "label": "System info",
@@ -228,7 +216,33 @@
     "menu.sel": -1
    },
    {
-    "menu.sel": 1
+    "menu.sel": 0
+   },
+   {
+    "menu.title": "User settings",
+    "menu.sel": 2,
+    "menu": [
+     {
+      "label": "Name",
+      "value": "Scott"
+     },
+     {
+      "label": "Phone",
+      "value": "416-555-0134"
+     },
+     {
+      "label": "Sober date",
+      "value": "Aug 19, 2024"
+     },
+     {
+      "label": "Today",
+      "value": "Nov 19, 2026"
+     },
+     {
+      "label": "Back",
+      "value": ""
+     }
+    ]
    }
   ],
   "edit-text": [
@@ -420,7 +434,8 @@
  "confirm.ok": "Yes, change it",
  "sys.battery": "82%  · 3.94 V",
  "sys.power": "On battery",
- "sys.version": "1.13-world10",
+ "sys.version": "1.14-world11",
  "sys.friends": "4",
- "sys.id": "5A3F09C2"
+ "sys.id": "5A3F09C2",
+ "menu.title": "Settings"
 }

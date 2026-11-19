@@ -315,7 +315,7 @@ static const UiNode SCREEN_main_nodes[] = {
 static const UiNode SCREEN_menu_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 9}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
-  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Settings", nullptr, nullptr, 0}, // <text>
+  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "{menu.title}", nullptr, nullptr, 0}, // <text>
   {7, 0, 4, 0, 0, 0, 0, 23, 122, 206, 27, 0, "menu", "{menu.sel}", nullptr, 4}, // <list>
   {0, 0, 4, 0, 0, 0, 0, 23, 122, 26, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
   {1, 2, 4, 0, 0, 0, 6, 25, 111, 13, 0, 0, "{item.label}", nullptr, nullptr, 0}, // <text>
