@@ -24,7 +24,7 @@ enum Mode : uint8_t {
   M_EDIT_TEXT,
 };
 
-static const uint8_t CAROUSEL_COUNT = 5;  // main, reflection, friends, menu, gnome
+static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
 static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME;
 
 static Mode mode = M_CAROUSEL;
@@ -182,7 +182,7 @@ static Gnome gnomeToday() {
   Gnome g = {nullptr, s.y, P_STAND};
   bool cheer = false;
   if (s.y >= 1 && s.m == 0 && s.d == 0) {            // a yearly birthday
-    g.note = &GNOME_YEARS[s.y == 1 ? 0 : s.y <= 4 ? 1 : s.y == 5 ? 2 : s.y <= 9 ? 3 : 4];
+    g.note = &GNOME_YEARS[s.y <= 15 ? s.y - 1 : 15];  // one note per year to fifteen, matching what the world gains
     cheer = true;
   } else if (s.y == 0 && s.m >= 1 && s.d == 0) {     // a monthly milestone in the first year
     g.note = &GNOME_MONTHS[s.m - 1];
@@ -500,8 +500,8 @@ class Data : public UiData {
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       default:
-        if (carousel == 2 && store::friendCount) snprintf(out, n, "\201 choose a friend");
-        else if (carousel == 3) snprintf(out, n, "\201 choose a setting");
+        if (carousel == 3 && store::friendCount) snprintf(out, n, "\201 choose a friend");
+        else if (carousel == 4) snprintf(out, n, "\201 choose a setting");
         break;
     }
   }
@@ -527,10 +527,10 @@ static int currentScreen() {
       const char* unit;
       return milestone(sober(), num, unit) ? S_ANNIV : S_MAIN;
     }
-    case 1: return S_REFLECT;
-    case 2: return S_FRIENDS;
-    case 3: return S_MENU;
-    default: return S_GNOME;
+    case 1: return S_GNOME;
+    case 2: return S_REFLECT;
+    case 3: return S_FRIENDS;
+    default: return S_MENU;
   }
 }
 
@@ -625,9 +625,9 @@ static void handleKey(Event e) {
       if (e == EV_KEY1) { carousel = (carousel + CAROUSEL_COUNT - 1) % CAROUSEL_COUNT; reflectPage = 0; }
       else if (e == EV_KEY3) { carousel = (carousel + 1) % CAROUSEL_COUNT; reflectPage = 0; }
       else if (e == EV_KEY2) {
-        if (carousel == 1) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
-        else if (carousel == 2 && store::friendCount) { mode = M_FRIENDS; friendSel = 0; }
-        else if (carousel == 3) { mode = M_MENU; menuSel = 0; }
+        if (carousel == 2) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
+        else if (carousel == 3 && store::friendCount) { mode = M_FRIENDS; friendSel = 0; }
+        else if (carousel == 4) { mode = M_MENU; menuSel = 0; }
       }
       break;
 

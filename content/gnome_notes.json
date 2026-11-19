@@ -178,20 +178,64 @@
    "full": "A whole year. The tree gave its first apple today, and it's yours. Happy birthday."
   },
   {
-   "short": "{n} years!!",
-   "full": "{n} years, and a new apple on the tree. Look what your days added up to."
+   "short": "Two years!!",
+   "full": "Two years, and a second apple on the branch. Look what your days added up to."
+  },
+  {
+   "short": "Three years!!",
+   "full": "Three years. Three apples now, and the tree is getting tall. So are you."
+  },
+  {
+   "short": "Four years!!",
+   "full": "Four years. Four apples, and I've been saving planks. You'll see why next year."
   },
   {
    "short": "Five years!!!",
-   "full": "Five years. The tree is fully grown, and it's a beauty. So are these years."
+   "full": "Five years. The tree is fully grown, so I built a little house in it. Come visit."
   },
   {
-   "short": "{n} years!!",
-   "full": "{n} years. Another apple for the grass. Thank you for letting me watch this grow."
+   "short": "Six years!!",
+   "full": "Six years. I made the house wider and put in a new window. More light now."
+  },
+  {
+   "short": "Seven years!!",
+   "full": "Seven years. A second floor went up, and a cat moved in. She picked us, I think."
+  },
+  {
+   "short": "Eight years!!",
+   "full": "Eight years. Someone special moved in, and brought a dog. The house is full now."
+  },
+  {
+   "short": "Nine years!!",
+   "full": "Nine years. A new attic window. On clear nights we can see the stars up there."
+  },
+  {
+   "short": "TEN YEARS!!!",
+   "full": "Ten years. The house is finished, deck and all, and a robin took the attic. Home."
+  },
+  {
+   "short": "Eleven years!!",
+   "full": "Eleven years. A stream came down the hill, so I built a bridge. Let's explore."
+  },
+  {
+   "short": "Twelve years!!",
+   "full": "Twelve years. Nothing new to build today. Just a quiet morning on the deck with you."
+  },
+  {
+   "short": "Thirteen years!!",
+   "full": "Thirteen years. We dug a well. Fresh water for anyone who wanders by thirsty."
+  },
+  {
+   "short": "Fourteen years!!",
+   "full": "Fourteen years. The path over the bridge is worn smooth. That's a lot of good days."
+  },
+  {
+   "short": "Fifteen years!!!",
+   "full": "Fifteen years. An old friend built a cottage on the far hill. Neighbours at last!"
   },
   {
    "short": "{n} years!!!",
-   "full": "{n} years. I've loved every single day of tending this with you."
+   "full": "{n} years. Look at the little world your days have built. I love living in it."
   }
  ],
  "rainy": [
