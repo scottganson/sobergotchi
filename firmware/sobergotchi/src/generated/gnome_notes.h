@@ -48,12 +48,23 @@ static const GnomeNote GNOME_MONTHS[11] = {
   {"Ten months!", "Ten months. I've run out of fingers again. Keep going."},
   {"Eleven months!", "Eleven months. The big one is close. Today still comes first."},
 };
-static const GnomeNote GNOME_YEARS[5] = {
+static const GnomeNote GNOME_YEARS[16] = {
   {"ONE YEAR!!!", "A whole year. The tree gave its first apple today, and it's yours. Happy birthday."},
-  {"{n} years!!", "{n} years, and a new apple on the tree. Look what your days added up to."},
-  {"Five years!!!", "Five years. The tree is fully grown, and it's a beauty. So are these years."},
-  {"{n} years!!", "{n} years. Another apple for the grass. Thank you for letting me watch this grow."},
-  {"{n} years!!!", "{n} years. I've loved every single day of tending this with you."},
+  {"Two years!!", "Two years, and a second apple on the branch. Look what your days added up to."},
+  {"Three years!!", "Three years. Three apples now, and the tree is getting tall. So are you."},
+  {"Four years!!", "Four years. Four apples, and I've been saving planks. You'll see why next year."},
+  {"Five years!!!", "Five years. The tree is fully grown, so I built a little house in it. Come visit."},
+  {"Six years!!", "Six years. I made the house wider and put in a new window. More light now."},
+  {"Seven years!!", "Seven years. A second floor went up, and a cat moved in. She picked us, I think."},
+  {"Eight years!!", "Eight years. Someone special moved in, and brought a dog. The house is full now."},
+  {"Nine years!!", "Nine years. A new attic window. On clear nights we can see the stars up there."},
+  {"TEN YEARS!!!", "Ten years. The house is finished, deck and all, and a robin took the attic. Home."},
+  {"Eleven years!!", "Eleven years. A stream came down the hill, so I built a bridge. Let's explore."},
+  {"Twelve years!!", "Twelve years. Nothing new to build today. Just a quiet morning on the deck with you."},
+  {"Thirteen years!!", "Thirteen years. We dug a well. Fresh water for anyone who wanders by thirsty."},
+  {"Fourteen years!!", "Fourteen years. The path over the bridge is worn smooth. That's a lot of good days."},
+  {"Fifteen years!!!", "Fifteen years. An old friend built a cottage on the far hill. Neighbours at last!"},
+  {"{n} years!!!", "{n} years. Look at the little world your days have built. I love living in it."},
 };
 static const GnomeNote GNOME_RAINY[6] = {
   {"Rain helps us grow", "Trees need rainy days too. This one is doing its work."},
