@@ -51,14 +51,36 @@ static EditTarget editTarget;
 static int editField;
 static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
-static int editPos;
-static int editChoice = -1;
-static bool confirmYes = false;  // on the sobriety-date question: Yes highlighted (starts on Cancel)  // -1 editing; else the Save / Cancel (/ Space) option highlighted
-static const char NAME_CHARS[] = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'";
-static const char PHONE_CHARS[] = " 0123456789";
+static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
+static bool confirmYes = false;  // on the sobriety-date question: Yes highlighted (starts on Cancel)
 
-static const char* editChars() { return editTarget == E_NAME ? NAME_CHARS : PHONE_CHARS; }
+// Name / phone keyboard: up/down move through the rows of keys and the actions under them; enter on a row steps
+// into it, up/down then move along it, enter types that key and steps back out. Moving past either end of a row
+// also steps back out. '^' is the Aa key (flips the case of the next letter).
+static const char* const NAME_ROWS[] = {"ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "Z.-'^"};
+static const char* const PHONE_ROWS[] = {"12345", "67890"};
+enum KbAction : uint8_t { A_SPACE, A_DELETE, A_SAVE, A_CANCEL };
+static const char* const KB_ACTION_LABELS[] = {"Space", "Delete", "Save", "Cancel"};
+static const int KB_ROWS_MAX = 6, KB_COLS_MAX = 5, KB_ACTIONS_MAX = 4;
+static int kbRow = 0;    // selected row or action (rows first)
+static int kbCol = -1;   // -1: choosing a row; else the key within kbRow
+static bool kbShift = false;
+
 static int editMax() { return editTarget == E_NAME ? NAME_LEN : PHONE_LEN; }
+static bool kbName() { return editTarget == E_NAME; }
+static int kbRows() { return kbName() ? 6 : 2; }
+static const char* kbRowKeys(int r) { return r < 0 || r >= kbRows() ? "" : kbName() ? NAME_ROWS[r] : PHONE_ROWS[r]; }
+static int kbActions() { return kbName() ? 4 : 3; }
+static KbAction kbAction(int i) { return (KbAction)(kbName() ? i : i + 1); }  // the phone has no Space
+static int kbItems() { return kbRows() + kbActions(); }
+// The character a key types: letters are capitalised at the start of each word, unless Aa flipped it.
+static char kbChar(char key) {
+  if (key < 'A' || key > 'Z') return key;
+  int len = strlen(editBuf);
+  bool upper = len == 0 || editBuf[len - 1] == ' ' || editBuf[len - 1] == '-';
+  if (kbShift) upper = !upper;
+  return upper ? key : key - 'A' + 'a';
+}
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -396,6 +418,7 @@ class Data : public UiData {
     }
 
     if (!strncmp(key, "edit.", 5)) return editValue(key + 5, out, n);
+    if (!strncmp(key, "kb.", 3)) return kbValue(key + 3, out, n);
   }
 
  private:
@@ -444,7 +467,7 @@ class Data : public UiData {
     }
     if (k[0] == 'l' || k[0] == 'v' || k[0] == 's') {
       int f = k[1] - '0';
-      if (k[0] == 's') { snprintf(out, n, "%s", (mode == M_EDIT_DATE && editField == f) ? "1" : ""); return; }
+      if (k[0] == 's') { snprintf(out, n, "%s", (mode == M_EDIT_DATE && editChoice < 0 && editField == f) ? "1" : ""); return; }
       if (k[0] == 'l') {
         static const char* L[] = {"Month", "Day", "Year", "Hour"};
         if (f < 3 || editTarget == E_TODAY) snprintf(out, n, "%s", L[f]);
@@ -462,20 +485,15 @@ class Data : public UiData {
     }
     if (!strcmp(k, "has3")) { snprintf(out, n, "%s", editTarget == E_TODAY ? "1" : ""); return; }
     if (!strncmp(k, "hint", 4)) {
-      const bool text = mode == M_EDIT_TEXT;
       const char* h = "";
       char opts[48];
       if (editChoice >= 0) {
-        static const char* O[] = {"Save", "Cancel", "Space"};
+        static const char* O[] = {"Save", "Cancel"};
         int m = 0;
-        for (int i = 0; i < (text ? 3 : 2); i++)
+        for (int i = 0; i < 2; i++)
           m += snprintf(opts + m, sizeof opts - m, i == editChoice ? "%s[%s]" : "%s %s ", i ? " " : "", O[i]);
         if (k[4] == '1') h = opts;
         else if (k[4] == '2') h = "\202 \203 choose  \177  \201 ok";
-      } else if (text) {
-        if (k[4] == '1') h = "\202 \203 change letter";
-        else if (k[4] == '2') h = "\201 next letter";
-        else h = "pick _ then \201 to finish";
       } else {
         if (k[4] == '1') h = "\202 more  less \203";
         else if (k[4] == '2') h = "\201 next";
@@ -483,19 +501,33 @@ class Data : public UiData {
       snprintf(out, n, "%s", h);
       return;
     }
-    const char* cs = editChars();
-    int len = strlen(cs);
-    const char* p = strchr(cs, editBuf[editPos] ? editBuf[editPos] : ' ');
-    int ci = p ? (int)(p - cs) : 0;
-    auto shown = [&](int i) -> char { char c = cs[(i + len) % len]; return c == ' ' ? '_' : c; };
     if (!strcmp(k, "text")) {
-      int m = 0;
-      for (int i = 0; i < editPos && editBuf[i] && m + 2 < (int)n; i++) out[m++] = editBuf[i];
-      out[m++] = '_';
-      out[m] = 0;
-    } else if (!strcmp(k, "prev")) snprintf(out, n, "%c", shown(ci - 1));
-    else if (!strcmp(k, "cur")) snprintf(out, n, "%c", shown(ci));
-    else if (!strcmp(k, "next")) snprintf(out, n, "%c", shown(ci + 1));
+      char shown[24];
+      if (kbName()) snprintf(shown, sizeof shown, "%s", editBuf);
+      else formatPhone(editBuf, shown, sizeof shown);
+      snprintf(out, n, "%s_", shown);
+    }
+  }
+
+  // The keyboard: kb.v<r> row shown, kb.c<r><c> key label, kb.h<r><c> key highlighted, kb.rs<r> row chosen (inverted),
+  // kb.ri<r> inside that row (outlined), kb.a<i> action label, kb.ah<i> action highlighted.
+  void kbValue(const char* k, char* out, size_t n) {
+    auto flag = [&](bool b) { snprintf(out, n, "%s", b ? "1" : ""); };
+    const int r = k[1] == 's' || k[1] == 'i' || k[1] == 'h' ? k[2] - '0' : k[1] - '0';
+    if (k[0] == 'v') return flag(r < kbRows());
+    if (k[0] == 'c') {
+      const int c = k[2] - '0';
+      const char* keys = kbRowKeys(r);
+      if (c >= (int)strlen(keys)) return;
+      if (keys[c] == '^') snprintf(out, n, "Aa");
+      else snprintf(out, n, "%c", kbChar(keys[c]));
+      return;
+    }
+    if (k[0] == 'h') return flag(kbCol >= 0 && kbRow == r && kbCol == k[2] - '0');
+    if (k[0] == 'r' && k[1] == 's') return flag(kbCol < 0 && kbRow == r);
+    if (k[0] == 'r' && k[1] == 'i') return flag(kbCol >= 0 && kbRow == r);
+    if (k[0] == 'a' && k[1] == 'h') { const int i = k[2] - '0'; return flag(i < kbActions() && kbRow == kbRows() + i); }
+    if (k[0] == 'a') { const int i = k[1] - '0'; if (i < kbActions()) snprintf(out, n, "%s", KB_ACTION_LABELS[kbAction(i)]); }
   }
 
   void hint(char* out, size_t n) {
@@ -503,6 +535,7 @@ class Data : public UiData {
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       case M_CONFIRM_SOBER: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
+      case M_EDIT_TEXT: snprintf(out, n, kbCol < 0 ? "\202 \203 move  \177  \201 pick" : "\202 \203 move  \177  \201 type"); break;
       default:
         if (carousel == 3 && store::friendCount) snprintf(out, n, "\201 choose a friend");
         else if (carousel == 4) snprintf(out, n, "\201 choose a setting");
@@ -576,8 +609,9 @@ static void startEditText(EditTarget target) {
   editTarget = target;
   memset(editBuf, 0, sizeof editBuf);
   strncpy(editBuf, target == E_NAME ? store::settings.name : store::settings.phone, editMax());
-  editPos = 0;
-  editChoice = -1;
+  kbRow = 0;
+  kbCol = -1;
+  kbShift = false;
   mode = M_EDIT_TEXT;
 }
 
@@ -679,7 +713,6 @@ static void handleKey(Event e) {
 
     case M_CONFIRM_SOBER:
       if (e == EV_KEY1 || e == EV_KEY3) confirmYes = !confirmYes;
-      else if (e == EV_KEY2_LONG) mode = M_MENU;
       else if (e == EV_KEY2) {
         if (confirmYes) startEditDate(E_SOBER);
         else mode = M_MENU;
@@ -702,37 +735,29 @@ static void handleKey(Event e) {
     }
 
     case M_EDIT_TEXT: {
-      const char* cs = editChars();
-      int len = strlen(cs);
-      char c = editBuf[editPos] ? editBuf[editPos] : ' ';
-      const char* p = strchr(cs, c);
-      int ci = p ? (int)(p - cs) : 0;
-      if (editChoice >= 0) {  // Save / Cancel / Space
-        if (e == EV_KEY1) editChoice = (editChoice + 2) % 3;
-        else if (e == EV_KEY3) editChoice = (editChoice + 1) % 3;
+      int len = strlen(editBuf);
+      if (kbCol < 0) {  // choosing a row or an action
+        if (e == EV_KEY1) kbRow = (kbRow + kbItems() - 1) % kbItems();
+        else if (e == EV_KEY3) kbRow = (kbRow + 1) % kbItems();
+        else if (e == EV_KEY2 && kbRow < kbRows()) kbCol = 0;
         else if (e == EV_KEY2) {
-          if (editChoice == 2) {  // keep typing: the blank stays as a space
-            if (editPos < editMax()) {
-              editBuf[editPos] = ' ';
-              if (editPos < editMax() - 1) editPos++;
-            }
-          } else {
-            if (editChoice == 0) {
-              for (int i = editPos; i < (int)sizeof editBuf; i++) editBuf[i] = 0;  // drop old text after the cursor
-              saveEditText();
-            }
-            mode = M_MENU;
+          switch (kbAction(kbRow - kbRows())) {
+            case A_SPACE: if (len > 0 && len < editMax() && editBuf[len - 1] != ' ') editBuf[len] = ' '; break;
+            case A_DELETE: if (len > 0) editBuf[len - 1] = 0; kbShift = false; break;
+            case A_SAVE: saveEditText(); mode = M_MENU; break;
+            case A_CANCEL: mode = M_MENU; break;
           }
-          editChoice = -1;
         }
-      } else if (e == EV_KEY1 || e == EV_KEY3) {
-        ci = (ci + (e == EV_KEY3 ? 1 : -1) + len) % len;
-        editBuf[editPos] = cs[ci];
-        for (int i = 0; i < editPos; i++) if (!editBuf[i]) editBuf[i] = ' ';
-      } else if (e == EV_KEY2) {
-        if (c == ' ') editChoice = 0;  // enter on a blank: finish
-        else if (editPos < editMax() - 1) editPos++;
-        else { editPos++; editChoice = 0; }  // full: finish after the last letter
+      } else {  // inside a row
+        const char* keys = kbRowKeys(kbRow);
+        const int last = strlen(keys) - 1;
+        if (e == EV_KEY1) kbCol = kbCol > 0 ? kbCol - 1 : -1;
+        else if (e == EV_KEY3) kbCol = kbCol < last ? kbCol + 1 : -1;
+        else if (e == EV_KEY2) {
+          if (keys[kbCol] == '^') kbShift = !kbShift;
+          else if (len < editMax()) { editBuf[len] = kbChar(keys[kbCol]); kbShift = false; }
+          kbCol = -1;
+        }
       }
       break;
     }
