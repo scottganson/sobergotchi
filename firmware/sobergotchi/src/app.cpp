@@ -34,7 +34,7 @@ static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
 static int reflectPage = 0, reflectPages = 1;
 static int friendSel = -1, menuSel = -1;
-static bool confirmDelete = false;
+static bool cardDelete = false;  // friend card: Delete highlighted (else Back)
 static bool sessionDirty = false;  // a partial refresh happened since the last full one
 
 // sorted view of friends: soonest anniversary first
@@ -74,7 +74,7 @@ static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
 static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
 static bool confirmYes = false;  // on an "Are you sure?" question: Yes highlighted (starts on Cancel)
-enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_FRIEND };
+enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_FRIEND, C_DELETE };
 static ConfirmWhat confirmWhat = C_SOBER;
 static bool confirmAgain = false;  // factory reset: the second, "really?" question
 
@@ -425,15 +425,20 @@ class Data : public UiData {
     if (!strcmp(key, "menu.title")) return str(menuUser ? "User settings" : "Settings");
     if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
     if (!strcmp(key, "confirm.title"))
-      return str(confirmWhat == C_RESET ? "Factory reset" : confirmWhat == C_FRIEND ? "Add friend" : "Sobriety date");
+      return str(confirmWhat == C_RESET ? "Factory reset" : confirmWhat == C_FRIEND ? "Add friend"
+                 : confirmWhat == C_DELETE ? "Delete friend" : "Sobriety date");
     if (!strcmp(key, "confirm.text")) {
       if (confirmWhat == C_FRIEND) { snprintf(out, n, "Make friends with %s?", popupFriend.name); return; }
+      if (confirmWhat == C_DELETE) {
+        snprintf(out, n, "Delete %s from your friends? This can't be undone.", popupFriend.name);
+        return;
+      }
       return str(confirmWhat == C_SOBER ? "Are you sure you want to change your sobriety date?"
                  : confirmAgain ? "Really erase everything? This can't be undone."
                                 : "Erase your name, date, phone and friends, and start over?");
     }
     if (!strcmp(key, "confirm.ok"))
-      return str(confirmWhat == C_FRIEND ? "Yes, add them" : confirmWhat == C_SOBER ? "Yes, change it"
+      return str(confirmWhat == C_FRIEND ? "Yes, add them" : confirmWhat == C_DELETE ? "Yes, delete" : confirmWhat == C_SOBER ? "Yes, change it"
                  : confirmAgain ? "Yes, erase all" : "Yes, erase it");
     if (!strcmp(key, "search.title")) return str(searchNone ? "No one found" : "Looking...");
     if (!strcmp(key, "search.text")) {
@@ -477,7 +482,7 @@ class Data : public UiData {
       if (!strcmp(k, "years")) return num(yearsNow(f.soberDay, t));
       if (!strcmp(k, "phone")) return formatPhone(f.phone, out, n);
       if (!strcmp(k, "in")) return formatUntil(nextAnniversary(f.soberDay, t) - t, out, n);
-      if (!strcmp(k, "confirm")) return flag(confirmDelete);
+      if (!strcmp(k, "del")) return flag(cardDelete);
     }
 
     if (!strncmp(key, "rps.", 4)) {
@@ -702,8 +707,7 @@ static void showPopup(int screenId) {
     if (radioOn && radioLeft() < left) left = radioLeft();
     Event e = hw::wait(left);
     radioTick();
-    if (e == EV_TIMEOUT) continue;
-    if (e != EV_TIMEOUT && e != EV_REED) break;  // any button closes the pop-up early
+    if (e == EV_KEY2) break;  // enter closes the pop-up early; up / down only ever select
   }
 }
 
@@ -862,7 +866,7 @@ static void handleKey(Event e) {
   switch (mode) {
     case M_INTRO:
       if (e == EV_KEY1 && introStep > I_HELLO) introStep--;
-      else if (e == EV_KEY2 || e == EV_KEY3) {
+      else if (e == EV_KEY2) {  // enter only: down never moves on
         switch (introStep) {
           case I_NAME: startEditText(E_NAME); break;
           case I_SOBER: startEditDate(E_SOBER); break;
@@ -885,7 +889,7 @@ static void handleKey(Event e) {
       break;
 
     case M_SYSINFO:
-      mode = M_MENU;  // any button: back to Settings
+      if (e == EV_KEY2) mode = M_MENU;  // enter: back to Settings (up / down do nothing here)
       break;
 
     case M_FRIENDS:  // rows: 0 Add friend, 1..friendCount the friends, friendCount + 1 Back
@@ -895,22 +899,18 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2 && friendSel > store::friendCount) mode = M_CAROUSEL;
       else if (e == EV_KEY2) {
         popupFriend = store::friends[order[friendSel - 1]];
-        confirmDelete = false;
+        cardDelete = false;  // Back highlighted
         mode = M_FRIEND_CARD;
       }
       break;
 
-    case M_FRIEND_CARD:
-      if (e == EV_KEY3) {
-        if (!confirmDelete) confirmDelete = true;
-        else {
-          store::deleteFriend(order[friendSel - 1]);
-          sortFriends();
-          if (friendSel > store::friendCount) friendSel = store::friendCount;
-          mode = store::friendCount ? M_FRIENDS : M_CAROUSEL;
-        }
-      } else if (e == EV_KEY1 || e == EV_KEY2 || e == EV_KEY2_LONG) {
-        mode = M_FRIENDS;
+    case M_FRIEND_CARD:  // up / down choose Back or Delete; enter does it, and Delete asks first
+      if (e == EV_KEY1 || e == EV_KEY3) cardDelete = !cardDelete;
+      else if (e == EV_KEY2 && !cardDelete) mode = M_FRIENDS;
+      else if (e == EV_KEY2) {
+        mode = M_CONFIRM;
+        confirmWhat = C_DELETE;
+        confirmYes = false;  // Cancel highlighted
       }
       break;
 
@@ -938,7 +938,17 @@ static void handleKey(Event e) {
     case M_CONFIRM:
       if (e == EV_KEY1 || e == EV_KEY3) confirmYes = !confirmYes;
       else if (e == EV_KEY2) {
-        if (confirmWhat == C_FRIEND) {
+        if (confirmWhat == C_DELETE) {
+          if (confirmYes) {
+            store::deleteFriend(order[friendSel - 1]);
+            sortFriends();
+            if (friendSel > store::friendCount) friendSel = store::friendCount;
+            mode = store::friendCount ? M_FRIENDS : M_CAROUSEL;
+          } else {
+            cardDelete = false;
+            mode = M_FRIEND_CARD;  // Cancel: back to their card, on Back
+          }
+        } else if (confirmWhat == C_FRIEND) {
           if (confirmYes) {
             store::upsertFriend(popupFriend);
             sortFriends();
@@ -1006,7 +1016,7 @@ static void goHome(bool full) {
   carousel = 0;
   menuUser = false;
   reflectPage = 0;
-  confirmDelete = false;
+  cardDelete = false;
   show(full);
   sessionDirty = false;
   shownDay = today();

@@ -1,4 +1,4 @@
-<!-- One friend's card. KEY1 back, KEY3 delete (press twice). -->
+<!-- One friend's card. Up / down choose Back or Delete, enter does it; Delete asks first (confirm screen). -->
 <screen id="friend">
   <row h="21" fill="ink" pad="0 4 0 5">
     <text w="*" font="label-b">Friend</text>
@@ -16,10 +16,13 @@
   </box>
   <spacer h="*"/>
   <stack h="24" margin="0 4 4 4">
-    <row if="!friend.confirm" gap="6">
-      <text w="*" font="small-b" align="center" border="1" radius="5">▲ Back</text>
-      <text w="*" font="small-b" align="center" border="1" radius="5">Delete ▼</text>
+    <row if="!friend.del" gap="6">
+      <text w="*" font="small-b" align="center" fill="ink" radius="5">Back</text>
+      <text w="*" font="small-b" align="center" border="1" radius="5">Delete</text>
     </row>
-    <text if="friend.confirm" font="small-b" align="center" fill="ink" radius="5">Press ▼ again to delete</text>
+    <row if="friend.del" gap="6">
+      <text w="*" font="small-b" align="center" border="1" radius="5">Back</text>
+      <text w="*" font="small-b" align="center" fill="ink" radius="5">Delete</text>
+    </row>
   </stack>
 </screen>

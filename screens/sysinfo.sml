@@ -1,4 +1,4 @@
-<!-- System info, opened from Settings. Any button goes back to Settings. -->
+<!-- System info, opened from Settings. Enter goes back to Settings. -->
 <screen id="sysinfo">
   <row h="21" fill="ink" pad="0 4 0 5">
     <text w="*" font="label-b">System info</text>

@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.16-world13"
+#define FIRMWARE_VERSION "1.17-world14"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1

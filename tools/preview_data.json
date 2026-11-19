@@ -128,7 +128,6 @@
  "friend.years": 5,
  "friend.in": "17 days",
  "friend.phone": "416-555-0101",
- "friend.confirm": false,
  "edit.title": "Your name",
  "edit.l0": "Month",
  "edit.v0": "Aug",
@@ -318,6 +317,11 @@
     "confirm.title": "Add friend",
     "confirm.text": "Make friends with Sam R.?",
     "confirm.ok": "Yes, add them"
+   },
+   {
+    "confirm.title": "Delete friend",
+    "confirm.text": "Delete Sam R. from your friends? This can't be undone.",
+    "confirm.ok": "Yes, delete"
    }
   ],
   "intro": [
@@ -463,5 +467,6 @@
  "sys.id": "5A3F09C2",
  "menu.title": "Settings",
  "search.title": "Looking...",
- "search.text": "Looking for Sobergotchis nearby for 30 seconds. Ask your friend to pick Add friend too."
+ "search.text": "Looking for Sobergotchis nearby for 30 seconds. Ask your friend to pick Add friend too.",
+ "friend.del": false
 }

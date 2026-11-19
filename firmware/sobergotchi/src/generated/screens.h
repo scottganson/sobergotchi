@@ -215,7 +215,7 @@ static const UiNode SCREEN_edit_text_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 247, 122, 3, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };
 static const UiNode SCREEN_friend_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 18}, // <col>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 20}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Friend", nullptr, nullptr, 0}, // <text>
   {1, 6, 5, 0, 0, 0, 2, 27, 118, 30, 0, 0, "{friend.name}", nullptr, nullptr, 0}, // <text>
@@ -229,11 +229,13 @@ static const UiNode SCREEN_friend_nodes[] = {
   {1, 0, 5, 0, 0, 0, 8, 149, 106, 15, 0, 0, "Anniversary", nullptr, nullptr, 0}, // <text>
   {1, 1, 5, 0, 0, 0, 8, 164, 106, 19, 0, 0, "{friend.date:MMM d} \177 {friend.in}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 186, 122, 40, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, nullptr, 4}, // <stack>
-  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, "!friend.confirm", 2}, // <row>
-  {1, 1, 5, 0, 1, 5, 4, 226, 54, 20, 0, 0, "\202 Back", nullptr, nullptr, 0}, // <text>
-  {1, 1, 5, 0, 1, 5, 64, 226, 54, 20, 0, 0, "Delete \203", nullptr, nullptr, 0}, // <text>
-  {1, 1, 21, 1, 0, 5, 4, 226, 114, 20, 0, 0, "Press \203 again to delete", nullptr, "friend.confirm", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, nullptr, 6}, // <stack>
+  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, "!friend.del", 2}, // <row>
+  {1, 1, 21, 1, 0, 5, 4, 226, 54, 20, 0, 0, "Back", nullptr, nullptr, 0}, // <text>
+  {1, 1, 5, 0, 1, 5, 64, 226, 54, 20, 0, 0, "Delete", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, "friend.del", 2}, // <row>
+  {1, 1, 5, 0, 1, 5, 4, 226, 54, 20, 0, 0, "Back", nullptr, nullptr, 0}, // <text>
+  {1, 1, 21, 1, 0, 5, 64, 226, 54, 20, 0, 0, "Delete", nullptr, nullptr, 0}, // <text>
 };
 static const UiNode SCREEN_friends_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 23}, // <col>
@@ -394,7 +396,7 @@ static const UiScreen UI_SCREENS[] = {
   {"confirm", SCREEN_confirm_nodes, 19},
   {"edit-date", SCREEN_edit_date_nodes, 36},
   {"edit-text", SCREEN_edit_text_nodes, 127},
-  {"friend", SCREEN_friend_nodes, 19},
+  {"friend", SCREEN_friend_nodes, 21},
   {"friends", SCREEN_friends_nodes, 24},
   {"gnome", SCREEN_gnome_nodes, 9},
   {"intro", SCREEN_intro_nodes, 8},
