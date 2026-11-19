@@ -19,7 +19,7 @@ void begin() {
   delay(50);  // let the panel supply settle before the reset pulse
   SPI.setPins(PIN_SPI_UNUSED_MISO, PIN_EPD_SCK, PIN_EPD_MOSI);
   epd.init(0, true, 2, false);
-  epd.setRotation(0);  // portrait, 122 x 250
+  epd.setRotation(2);  // portrait, 122 x 250, turned 180 degrees so it reads right side up
   epd.setTextWrap(false);
   awake = true;
 }
@@ -42,7 +42,7 @@ void show(uint8_t screenId, UiData& data, bool full) {
     digitalWrite(PIN_EPD_POWER, HIGH);
     delay(50);
     epd.init(0, true, 2, false);
-    epd.setRotation(0);
+    epd.setRotation(2);
     epd.setFullWindow();
     partials = 0;
     full = true;
