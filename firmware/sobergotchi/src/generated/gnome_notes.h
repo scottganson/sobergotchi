@@ -3,7 +3,7 @@
 
 struct GnomeNote { const char* brief; const char* full; };
 static const GnomeNote GNOME_DAILY[31] = {
-  {"You began today.", "The hardest step is the first one. You took it. I'm glad you're here."},
+  {"You began today.", "The hardest step is the first one. You took it. I'm Pip, and I'm so glad you're here."},
   {"One day. Well done", "One full day behind you. That first one is the biggest of all."},
   {"Two days. Well done", "Yesterday you did it once. Today you get to do it again."},
   {"Three days strong", "Day three can feel rough. Rest, eat something good, and go easy on yourself."},
@@ -49,11 +49,11 @@ static const GnomeNote GNOME_MONTHS[11] = {
   {"Eleven months!", "Eleven months. The big one is close. Today still comes first."},
 };
 static const GnomeNote GNOME_YEARS[16] = {
-  {"ONE YEAR!!!", "A whole year. The tree gave its first apple today, and it's yours. Happy birthday."},
+  {"ONE YEAR!!!", "A whole year. The tree gave its first apple today, and it's yours. Happy birthday, from Pip."},
   {"Two years!!", "Two years, and a second apple on the branch. Look what your days added up to."},
   {"Three years!!", "Three years. Three apples now, and the tree is getting tall. So are you."},
   {"Four years!!", "Four years. Four apples, and I've been saving planks. You'll see why next year."},
-  {"Five years!!!", "Five years. The tree is fully grown, so I built a little house in it. Come visit."},
+  {"Five years!!!", "Five years. The tree is fully grown, so I built a little house in it. Pip's place. Come visit."},
   {"Six years!!", "Six years. I made the house wider and put in a new window. More light now."},
   {"Seven years!!", "Seven years. A second floor went up, and a cat moved in. She picked us, I think."},
   {"Eight years!!", "Eight years. Someone special moved in, and brought a dog. The house is full now."},

@@ -1,9 +1,9 @@
 {
- "_comment": "The gnome's notes. 'daily' is indexed by days sober (0 = the sober date, up to 30). 'months' is 1 to 11 months. 'years' is: 1 year, 2-4, 5, 6-9, 10 and up ({n} becomes the number). 'rainy' rotates on wet or foggy days after the first month; index 2 is used for storms and 4 for fog. 'activity' is one line per pose, in pose order, shown on his page on ordinary days.",
+ "_comment": "The notes of Pip, the gnome. 'daily' is indexed by days sober (0 = the sober date, up to 30). 'months' is 1 to 11 months. 'years' is one note per year for 1 to 15, then one for 16 and up ({n} becomes the number). 'rainy' rotates on wet or foggy days after the first month; index 2 is used for storms and 4 for fog. 'activity' is one line per pose, in pose order, shown on his page on ordinary days.",
  "daily": [
   {
    "short": "You began today.",
-   "full": "The hardest step is the first one. You took it. I'm glad you're here."
+   "full": "The hardest step is the first one. You took it. I'm Pip, and I'm so glad you're here."
   },
   {
    "short": "One day. Well done",
@@ -175,7 +175,7 @@
  "years": [
   {
    "short": "ONE YEAR!!!",
-   "full": "A whole year. The tree gave its first apple today, and it's yours. Happy birthday."
+   "full": "A whole year. The tree gave its first apple today, and it's yours. Happy birthday, from Pip."
   },
   {
    "short": "Two years!!",
@@ -191,7 +191,7 @@
   },
   {
    "short": "Five years!!!",
-   "full": "Five years. The tree is fully grown, so I built a little house in it. Come visit."
+   "full": "Five years. The tree is fully grown, so I built a little house in it. Pip's place. Come visit."
   },
   {
    "short": "Six years!!",

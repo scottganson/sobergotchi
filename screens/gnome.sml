@@ -1,7 +1,7 @@
 <!-- The gnome's page: what he is up to today, and his note when he has one. -->
 <screen id="gnome">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">Gnome</text>
+    <text w="*" font="label-b">Pip</text>
     <text w="42" font="small-b" align="right">{today:MMM d}</text>
   </row>
   <image h="126" src="gnomebig" index="{gnome.pose}" valign="bottom"/>
