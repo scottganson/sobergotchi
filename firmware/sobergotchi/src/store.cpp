@@ -2,6 +2,8 @@
 
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
+#include <nrf_sdm.h>
+#include <nrf_soc.h>
 #include <stddef.h>
 
 #include "datemath.h"
@@ -28,19 +30,32 @@ static void writeFile(const char* path, const void* buf, size_t len) {
   }
 }
 
+// A random device ID. Once Bluetooth is running the SoftDevice owns the random number generator, and touching
+// NRF_RNG directly then faults or hangs (that is what froze the factory reset in v1.12 to v1.14), so ask it instead.
 static uint32_t randomId() {
   uint32_t r = 0;
-  for (int i = 0; i < 4; i++) {  // hardware random number generator
-    NRF_RNG->EVENTS_VALRDY = 0;
-    NRF_RNG->TASKS_START = 1;
-    while (!NRF_RNG->EVENTS_VALRDY) {}
-    r = (r << 8) | NRF_RNG->VALUE;
-    NRF_RNG->TASKS_STOP = 1;
+  uint8_t sdOn = 0;
+  sd_softdevice_is_enabled(&sdOn);
+  if (sdOn) {
+    for (int tries = 0; tries < 50; tries++) {
+      if (sd_rand_application_vector_get((uint8_t*)&r, sizeof r) == NRF_SUCCESS) break;
+      delay(2);  // its pool refills in the background
+    }
+    if (!r) r = (uint32_t)micros() * 2654435761u ^ settings.uid;  // pool still empty: anything that differs from before
+  } else {
+    for (int i = 0; i < 4; i++) {  // hardware random number generator, before Bluetooth starts
+      NRF_RNG->EVENTS_VALRDY = 0;
+      NRF_RNG->TASKS_START = 1;
+      while (!NRF_RNG->EVENTS_VALRDY) {}
+      r = (r << 8) | NRF_RNG->VALUE;
+      NRF_RNG->TASKS_STOP = 1;
+    }
   }
   return r ? r : 1;
 }
 
 static void defaults(uint32_t clockSecs) {
+  const uint32_t uid = randomId();
   memset(&settings, 0, sizeof settings);
   settings.magic = MAGIC;
   settings.version = VERSION;
@@ -48,7 +63,7 @@ static void defaults(uint32_t clockSecs) {
   strncpy(settings.phone, DEFAULT_PHONE, PHONE_LEN);
   settings.soberDay = daysFromCivil(DEFAULT_SOBER_YEAR, DEFAULT_SOBER_MONTH, DEFAULT_SOBER_DAY);
   settings.clockSecs = clockSecs;
-  settings.uid = randomId();
+  settings.uid = uid;
   settings.setupDone = 0;  // Pip asks for the name, sobriety date and phone
 }
 
