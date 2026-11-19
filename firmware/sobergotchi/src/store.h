@@ -12,6 +12,7 @@ struct Settings {
   int32_t soberDay;            // day number (days since 1970-01-01)
   uint32_t clockSecs;          // last known local time, seconds since 1970-01-01
   uint32_t uid;                // random ID that identifies this device to friends
+  uint32_t setupDone;          // 0 until Pip's first-time setup is finished (fresh flash or factory reset)
 };
 
 struct Friend {
@@ -35,5 +36,8 @@ void saveFriends();
 bool upsertFriend(const Friend& f);
 void deleteFriend(int index);
 void clearFriends();
+// Forgets the name, phone, sobriety date and every friend, and gives the device a new ID. Keeps the date.
+// Pip's first-time setup runs again afterwards.
+void factoryReset();
 
 }  // namespace store

@@ -2,6 +2,9 @@
 
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
+#include <nrf_sdm.h>
+#include <nrf_soc.h>
+#include <stddef.h>
 
 #include "datemath.h"
 
@@ -18,14 +21,6 @@ Settings settings;
 Friend friends[MAX_FRIENDS];
 int friendCount = 0;
 
-static bool readFile(const char* path, void* buf, size_t len) {
-  File f(InternalFS);
-  if (!f.open(path, FILE_O_READ)) return false;
-  size_t got = f.read((uint8_t*)buf, len);
-  f.close();
-  return got == len;
-}
-
 static void writeFile(const char* path, const void* buf, size_t len) {
   InternalFS.remove(path);
   File f(InternalFS);
@@ -35,25 +30,60 @@ static void writeFile(const char* path, const void* buf, size_t len) {
   }
 }
 
-void begin() {
-  InternalFS.begin();
-  if (!readFile(SETTINGS_FILE, &settings, sizeof settings) || settings.magic != MAGIC || settings.version != VERSION) {
-    memset(&settings, 0, sizeof settings);
-    settings.magic = MAGIC;
-    settings.version = VERSION;
-    strncpy(settings.name, DEFAULT_NAME, NAME_LEN);
-    strncpy(settings.phone, DEFAULT_PHONE, PHONE_LEN);
-    settings.soberDay = daysFromCivil(DEFAULT_SOBER_YEAR, DEFAULT_SOBER_MONTH, DEFAULT_SOBER_DAY);
-    settings.clockSecs = 0;
-    uint32_t r = 0;
-    for (int i = 0; i < 4; i++) {  // hardware random number generator
+// A random device ID. Once Bluetooth is running the SoftDevice owns the random number generator, and touching
+// NRF_RNG directly then faults or hangs (that is what froze the factory reset in v1.12 to v1.14), so ask it instead.
+static uint32_t randomId() {
+  uint32_t r = 0;
+  uint8_t sdOn = 0;
+  sd_softdevice_is_enabled(&sdOn);
+  if (sdOn) {
+    for (int tries = 0; tries < 50; tries++) {
+      if (sd_rand_application_vector_get((uint8_t*)&r, sizeof r) == NRF_SUCCESS) break;
+      delay(2);  // its pool refills in the background
+    }
+    if (!r) r = (uint32_t)micros() * 2654435761u ^ settings.uid;  // pool still empty: anything that differs from before
+  } else {
+    for (int i = 0; i < 4; i++) {  // hardware random number generator, before Bluetooth starts
       NRF_RNG->EVENTS_VALRDY = 0;
       NRF_RNG->TASKS_START = 1;
       while (!NRF_RNG->EVENTS_VALRDY) {}
       r = (r << 8) | NRF_RNG->VALUE;
       NRF_RNG->TASKS_STOP = 1;
     }
-    settings.uid = r ? r : 1;
+  }
+  return r ? r : 1;
+}
+
+static void defaults(uint32_t clockSecs) {
+  const uint32_t uid = randomId();
+  memset(&settings, 0, sizeof settings);
+  settings.magic = MAGIC;
+  settings.version = VERSION;
+  strncpy(settings.name, DEFAULT_NAME, NAME_LEN);
+  strncpy(settings.phone, DEFAULT_PHONE, PHONE_LEN);
+  settings.soberDay = daysFromCivil(DEFAULT_SOBER_YEAR, DEFAULT_SOBER_MONTH, DEFAULT_SOBER_DAY);
+  settings.clockSecs = clockSecs;
+  settings.uid = uid;
+  settings.setupDone = 0;  // Pip asks for the name, sobriety date and phone
+}
+
+void begin() {
+  InternalFS.begin();
+  // Settings saved before v1.12 end just before setupDone: keep them and count setup as done.
+  const size_t oldSize = offsetof(Settings, setupDone);
+  memset(&settings, 0, sizeof settings);
+  File sf(InternalFS);
+  size_t got = 0;
+  if (sf.open(SETTINGS_FILE, FILE_O_READ)) {
+    const int r = sf.read((uint8_t*)&settings, sizeof settings);
+    got = r > 0 ? (size_t)r : 0;
+    sf.close();
+  }
+  if (got == oldSize && settings.magic == MAGIC && settings.version == VERSION) {
+    settings.setupDone = 1;
+    saveSettings();
+  } else if (got != sizeof settings || settings.magic != MAGIC || settings.version != VERSION) {
+    defaults(0);
     saveSettings();
   }
   File f(InternalFS);
@@ -109,6 +139,12 @@ void deleteFriend(int index) {
 void clearFriends() {
   friendCount = 0;
   saveFriends();
+}
+
+void factoryReset() {
+  defaults(settings.clockSecs);
+  saveSettings();
+  clearFriends();
 }
 
 }  // namespace store
