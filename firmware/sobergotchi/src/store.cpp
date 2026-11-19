@@ -2,6 +2,7 @@
 
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
+#include <stddef.h>
 
 #include "datemath.h"
 
@@ -18,14 +19,6 @@ Settings settings;
 Friend friends[MAX_FRIENDS];
 int friendCount = 0;
 
-static bool readFile(const char* path, void* buf, size_t len) {
-  File f(InternalFS);
-  if (!f.open(path, FILE_O_READ)) return false;
-  size_t got = f.read((uint8_t*)buf, len);
-  f.close();
-  return got == len;
-}
-
 static void writeFile(const char* path, const void* buf, size_t len) {
   InternalFS.remove(path);
   File f(InternalFS);
@@ -35,25 +28,47 @@ static void writeFile(const char* path, const void* buf, size_t len) {
   }
 }
 
+static uint32_t randomId() {
+  uint32_t r = 0;
+  for (int i = 0; i < 4; i++) {  // hardware random number generator
+    NRF_RNG->EVENTS_VALRDY = 0;
+    NRF_RNG->TASKS_START = 1;
+    while (!NRF_RNG->EVENTS_VALRDY) {}
+    r = (r << 8) | NRF_RNG->VALUE;
+    NRF_RNG->TASKS_STOP = 1;
+  }
+  return r ? r : 1;
+}
+
+static void defaults(uint32_t clockSecs) {
+  memset(&settings, 0, sizeof settings);
+  settings.magic = MAGIC;
+  settings.version = VERSION;
+  strncpy(settings.name, DEFAULT_NAME, NAME_LEN);
+  strncpy(settings.phone, DEFAULT_PHONE, PHONE_LEN);
+  settings.soberDay = daysFromCivil(DEFAULT_SOBER_YEAR, DEFAULT_SOBER_MONTH, DEFAULT_SOBER_DAY);
+  settings.clockSecs = clockSecs;
+  settings.uid = randomId();
+  settings.setupDone = 0;  // Pip asks for the name, sobriety date and phone
+}
+
 void begin() {
   InternalFS.begin();
-  if (!readFile(SETTINGS_FILE, &settings, sizeof settings) || settings.magic != MAGIC || settings.version != VERSION) {
-    memset(&settings, 0, sizeof settings);
-    settings.magic = MAGIC;
-    settings.version = VERSION;
-    strncpy(settings.name, DEFAULT_NAME, NAME_LEN);
-    strncpy(settings.phone, DEFAULT_PHONE, PHONE_LEN);
-    settings.soberDay = daysFromCivil(DEFAULT_SOBER_YEAR, DEFAULT_SOBER_MONTH, DEFAULT_SOBER_DAY);
-    settings.clockSecs = 0;
-    uint32_t r = 0;
-    for (int i = 0; i < 4; i++) {  // hardware random number generator
-      NRF_RNG->EVENTS_VALRDY = 0;
-      NRF_RNG->TASKS_START = 1;
-      while (!NRF_RNG->EVENTS_VALRDY) {}
-      r = (r << 8) | NRF_RNG->VALUE;
-      NRF_RNG->TASKS_STOP = 1;
-    }
-    settings.uid = r ? r : 1;
+  // Settings saved before v1.12 end just before setupDone: keep them and count setup as done.
+  const size_t oldSize = offsetof(Settings, setupDone);
+  memset(&settings, 0, sizeof settings);
+  File sf(InternalFS);
+  size_t got = 0;
+  if (sf.open(SETTINGS_FILE, FILE_O_READ)) {
+    const int r = sf.read((uint8_t*)&settings, sizeof settings);
+    got = r > 0 ? (size_t)r : 0;
+    sf.close();
+  }
+  if (got == oldSize && settings.magic == MAGIC && settings.version == VERSION) {
+    settings.setupDone = 1;
+    saveSettings();
+  } else if (got != sizeof settings || settings.magic != MAGIC || settings.version != VERSION) {
+    defaults(0);
     saveSettings();
   }
   File f(InternalFS);
@@ -109,6 +124,12 @@ void deleteFriend(int index) {
 void clearFriends() {
   friendCount = 0;
   saveFriends();
+}
+
+void factoryReset() {
+  defaults(settings.clockSecs);
+  saveSettings();
+  clearFriends();
 }
 
 }  // namespace store

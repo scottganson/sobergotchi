@@ -118,6 +118,10 @@
   {
    "label": "Version",
    "value": "1.0"
+  },
+  {
+   "label": "Factory reset",
+   "value": "start over with Pip"
   }
  ],
  "friend.name": "Sam R.",
@@ -274,6 +278,58 @@
     "sober.num": "90",
     "sober.unit": "DAYS"
    }
+  ],
+  "confirm": [
+   {},
+   {
+    "confirm.title": "Factory reset",
+    "confirm.text": "Erase your name, date, phone and friends, and start over?",
+    "confirm.ok": "Yes, erase it"
+   }
+  ],
+  "intro": [
+   {
+    "intro.title": "Hello!",
+    "intro.step": "1/6",
+    "intro.pose": 1,
+    "hint": "● next",
+    "intro.text": "Hello there, friend. I'm Pip. I look after the little garden in here, and I'd love to keep you company, one day at a time."
+   },
+   {
+    "intro.title": "Your name",
+    "intro.step": "2/6",
+    "intro.pose": 0,
+    "hint": "▲ back  ·  ● next",
+    "intro.text": "Let's get to know each other. What would you like me to call you?"
+   },
+   {
+    "intro.title": "Sobriety date",
+    "intro.step": "3/6",
+    "intro.pose": 4,
+    "hint": "▲ back  ·  ● next",
+    "intro.text": "It's good to meet you, Scott. When did your sobriety begin? I'll count every day from there."
+   },
+   {
+    "intro.title": "Friends",
+    "intro.step": "4/6",
+    "intro.pose": 5,
+    "hint": "▲ back  ·  ● next",
+    "intro.text": "Hold your Sobergotchi near another one to become friends. You'll swap your name, phone number and sobriety date."
+   },
+   {
+    "intro.title": "Your phone",
+    "intro.step": "5/6",
+    "intro.pose": 7,
+    "hint": "▲ back  ·  ● next",
+    "intro.text": "What number should your friends call? If you'd rather not share one, pick Cancel to skip."
+   },
+   {
+    "intro.title": "All set",
+    "intro.step": "6/6",
+    "intro.pose": 9,
+    "hint": "▲ back  ·  ● begin",
+    "intro.text": "That's everything, Scott. Our garden grows with every sober day. Come and visit me any time."
+   }
   ]
  },
  "sober.short": "2y 2m 27d",
@@ -353,5 +409,8 @@
  "kb.a2": "Save",
  "kb.ah2": false,
  "kb.a3": "Cancel",
- "kb.ah3": false
+ "kb.ah3": false,
+ "confirm.title": "Sobriety date",
+ "confirm.text": "Are you sure you want to change your sobriety date?",
+ "confirm.ok": "Yes, change it"
 }

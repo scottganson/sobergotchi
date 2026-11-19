@@ -74,7 +74,9 @@ Named in `fonts/fonts.json`: `small`, `small-b`, `label`, `label-b`, `body`, `ti
 | `rps.name`, `rps.mine`, `rps.theirs`, `rps.result` | rock-paper-scissors |
 | `edit.title`, `edit.l0..3`, `edit.v0..3`, `edit.s0..3`, `edit.has3`, `edit.text` | editors |
 | `kb.v<r>`, `kb.c<r><c>`, `kb.h<r><c>`, `kb.a<i>`, `kb.ah<i>` | name / phone keyboard: row shown, key label, key highlighted, action label, action highlighted |
-| `confirm.yes` | Yes highlighted on the sobriety-date question |
+| `confirm.yes` | Yes highlighted on an "Are you sure?" question (sobriety date or factory reset) |
+| `confirm.title`, `confirm.text`, `confirm.ok` | that question's header, wording and Yes label |
+| `intro.title`, `intro.text`, `intro.pose`, `intro.step` | Pip's first-time setup page: header, what he says, his pose (0 to 9), "2/6" |
 
 Sample values for the previews live in `tools/preview_data.json`. To add a new value, add it to `Data::value()` in `firmware/sobergotchi/src/app.cpp` and to the preview data.
 

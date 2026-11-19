@@ -20,13 +20,14 @@ enum Mode : uint8_t {
   M_FRIENDS,        // picking a friend in the list
   M_FRIEND_CARD,    // one friend
   M_MENU,           // picking a setting
-  M_CONFIRM_SOBER,  // "Are you sure?" before the sobriety date editor
+  M_CONFIRM,        // "Are you sure?" before the sobriety date editor or a factory reset
+  M_INTRO,          // Pip's first-time setup (fresh flash or factory reset)
   M_EDIT_DATE,
   M_EDIT_TEXT,
 };
 
 static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM;
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
@@ -52,7 +53,14 @@ static int editField;
 static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
 static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
-static bool confirmYes = false;  // on the sobriety-date question: Yes highlighted (starts on Cancel)
+static bool confirmYes = false;  // on an "Are you sure?" question: Yes highlighted (starts on Cancel)
+enum ConfirmWhat : uint8_t { C_SOBER, C_RESET };
+static ConfirmWhat confirmWhat = C_SOBER;
+
+// Pip's first-time setup: a page per step; the name, sober date and phone pages open the usual editors.
+enum IntroStep : uint8_t { I_HELLO, I_NAME, I_SOBER, I_FRIENDS, I_PHONE, I_DONE, I_COUNT };
+static int introStep = I_HELLO;
+static bool inIntro() { return !store::settings.setupDone; }
 
 // Name / phone keyboard: up/down step through every key, then the actions under them (wrapping round); enter types
 // the highlighted key or does the action. '^' is the Aa key (flips the case of the next letter).
@@ -296,9 +304,10 @@ static int nextFriend() {  // index into store::friends of the soonest anniversa
 // ---------------------------------------------------------------------------
 // values for the screens
 // ---------------------------------------------------------------------------
-static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Battery", "Version", "Back"};
-static const int MENU_COUNT = 7;
-static const int MENU_BACK = 6;
+static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Battery", "Version", "Factory reset", "Back"};
+static const int MENU_COUNT = 8;
+static const int MENU_RESET = 6;
+static const int MENU_BACK = 7;
 
 class Data : public UiData {
  public:
@@ -388,6 +397,12 @@ class Data : public UiData {
     if (!strcmp(key, "friends.sel")) return num(mode == M_FRIENDS ? friendSel : -1);
     if (!strcmp(key, "menu.sel")) return num(mode == M_MENU ? menuSel : -1);
     if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
+    if (!strcmp(key, "confirm.title")) return str(confirmWhat == C_RESET ? "Factory reset" : "Sobriety date");
+    if (!strcmp(key, "confirm.text"))
+      return str(confirmWhat == C_RESET ? "Erase your name, date, phone and friends, and start over?"
+                                        : "Are you sure you want to change your sobriety date?");
+    if (!strcmp(key, "confirm.ok")) return str(confirmWhat == C_RESET ? "Yes, erase it" : "Yes, change it");
+    if (!strncmp(key, "intro.", 6)) return introValue(key + 6, out, n);
 
     if (!strncmp(key, "reflect.", 8)) {
       const Reflection& r = REFLECTIONS[dayOfYear366(t) % REFLECTION_COUNT];
@@ -429,6 +444,37 @@ class Data : public UiData {
   }
 
  private:
+  // Pip's setup pages: intro.title, intro.text, intro.pose, intro.step
+  void introValue(const char* k, char* out, size_t n) {
+    static const char* const TITLE[I_COUNT] = {"Hello!", "Your name", "Sobriety date", "Friends", "Your phone", "All set"};
+    static const uint8_t POSE[I_COUNT] = {P_WAVE, P_STAND, P_READ, P_TEA, P_LANTERN, P_CHEER};
+    const char* name = store::settings.name;
+    if (!strcmp(k, "title")) { snprintf(out, n, "%s", TITLE[introStep]); return; }
+    if (!strcmp(k, "pose")) { snprintf(out, n, "%d", POSE[introStep]); return; }
+    if (!strcmp(k, "step")) { snprintf(out, n, "%d/%d", introStep + 1, (int)I_COUNT); return; }
+    if (strcmp(k, "text")) return;
+    switch (introStep) {
+      case I_HELLO:
+        snprintf(out, n, "Hello there, friend. I'm Pip. I look after the little garden in here, and I'd love to keep "
+                         "you company, one day at a time.");
+        break;
+      case I_NAME: snprintf(out, n, "Let's get to know each other. What would you like me to call you?"); break;
+      case I_SOBER:
+        snprintf(out, n, "It's good to meet you, %s. When did your sobriety begin? I'll count every day from there.", name);
+        break;
+      case I_FRIENDS:
+        snprintf(out, n, "Hold your Sobergotchi near another one to become friends. You'll swap your name, phone "
+                         "number and sobriety date.");
+        break;
+      case I_PHONE:
+        snprintf(out, n, "What number should your friends call? If you'd rather not share one, pick Cancel to skip.");
+        break;
+      default:
+        snprintf(out, n, "That's everything, %s. Our garden grows with every sober day. Come and visit me any time.", name);
+        break;
+    }
+  }
+
   void itemValue(const char* k, const char* fmt, char* out, size_t n, int32_t t) {
     if (list && !strcmp(list, "menu")) return menuValue(k, out, n);
     if (item == store::friendCount) {  // the "Back" row
@@ -462,6 +508,7 @@ class Data : public UiData {
         break;
       }
       case 5: snprintf(out, n, "%s", FIRMWARE_VERSION); break;
+      case MENU_RESET: snprintf(out, n, "start over with Pip"); break;
     }
   }
 
@@ -539,7 +586,11 @@ class Data : public UiData {
     switch (mode) {
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
-      case M_CONFIRM_SOBER: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
+      case M_CONFIRM: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
+      case M_INTRO:
+        if (introStep == I_HELLO) snprintf(out, n, "\201 next");
+        else snprintf(out, n, "\202 back  \177  \201 %s", introStep == I_DONE ? "begin" : "next");
+        break;
       case M_EDIT_TEXT: snprintf(out, n, "\202 \203 move  \177  \201 pick"); break;
       default:
         if (carousel == 3 && store::friendCount) snprintf(out, n, "\201 choose a friend");
@@ -557,7 +608,8 @@ static Data data;
 static int currentScreen() {
   switch (mode) {
     case M_FRIEND_CARD: return S_FRIEND;
-    case M_CONFIRM_SOBER: return S_CONFIRM;
+    case M_CONFIRM: return S_CONFIRM;
+    case M_INTRO: return S_INTRO;
     case M_EDIT_DATE: return S_EDIT_DATE;
     case M_EDIT_TEXT: return S_EDIT_TEXT;
     case M_FRIENDS: return S_FRIENDS;
@@ -603,7 +655,7 @@ static void startEditDate(EditTarget target) {
   editTarget = target;
   editField = 0;
   editChoice = -1;
-  int32_t day = target == E_SOBER ? store::settings.soberDay : today();
+  int32_t day = target == E_SOBER && !inIntro() ? store::settings.soberDay : today();  // setup starts from today
   Ymd d = civilFromDays(day);
   editY = d.y; editM = d.m; editD = d.d;
   editH = (hw::now() % 86400UL) / 3600UL;
@@ -613,7 +665,7 @@ static void startEditDate(EditTarget target) {
 static void startEditText(EditTarget target) {
   editTarget = target;
   memset(editBuf, 0, sizeof editBuf);
-  strncpy(editBuf, target == E_NAME ? store::settings.name : store::settings.phone, editMax());
+  if (!inIntro()) strncpy(editBuf, target == E_NAME ? store::settings.name : store::settings.phone, editMax());
   kbSel = 0;
   kbShift = false;
   mode = M_EDIT_TEXT;
@@ -633,11 +685,12 @@ static void saveEditDate() {
   reflectPage = 0;
 }
 
-static void saveEditText() {
+static bool saveEditText() {  // false when a name was left empty (nothing saved)
   int len = strlen(editBuf);
   while (len > 0 && editBuf[len - 1] == ' ') editBuf[--len] = 0;
   if (editTarget == E_NAME) {
-    if (len) strncpy(store::settings.name, editBuf, NAME_LEN + 1);
+    if (!len) return false;
+    strncpy(store::settings.name, editBuf, NAME_LEN + 1);
   } else {
     char digits[PHONE_LEN + 1];
     int m = 0;
@@ -647,6 +700,27 @@ static void saveEditText() {
     strncpy(store::settings.phone, digits, PHONE_LEN + 1);
   }
   store::saveSettings();
+  return true;
+}
+
+// Where an editor goes when it closes: back to Settings, or during setup on to Pip's next page.
+static void editClosed(bool saved) {
+  if (!inIntro()) { mode = M_MENU; return; }
+  mode = M_INTRO;
+  if (saved || editTarget == E_PHONE) introStep++;  // the phone may be skipped with Cancel
+}
+
+static void startIntro() {
+  introStep = I_HELLO;
+  mode = M_INTRO;
+}
+
+static void finishIntro() {
+  store::settings.setupDone = 1;
+  store::settings.clockSecs = hw::now();
+  store::saveSettings();
+  sortFriends();
+  mode = M_CAROUSEL;
 }
 
 static void stepDate(int dir) {
@@ -664,6 +738,19 @@ static void stepDate(int dir) {
 static void handleKey(Event e) {
   if (e == EV_KEY2_LONG) e = EV_KEY2;  // no hold actions: a long press is just enter
   switch (mode) {
+    case M_INTRO:
+      if (e == EV_KEY1 && introStep > I_HELLO) introStep--;
+      else if (e == EV_KEY2 || e == EV_KEY3) {
+        switch (introStep) {
+          case I_NAME: startEditText(E_NAME); break;
+          case I_SOBER: startEditDate(E_SOBER); break;
+          case I_PHONE: startEditText(E_PHONE); break;
+          case I_DONE: finishIntro(); break;
+          default: introStep++; break;
+        }
+      }
+      break;
+
     case M_CAROUSEL:
       if (e == EV_KEY1) { carousel = (carousel + CAROUSEL_COUNT - 1) % CAROUSEL_COUNT; reflectPage = 0; }
       else if (e == EV_KEY3) { carousel = (carousel + 1) % CAROUSEL_COUNT; reflectPage = 0; }
@@ -705,21 +792,28 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2_LONG) mode = M_CAROUSEL;
       else if (e == EV_KEY2) {
         switch (menuSel) {
-          case 0: mode = M_CONFIRM_SOBER; confirmYes = false; break;
+          case 0: mode = M_CONFIRM; confirmWhat = C_SOBER; confirmYes = false; break;
           case 1: startEditDate(E_TODAY); break;
           case 2: startEditText(E_NAME); break;
           case 3: startEditText(E_PHONE); break;
+          case MENU_RESET: mode = M_CONFIRM; confirmWhat = C_RESET; confirmYes = false; break;
           case MENU_BACK: mode = M_CAROUSEL; break;
           default: break;
         }
       }
       break;
 
-    case M_CONFIRM_SOBER:
+    case M_CONFIRM:
       if (e == EV_KEY1 || e == EV_KEY3) confirmYes = !confirmYes;
       else if (e == EV_KEY2) {
-        if (confirmYes) startEditDate(E_SOBER);
-        else mode = M_MENU;
+        if (!confirmYes) mode = M_MENU;
+        else if (confirmWhat == C_SOBER) startEditDate(E_SOBER);
+        else {
+          store::factoryReset();
+          sortFriends();
+          menuSel = -1;
+          startIntro();
+        }
       }
       break;
 
@@ -728,9 +822,10 @@ static void handleKey(Event e) {
       if (editChoice >= 0) {  // after the last field: Save / Cancel
         if (e == EV_KEY1 || e == EV_KEY3) editChoice ^= 1;
         else if (e == EV_KEY2) {
-          if (editChoice == 0) saveEditDate();
+          const bool save = editChoice == 0;
+          if (save) saveEditDate();
           editChoice = -1;
-          mode = M_MENU;
+          editClosed(save);
         }
       } else if (e == EV_KEY1) stepDate(+1);  // up
       else if (e == EV_KEY3) stepDate(-1);    // down
@@ -750,8 +845,8 @@ static void handleKey(Event e) {
         switch (kbAction(kbSel - kbKeys())) {
           case A_SPACE: if (len > 0 && len < editMax() && editBuf[len - 1] != ' ') editBuf[len] = ' '; break;
           case A_DELETE: if (len > 0) editBuf[len - 1] = 0; kbShift = false; break;
-          case A_SAVE: saveEditText(); mode = M_MENU; break;
-          case A_CANCEL: mode = M_MENU; break;
+          case A_SAVE: editClosed(saveEditText()); break;
+          case A_CANCEL: editClosed(false); break;
         }
       }
       break;
@@ -800,15 +895,32 @@ void begin() {
   S_ADDED = ui::screenByName("added");
   S_RPS = ui::screenByName("rps");
   S_GNOME = ui::screenByName("gnome");
+  S_INTRO = ui::screenByName("intro");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();
   hw::setNow(store::settings.clockSecs > built ? store::settings.clockSecs : built);
   sortFriends();
+  if (inIntro()) {  // fresh flash: Pip says hello and asks for the name, sober date and phone
+    startIntro();
+    show(true);
+    sessionDirty = false;
+    display::sleep();
+    return;
+  }
   goHome(true);
 }
 
 void loop() {
+  if (inIntro()) {  // setup waits for the buttons: no idle timeout, no friend taps until Pip knows who you are
+    Event e = hw::wait(IDLE_TIMEOUT_MS);
+    if (e == EV_TIMEOUT) { display::sleep(); return; }
+    if (e == EV_REED) return;
+    handleKey(e);
+    if (mode == M_CAROUSEL) goHome(true);  // setup finished: a clean full refresh onto the home screen
+    else show(false);
+    return;
+  }
   bool home = mode == M_CAROUSEL && carousel == 0 && !sessionDirty;
   // At home: sleep until midnight. Elsewhere: until the idle timeout.
   uint32_t timeout = home ? hw::secondsToMidnight() * 1000UL + 2000UL : IDLE_TIMEOUT_MS;

@@ -29,15 +29,15 @@ static const UiNode SCREEN_anniversary_nodes[] = {
 static const UiNode SCREEN_confirm_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 18}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
-  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Sobriety date", nullptr, nullptr, 0}, // <text>
+  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "{confirm.title}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 22, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {2, 3, 1, 0, 0, 0, 6, 43, 110, 70, 15, 0, "Are you sure you want to change your sobriety date?", "0", nullptr, 0}, // <wrap>
+  {2, 3, 1, 0, 0, 0, 6, 43, 110, 70, 15, 0, "{confirm.text}", "0", nullptr, 0}, // <wrap>
   {0, 0, 4, 0, 0, 0, 0, 113, 122, 22, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
   {0, 0, 4, 0, 0, 0, 10, 137, 102, 34, 0, 0, nullptr, nullptr, nullptr, 4}, // <stack>
   {0, 0, 4, 0, 1, 6, 10, 137, 102, 34, 0, 0, nullptr, nullptr, "!confirm.yes", 1}, // <row>
-  {1, 2, 5, 0, 0, 0, 10, 137, 102, 34, 0, 0, "Yes, change it", nullptr, nullptr, 0}, // <text>
+  {1, 2, 5, 0, 0, 0, 10, 137, 102, 34, 0, 0, "{confirm.ok}", nullptr, nullptr, 0}, // <text>
   {0, 0, 20, 1, 0, 6, 10, 137, 102, 34, 0, 0, nullptr, nullptr, "confirm.yes", 1}, // <row>
-  {1, 2, 5, 0, 0, 0, 10, 137, 102, 34, 0, 0, "Yes, change it", nullptr, nullptr, 0}, // <text>
+  {1, 2, 5, 0, 0, 0, 10, 137, 102, 34, 0, 0, "{confirm.ok}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 10, 175, 102, 34, 0, 0, nullptr, nullptr, nullptr, 4}, // <stack>
   {0, 0, 4, 0, 1, 6, 10, 175, 102, 34, 0, 0, nullptr, nullptr, "confirm.yes", 1}, // <row>
   {1, 2, 5, 0, 0, 0, 10, 175, 102, 34, 0, 0, "Cancel", nullptr, nullptr, 0}, // <text>
@@ -269,6 +269,16 @@ static const UiNode SCREEN_gnome_nodes[] = {
   {2, 2, 1, 0, 0, 0, 4, 167, 114, 74, 13, 0, "{note.full}", "0", nullptr, 0}, // <wrap>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
+static const UiNode SCREEN_intro_nodes[] = {
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 7}, // <col>
+  {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
+  {1, 3, 4, 0, 0, 0, 5, 0, 83, 21, 0, 0, "{intro.title}", nullptr, nullptr, 0}, // <text>
+  {1, 1, 6, 0, 0, 0, 88, 0, 30, 21, 0, 0, "{intro.step}", nullptr, nullptr, 0}, // <text>
+  {3, 0, 9, 0, 0, 0, 0, 21, 122, 96, 95, 10, "{intro.pose}", nullptr, nullptr, 0}, // <image>
+  {2, 2, 1, 0, 0, 0, 4, 120, 114, 113, 13, 0, "{intro.text}", "0", nullptr, 0}, // <wrap>
+  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+};
 static const UiNode SCREEN_main_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 30}, // <col>
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 15, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
@@ -346,6 +356,7 @@ static const UiScreen UI_SCREENS[] = {
   {"friend", SCREEN_friend_nodes, 19},
   {"friends", SCREEN_friends_nodes, 21},
   {"gnome", SCREEN_gnome_nodes, 9},
+  {"intro", SCREEN_intro_nodes, 8},
   {"main", SCREEN_main_nodes, 31},
   {"menu", SCREEN_menu_nodes, 10},
   {"reflection", SCREEN_reflection_nodes, 10},
@@ -359,8 +370,9 @@ static const UiScreen UI_SCREENS[] = {
 #define SCREEN_FRIEND 5
 #define SCREEN_FRIENDS 6
 #define SCREEN_GNOME 7
-#define SCREEN_MAIN 8
-#define SCREEN_MENU 9
-#define SCREEN_REFLECTION 10
-#define SCREEN_RPS 11
-#define SCREEN_COUNT 12
+#define SCREEN_INTRO 8
+#define SCREEN_MAIN 9
+#define SCREEN_MENU 10
+#define SCREEN_REFLECTION 11
+#define SCREEN_RPS 12
+#define SCREEN_COUNT 13
