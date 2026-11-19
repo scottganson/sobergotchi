@@ -10,7 +10,6 @@ namespace display {
 
 static GxEPD2_BW<GxEPD2_213_GDEY0213B74, GxEPD2_213_GDEY0213B74::HEIGHT> epd(
     GxEPD2_213_GDEY0213B74(PIN_EPD_CS, PIN_EPD_DC, PIN_EPD_RST, PIN_EPD_BUSY));
-static int partials = 0;
 static bool awake = false;
 
 void begin() {
@@ -26,13 +25,10 @@ void begin() {
 
 void show(uint8_t screenId, UiData& data, bool full) {
   pinMode(PIN_EPD_DC, OUTPUT);  // the battery reading borrows this pin
-  if (!full && partials >= FULL_REFRESH_EVERY) full = true;
   if (full) {
     epd.setFullWindow();
-    partials = 0;
   } else {
     epd.setPartialWindow(0, 0, epd.width(), epd.height());
-    partials++;
   }
   if (digitalRead(PIN_EPD_BUSY) == HIGH) {
     // Panel stuck busy (it ignored the wake-up reset): cut its power, start it fresh, force a full refresh.
@@ -44,7 +40,6 @@ void show(uint8_t screenId, UiData& data, bool full) {
     epd.init(0, true, 2, false);
     epd.setRotation(2);
     epd.setFullWindow();
-    partials = 0;
     full = true;
     LOG("screen %d: busy pin %d after power-cycle", screenId, digitalRead(PIN_EPD_BUSY));
   }

@@ -1,7 +1,7 @@
 <!-- Home screen: date and battery, your name, the tree, your sober time, next friend anniversary. -->
 <screen id="main">
   <row h="15" pad="3 3 0 4">
-    <text w="*" font="small-b">{today:dddd, MMM d}</text>
+    <text w="*" font="small-b">{today:ddd, MMM d}</text>
     <battery w="28" align="right"/>
   </row>
   <text h="27" font="name" align="center">{user.name}</text>

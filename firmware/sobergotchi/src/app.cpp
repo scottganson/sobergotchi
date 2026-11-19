@@ -31,7 +31,7 @@ static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
 static int reflectPage = 0, reflectPages = 1;
 static int friendSel = -1, menuSel = -1;
-static bool confirmDelete = false, confirmClear = false;
+static bool confirmDelete = false;
 static bool sessionDirty = false;  // a partial refresh happened since the last full one
 
 // sorted view of friends: soonest anniversary first
@@ -265,9 +265,9 @@ static int nextFriend() {  // index into store::friends of the soonest anniversa
 // ---------------------------------------------------------------------------
 // values for the screens
 // ---------------------------------------------------------------------------
-static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Friends", "Clear friends", "Battery", "Version", "Back"};
-static const int MENU_COUNT = 9;
-static const int MENU_BACK = 8;
+static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Battery", "Version", "Back"};
+static const int MENU_COUNT = 7;
+static const int MENU_BACK = 6;
 
 class Data : public UiData {
  public:
@@ -423,14 +423,12 @@ class Data : public UiData {
       case 1: formatDate(today(), "MMM d, yyyy", out, n); break;
       case 2: snprintf(out, n, "%s", store::settings.name); break;
       case 3: if (store::settings.phone[0]) formatPhone(store::settings.phone, out, n); else snprintf(out, n, "not set"); break;
-      case 4: snprintf(out, n, "%d", store::friendCount); break;
-      case 5: snprintf(out, n, "%s", confirmClear ? "press \201 again to clear all" : ""); break;
-      case 6: {
+      case 4: {
         int cv = (int)(hw::batteryVolts() * 100 + 0.5f);  // no float printf on this core
         snprintf(out, n, "%d%%  \177  %d.%02d V%s", hw::batteryPercent(), cv / 100, cv % 100, hw::charging() ? "  \177  charging" : "");
         break;
       }
-      case 7: snprintf(out, n, "%s", FIRMWARE_VERSION); break;
+      case 5: snprintf(out, n, "%s", FIRMWARE_VERSION); break;
     }
   }
 
@@ -629,7 +627,7 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2) {
         if (carousel == 1) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
         else if (carousel == 2 && store::friendCount) { mode = M_FRIENDS; friendSel = 0; }
-        else if (carousel == 3) { mode = M_MENU; menuSel = 0; confirmClear = false; }
+        else if (carousel == 3) { mode = M_MENU; menuSel = 0; }
       }
       break;
 
@@ -659,8 +657,8 @@ static void handleKey(Event e) {
       break;
 
     case M_MENU:
-      if (e == EV_KEY1 && menuSel > 0) { menuSel--; confirmClear = false; }
-      else if (e == EV_KEY3 && menuSel < MENU_COUNT - 1) { menuSel++; confirmClear = false; }
+      if (e == EV_KEY1 && menuSel > 0) menuSel--;
+      else if (e == EV_KEY3 && menuSel < MENU_COUNT - 1) menuSel++;
       else if (e == EV_KEY2_LONG) mode = M_CAROUSEL;
       else if (e == EV_KEY2) {
         switch (menuSel) {
@@ -668,12 +666,7 @@ static void handleKey(Event e) {
           case 1: startEditDate(E_TODAY); break;
           case 2: startEditText(E_NAME); break;
           case 3: startEditText(E_PHONE); break;
-          case 4: carousel = 2; mode = store::friendCount ? M_FRIENDS : M_CAROUSEL; friendSel = 0; break;
           case MENU_BACK: mode = M_CAROUSEL; break;
-          case 5:
-            if (!confirmClear) confirmClear = true;
-            else { store::clearFriends(); sortFriends(); confirmClear = false; }
-            break;
           default: break;
         }
       }
@@ -752,7 +745,7 @@ static void goHome() {
   mode = M_CAROUSEL;
   carousel = 0;
   reflectPage = 0;
-  confirmDelete = confirmClear = false;
+  confirmDelete = false;
   show(true);
   sessionDirty = false;
   shownDay = today();
