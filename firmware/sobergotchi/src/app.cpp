@@ -28,7 +28,7 @@ enum Mode : uint8_t {
 };
 
 static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO;
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
@@ -45,6 +45,10 @@ static int32_t orderToday = -1;
 static Friend popupFriend;
 static uint8_t rpsMine, rpsTheirs;
 
+// Friends > Add friend: the radio looks for another Sobergotchi while the search screen is up
+static bool searching = false;    // the search screen is showing and the radio is on
+static bool searchNone = false;   // the search ended without finding anyone
+
 // ---------------------------------------------------------------------------
 // editors
 // ---------------------------------------------------------------------------
@@ -55,7 +59,7 @@ static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
 static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
 static bool confirmYes = false;  // on an "Are you sure?" question: Yes highlighted (starts on Cancel)
-enum ConfirmWhat : uint8_t { C_SOBER, C_RESET };
+enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_FRIEND };
 static ConfirmWhat confirmWhat = C_SOBER;
 static bool confirmAgain = false;  // factory reset: the second, "really?" question
 
@@ -323,7 +327,8 @@ class Data : public UiData {
   void wrapPages(int pages) override { reflectPages = pages; }
 
   int listCount(const char* name) override {
-    if (!strcmp(name, "friends")) return store::friendCount ? store::friendCount + 1 : 0;  // last row is "Back"
+    // first row "Add friend", then the friends, last row "Back"; no friends: the empty page (enter adds one)
+    if (!strcmp(name, "friends")) return store::friendCount ? store::friendCount + 2 : 0;
     if (!strcmp(name, "menu")) return menuCount();
     return 0;
   }
@@ -404,13 +409,24 @@ class Data : public UiData {
     if (!strcmp(key, "menu.sel")) return num(mode == M_MENU ? menuSel : -1);
     if (!strcmp(key, "menu.title")) return str(menuUser ? "User settings" : "Settings");
     if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
-    if (!strcmp(key, "confirm.title")) return str(confirmWhat == C_RESET ? "Factory reset" : "Sobriety date");
-    if (!strcmp(key, "confirm.text"))
+    if (!strcmp(key, "confirm.title"))
+      return str(confirmWhat == C_RESET ? "Factory reset" : confirmWhat == C_FRIEND ? "Add friend" : "Sobriety date");
+    if (!strcmp(key, "confirm.text")) {
+      if (confirmWhat == C_FRIEND) { snprintf(out, n, "Make friends with %s?", popupFriend.name); return; }
       return str(confirmWhat == C_SOBER ? "Are you sure you want to change your sobriety date?"
                  : confirmAgain ? "Really erase everything? This can't be undone."
                                 : "Erase your name, date, phone and friends, and start over?");
+    }
     if (!strcmp(key, "confirm.ok"))
-      return str(confirmWhat == C_SOBER ? "Yes, change it" : confirmAgain ? "Yes, erase all" : "Yes, erase it");
+      return str(confirmWhat == C_FRIEND ? "Yes, add them" : confirmWhat == C_SOBER ? "Yes, change it"
+                 : confirmAgain ? "Yes, erase all" : "Yes, erase it");
+    if (!strcmp(key, "search.title")) return str(searchNone ? "No one found" : "Looking...");
+    if (!strcmp(key, "search.text")) {
+      if (searchNone) return str("Ask your friend to pick Add friend too, hold them close and try again.");
+      snprintf(out, n, "Looking for Sobergotchis nearby for %d seconds. Ask your friend to pick Add friend too.",
+               (int)(ADD_FRIEND_MS / 1000));
+      return;
+    }
     if (!strncmp(key, "sys.", 4)) {
       const char* k = key + 4;
       if (!strcmp(k, "battery")) {
@@ -499,14 +515,15 @@ class Data : public UiData {
 
   void itemValue(const char* k, const char* fmt, char* out, size_t n, int32_t t) {
     if (list && !strcmp(list, "menu")) return menuValue(k, out, n);
-    if (item == store::friendCount) {  // the "Back" row
-      if (!strcmp(k, "name")) snprintf(out, n, "Back");
-      else if (!strcmp(k, "back")) snprintf(out, n, "1");
+    if (item == 0 || item == store::friendCount + 1) {  // the "Add friend" and "Back" rows
+      if (!strcmp(k, "name")) snprintf(out, n, "%s", item ? "Back" : "Add friend");
+      else if (!strcmp(k, "back")) snprintf(out, n, "1");  // plain row: no date badge
+      else if (!strcmp(k, "add")) snprintf(out, n, "%s", item ? "" : "1");
       return;
     }
-    if (item < 0 || item >= store::friendCount) return;
+    if (item < 1 || item > store::friendCount) return;
     if (orderToday != t) sortFriends();
-    const Friend& f = store::friends[order[item]];
+    const Friend& f = store::friends[order[item - 1]];
     int32_t a = nextAnniversary(f.soberDay, t);
     if (!strcmp(k, "name")) snprintf(out, n, "%s", f.name);
     else if (!strcmp(k, "date")) formatDate(f.soberDay, fmt, out, n);
@@ -603,8 +620,10 @@ class Data : public UiData {
   }
 
   void hint(char* out, size_t n) {
+    if (searching) { snprintf(out, n, "any button stops"); return; }
+    if (searchNone) { snprintf(out, n, "\201 back"); return; }
     switch (mode) {
-      case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
+      case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 %s", friendSel == 0 ? "add" : "open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       case M_CONFIRM: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
       case M_INTRO:
@@ -613,7 +632,7 @@ class Data : public UiData {
         break;
       case M_EDIT_TEXT: snprintf(out, n, "\202 \203 move  \177  \201 pick"); break;
       default:
-        if (carousel == 3 && store::friendCount) snprintf(out, n, "\201 choose a friend");
+        if (carousel == 3) snprintf(out, n, store::friendCount ? "\201 choose a friend" : "\201 add a friend");
         else if (carousel == 4) snprintf(out, n, "\201 choose a setting");
         break;
     }
@@ -744,6 +763,71 @@ static void finishIntro() {
   mode = M_CAROUSEL;
 }
 
+// ---------------------------------------------------------------------------
+// Friends > Add friend
+// ---------------------------------------------------------------------------
+static bool isFriend(uint32_t uid) {
+  for (int i = 0; i < store::friendCount; i++)
+    if (store::friends[i].uid == uid) return true;
+  return false;
+}
+
+// Back to the friends list after adding (or not), on the given friend's row if there is one.
+static void friendsBack(uint32_t uid) {
+  if (!store::friendCount) { mode = M_CAROUSEL; carousel = 3; return; }
+  mode = M_FRIENDS;
+  if (friendSel < 0) friendSel = 1;
+  if (friendSel > store::friendCount + 1) friendSel = store::friendCount + 1;
+  for (int i = 0; i < store::friendCount; i++)
+    if (uid && store::friends[order[i]].uid == uid) friendSel = i + 1;
+}
+
+// Radio on for up to ADD_FRIEND_MS, looking for another Sobergotchi in Add friend mode (or being tapped). Any button
+// stops early. A new friend is asked about first ("Make friends with Sam?", Cancel highlighted); a friend we already
+// have just gets their card refreshed and a game of rock-paper-scissors, like a tap. The radio is off again after.
+static void addFriend() {
+  searching = true;
+  searchNone = false;
+  display::show(S_SEARCH, data, false);
+  sessionDirty = true;
+  exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
+  LOG("add friend: radio on");
+  const uint32_t t0 = millis();
+  uint32_t foundAt = 0;
+  bool stopped = false;
+  for (;;) {
+    if (foundAt) { if (millis() - foundAt >= ADD_FRIEND_GRACE_MS) break; }  // let them hear us too
+    else if (millis() - t0 >= ADD_FRIEND_MS) break;
+    else if (exchange::found()) { foundAt = millis(); continue; }
+    const Event e = hw::wait(100);
+    if (e != EV_TIMEOUT && e != EV_REED) { stopped = true; break; }
+  }
+  const exchange::Result r = exchange::finish();
+  searching = false;
+  LOG("add friend: radio off, %s", stopped ? "stopped" : r.found ? r.card.name : "no one found");
+  if (stopped) { friendsBack(0); return; }
+  if (!r.found) {
+    searchNone = true;
+    showPopup(S_SEARCH);
+    searchNone = false;
+    friendsBack(0);
+    return;
+  }
+  popupFriend = r.card;
+  rpsMine = r.myThrow;
+  rpsTheirs = r.theirThrow;
+  if (isFriend(r.card.uid)) {
+    store::upsertFriend(r.card);
+    sortFriends();
+    showPopup(S_RPS);
+    friendsBack(r.card.uid);
+    return;
+  }
+  mode = M_CONFIRM;
+  confirmWhat = C_FRIEND;
+  confirmYes = false;  // Cancel highlighted
+}
+
 static void stepDate(int dir) {
   switch (editField) {
     case 0: editM = (editM - 1 + dir + 12) % 12 + 1; break;
@@ -777,7 +861,8 @@ static void handleKey(Event e) {
       else if (e == EV_KEY3) { carousel = (carousel + 1) % CAROUSEL_COUNT; reflectPage = 0; }
       else if (e == EV_KEY2) {
         if (carousel == 2) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
-        else if (carousel == 3 && store::friendCount) { mode = M_FRIENDS; friendSel = 0; }
+        else if (carousel == 3 && store::friendCount) { mode = M_FRIENDS; friendSel = 1; }  // on the first friend
+        else if (carousel == 3) addFriend();                                                // no friends yet
         else if (carousel == 4) { mode = M_MENU; menuUser = false; menuSel = 0; }
       }
       break;
@@ -786,24 +871,25 @@ static void handleKey(Event e) {
       mode = M_MENU;  // any button: back to Settings
       break;
 
-    case M_FRIENDS:
+    case M_FRIENDS:  // rows: 0 Add friend, 1..friendCount the friends, friendCount + 1 Back
       if (e == EV_KEY1 && friendSel > 0) friendSel--;
-      else if (e == EV_KEY3 && friendSel < store::friendCount) friendSel++;  // friendCount = the Back row
-      else if (e == EV_KEY2 && friendSel >= store::friendCount) mode = M_CAROUSEL;
-      else if (e == EV_KEY2 && store::friendCount) {
-        popupFriend = store::friends[order[friendSel]];
+      else if (e == EV_KEY3 && friendSel < store::friendCount + 1) friendSel++;
+      else if (e == EV_KEY2 && friendSel == 0) addFriend();
+      else if (e == EV_KEY2 && friendSel > store::friendCount) mode = M_CAROUSEL;
+      else if (e == EV_KEY2) {
+        popupFriend = store::friends[order[friendSel - 1]];
         confirmDelete = false;
         mode = M_FRIEND_CARD;
-      } else if (e == EV_KEY2_LONG) mode = M_CAROUSEL;
+      }
       break;
 
     case M_FRIEND_CARD:
       if (e == EV_KEY3) {
         if (!confirmDelete) confirmDelete = true;
         else {
-          store::deleteFriend(order[friendSel]);
+          store::deleteFriend(order[friendSel - 1]);
           sortFriends();
-          if (friendSel >= store::friendCount) friendSel = store::friendCount - 1;
+          if (friendSel > store::friendCount) friendSel = store::friendCount;
           mode = store::friendCount ? M_FRIENDS : M_CAROUSEL;
         }
       } else if (e == EV_KEY1 || e == EV_KEY2 || e == EV_KEY2_LONG) {
@@ -835,7 +921,14 @@ static void handleKey(Event e) {
     case M_CONFIRM:
       if (e == EV_KEY1 || e == EV_KEY3) confirmYes = !confirmYes;
       else if (e == EV_KEY2) {
-        if (!confirmYes) mode = M_MENU;
+        if (confirmWhat == C_FRIEND) {
+          if (confirmYes) {
+            store::upsertFriend(popupFriend);
+            sortFriends();
+            showPopup(S_ADDED);
+          }
+          friendsBack(confirmYes ? popupFriend.uid : 0);
+        } else if (!confirmYes) mode = M_MENU;
         else if (confirmWhat == C_SOBER) startEditDate(E_SOBER);
         else if (!confirmAgain) { confirmAgain = true; confirmYes = false; }  // ask twice, Cancel highlighted again
         else {
@@ -929,6 +1022,7 @@ void begin() {
   S_GNOME = ui::screenByName("gnome");
   S_INTRO = ui::screenByName("intro");
   S_SYSINFO = ui::screenByName("sysinfo");
+  S_SEARCH = ui::screenByName("search");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();

@@ -236,16 +236,19 @@ static const UiNode SCREEN_friend_nodes[] = {
   {1, 1, 21, 1, 0, 5, 4, 226, 114, 20, 0, 0, "Press \203 again to delete", nullptr, "friend.confirm", 0}, // <text>
 };
 static const UiNode SCREEN_friends_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 20}, // <col>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 23}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 83, 21, 0, 0, "Friends", nullptr, nullptr, 0}, // <text>
   {1, 1, 6, 0, 0, 0, 88, 0, 30, 21, 0, 0, "{friends.count}", nullptr, nullptr, 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, nullptr, 14}, // <stack>
-  {7, 0, 4, 0, 0, 0, 0, 21, 122, 208, 32, 0, "friends", "{friends.sel}", "friends.any", 8}, // <list>
-  {0, 0, 4, 0, 0, 0, 0, 21, 122, 31, 0, 0, nullptr, nullptr, nullptr, 6}, // <row>
+  {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, nullptr, 17}, // <stack>
+  {7, 0, 4, 0, 0, 0, 0, 21, 122, 208, 32, 0, "friends", "{friends.sel}", "friends.any", 11}, // <list>
+  {0, 0, 4, 0, 0, 0, 0, 21, 122, 31, 0, 0, nullptr, nullptr, nullptr, 9}, // <row>
+  {0, 0, 4, 0, 0, 0, 4, 24, 27, 26, 0, 0, nullptr, nullptr, nullptr, 5}, // <stack>
   {0, 0, 4, 0, 1, 4, 4, 24, 27, 26, 0, 0, nullptr, nullptr, "!item.back", 2}, // <col>
   {1, 1, 21, 1, 0, 3, 4, 24, 27, 11, 0, 0, "{item.date:MMM}", nullptr, nullptr, 0}, // <text>
   {1, 3, 5, 0, 0, 0, 4, 35, 27, 15, 0, 0, "{item.date:d}", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 1, 4, 4, 24, 27, 26, 0, 0, nullptr, nullptr, "item.add", 1}, // <col>
+  {1, 3, 5, 0, 0, 0, 4, 24, 27, 26, 0, 0, "+", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 36, 24, 82, 26, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
   {1, 2, 4, 0, 0, 0, 36, 24, 82, 14, 0, 0, "{item.name}", nullptr, nullptr, 0}, // <text>
   {1, 0, 4, 0, 0, 0, 36, 38, 82, 12, 0, 0, "{item.years} yrs \177 {item.in}", nullptr, "!item.back", 0}, // <text>
@@ -346,6 +349,16 @@ static const UiNode SCREEN_rps_nodes[] = {
   {6, 0, 4, 0, 0, 0, 20, 202, 82, 9, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
   {1, 11, 5, 0, 0, 0, 0, 211, 122, 39, 0, 0, "{rps.result}", nullptr, nullptr, 0}, // <text>
 };
+static const UiNode SCREEN_search_nodes[] = {
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 7}, // <col>
+  {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
+  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Add friend", nullptr, nullptr, 0}, // <text>
+  {3, 0, 5, 0, 0, 0, 0, 21, 122, 122, 5, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {1, 3, 5, 0, 0, 0, 0, 143, 122, 18, 0, 0, "{search.title}", nullptr, nullptr, 0}, // <text>
+  {2, 2, 1, 0, 0, 0, 6, 163, 110, 70, 13, 0, "{search.text}", "0", nullptr, 0}, // <wrap>
+  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+};
 static const UiNode SCREEN_sysinfo_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 25}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
@@ -382,13 +395,14 @@ static const UiScreen UI_SCREENS[] = {
   {"edit-date", SCREEN_edit_date_nodes, 36},
   {"edit-text", SCREEN_edit_text_nodes, 127},
   {"friend", SCREEN_friend_nodes, 19},
-  {"friends", SCREEN_friends_nodes, 21},
+  {"friends", SCREEN_friends_nodes, 24},
   {"gnome", SCREEN_gnome_nodes, 9},
   {"intro", SCREEN_intro_nodes, 8},
   {"main", SCREEN_main_nodes, 31},
   {"menu", SCREEN_menu_nodes, 10},
   {"reflection", SCREEN_reflection_nodes, 10},
   {"rps", SCREEN_rps_nodes, 8},
+  {"search", SCREEN_search_nodes, 8},
   {"sysinfo", SCREEN_sysinfo_nodes, 26},
 };
 #define SCREEN_ADDED 0
@@ -404,5 +418,6 @@ static const UiScreen UI_SCREENS[] = {
 #define SCREEN_MENU 10
 #define SCREEN_REFLECTION 11
 #define SCREEN_RPS 12
-#define SCREEN_SYSINFO 13
-#define SCREEN_COUNT 14
+#define SCREEN_SEARCH 13
+#define SCREEN_SYSINFO 14
+#define SCREEN_COUNT 15

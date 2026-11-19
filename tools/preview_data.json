@@ -35,6 +35,11 @@
  "friends.sel": -1,
  "friends": [
   {
+   "name": "Add friend",
+   "back": true,
+   "add": true
+  },
+  {
    "name": "Sam R.",
    "date": {
     "date": "2021-12-02"
@@ -87,6 +92,10 @@
    "years": 3,
    "in": "10 mos",
    "phone": "289-555-0166"
+  },
+  {
+   "name": "Back",
+   "back": true
   }
  ],
  "reflect.title": "Language of the Heart",
@@ -203,7 +212,7 @@
   "friends": [
    {},
    {
-    "friends.sel": 2,
+    "friends.sel": 0,
     "hint": "● open  ·  hold ● back"
    },
    {
@@ -304,6 +313,11 @@
     "confirm.title": "Factory reset",
     "confirm.text": "Really erase everything? This can't be undone.",
     "confirm.ok": "Yes, erase all"
+   },
+   {
+    "confirm.title": "Add friend",
+    "confirm.text": "Make friends with Sam R.?",
+    "confirm.ok": "Yes, add them"
    }
   ],
   "intro": [
@@ -348,6 +362,16 @@
     "intro.pose": 9,
     "hint": "▲ back  ·  ● begin",
     "intro.text": "That's everything, Scott. Our garden grows with every sober day. Come and visit me any time."
+   }
+  ],
+  "search": [
+   {
+    "hint": "any button stops"
+   },
+   {
+    "search.title": "No one found",
+    "search.text": "Ask your friend to pick Add friend too, hold them close and try again.",
+    "hint": "● back"
    }
   ]
  },
@@ -437,5 +461,7 @@
  "sys.version": "1.15-world12",
  "sys.friends": "4",
  "sys.id": "5A3F09C2",
- "menu.title": "Settings"
+ "menu.title": "Settings",
+ "search.title": "Looking...",
+ "search.text": "Looking for Sobergotchis nearby for 30 seconds. Ask your friend to pick Add friend too."
 }
