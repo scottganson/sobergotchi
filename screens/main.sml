@@ -32,7 +32,7 @@
     <row if="!next.today" pad="2 2 1 2" gap="5" border="1" radius="5">
       <image w="16" src="cake"/>
       <stack w="*">
-        <text font="small-b" if="next.any">{next.name} · {next.years} yrs · {next.date:MMM d}</text>
+        <text font="small-b" if="next.any">{next.name} - {next.date:MMM d}</text>
         <text font="small" if="!next.any">No friends yet</text>
       </stack>
     </row>
