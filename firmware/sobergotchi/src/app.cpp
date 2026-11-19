@@ -741,12 +741,13 @@ static void friendTap() {
 // ---------------------------------------------------------------------------
 static int32_t shownDay = -1;
 
-static void goHome() {
+// Full refresh only at power-up and the midnight redraw; partial otherwise (Scott saw ghosting right after full ones).
+static void goHome(bool full) {
   mode = M_CAROUSEL;
   carousel = 0;
   reflectPage = 0;
   confirmDelete = false;
-  show(true);
+  show(full);
   sessionDirty = false;
   shownDay = today();
   display::sleep();
@@ -769,7 +770,7 @@ void begin() {
   uint32_t built = hw::buildTime();
   hw::setNow(store::settings.clockSecs > built ? store::settings.clockSecs : built);
   sortFriends();
-  goHome();
+  goHome(true);
 }
 
 void loop() {
@@ -780,17 +781,18 @@ void loop() {
   LOG("event %d", (int)e);
 
   if (e == EV_TIMEOUT) {
-    if (!home || today() != shownDay) {
-      // midnight (or the end of a button session): save the clock, redraw home with a full refresh
+    const bool newDay = today() != shownDay;
+    if (!home || newDay) {
+      // midnight (full refresh) or the end of a button session (partial): save the clock, redraw home
       store::settings.clockSecs = hw::now();
       store::saveSettings();
-      goHome();
+      goHome(newDay);
     }
     return;
   }
   if (e == EV_REED) {
     friendTap();
-    goHome();
+    goHome(false);
     return;
   }
   handleKey(e);
