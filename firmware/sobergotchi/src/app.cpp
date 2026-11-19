@@ -46,8 +46,23 @@ static Friend popupFriend;
 static uint8_t rpsMine, rpsTheirs;
 
 // Friends > Add friend: the radio looks for another Sobergotchi while the search screen is up
-static bool searching = false;    // the search screen is showing and the radio is on
+static bool searching = false;    // the search screen is showing
 static bool searchNone = false;   // the search ended without finding anyone
+static bool radioOn = false;      // Add friend window open: the radio stays on until radioOffAt
+static uint32_t radioOffAt = 0;   // millis()
+
+// Turns the radio off once the Add friend window is over. True if it just did.
+static bool radioTick() {
+  if (!radioOn || (int32_t)(millis() - radioOffAt) < 0) return false;
+  exchange::finish();
+  radioOn = false;
+  LOG("add friend: radio off");
+  return true;
+}
+static uint32_t radioLeft() {
+  const int32_t left = (int32_t)(radioOffAt - millis());
+  return radioOn && left > 0 ? (uint32_t)left : 0;
+}
 
 // ---------------------------------------------------------------------------
 // editors
@@ -620,7 +635,7 @@ class Data : public UiData {
   }
 
   void hint(char* out, size_t n) {
-    if (searching) { snprintf(out, n, "any button stops"); return; }
+    if (searching) { snprintf(out, n, "radio on for %d seconds", (int)(ADD_FRIEND_MS / 1000)); return; }
     if (searchNone) { snprintf(out, n, "\201 back"); return; }
     switch (mode) {
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 %s", friendSel == 0 ? "add" : "open"); break;
@@ -683,7 +698,11 @@ static void showPopup(int screenId) {
   sessionDirty = true;
   uint32_t t0 = millis();
   while (millis() - t0 < POPUP_MS) {
-    Event e = hw::wait(POPUP_MS - (millis() - t0));
+    uint32_t left = POPUP_MS - (millis() - t0);
+    if (radioOn && radioLeft() < left) left = radioLeft();
+    Event e = hw::wait(left);
+    radioTick();
+    if (e == EV_TIMEOUT) continue;
     if (e != EV_TIMEOUT && e != EV_REED) break;  // any button closes the pop-up early
   }
 }
@@ -751,6 +770,7 @@ static void editClosed(bool saved) {
 }
 
 static void startIntro() {
+  if (radioOn) { exchange::finish(); radioOn = false; }  // factory reset straight after an Add friend
   introStep = I_HELLO;
   mode = M_INTRO;
 }
@@ -782,30 +802,26 @@ static void friendsBack(uint32_t uid) {
     if (uid && store::friends[order[i]].uid == uid) friendSel = i + 1;
 }
 
-// Radio on for up to ADD_FRIEND_MS, looking for another Sobergotchi in Add friend mode (or being tapped). Any button
-// stops early. A new friend is asked about first ("Make friends with Sam?", Cancel highlighted); a friend we already
-// have just gets their card refreshed and a game of rock-paper-scissors, like a tap. The radio is off again after.
+// Add friend mode, from Friends > Add friend or a reed tap. The radio is on for ADD_FRIEND_MS whatever happens, so
+// the other person has time to start theirs: buttons don't stop it, and finding someone doesn't either. As soon as
+// someone is found we ask ("Make friends with Sam?", Cancel highlighted) while the radio carries on in the background;
+// a friend we already have just gets their card refreshed and a game of rock-paper-scissors.
 static void addFriend() {
+  if (radioOn) { exchange::finish(); radioOn = false; }  // picked Add friend again: a fresh 30 seconds
   searching = true;
   searchNone = false;
   display::show(S_SEARCH, data, false);
   sessionDirty = true;
   exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
+  radioOn = true;
+  radioOffAt = millis() + ADD_FRIEND_MS;
   LOG("add friend: radio on");
-  const uint32_t t0 = millis();
-  uint32_t foundAt = 0;
-  bool stopped = false;
-  for (;;) {
-    if (foundAt) { if (millis() - foundAt >= ADD_FRIEND_GRACE_MS) break; }  // let them hear us too
-    else if (millis() - t0 >= ADD_FRIEND_MS) break;
-    else if (exchange::found()) { foundAt = millis(); continue; }
-    const Event e = hw::wait(100);
-    if (e != EV_TIMEOUT && e != EV_REED) { stopped = true; break; }
+  while (radioOn && !exchange::found()) {
+    hw::wait(radioLeft() < 100 ? radioLeft() : 100);  // buttons and taps are ignored while looking
+    radioTick();
   }
-  const exchange::Result r = exchange::finish();
+  const exchange::Result r = exchange::best();
   searching = false;
-  LOG("add friend: radio off, %s", stopped ? "stopped" : r.found ? r.card.name : "no one found");
-  if (stopped) { friendsBack(0); return; }
   if (!r.found) {
     searchNone = true;
     showPopup(S_SEARCH);
@@ -813,6 +829,7 @@ static void addFriend() {
     friendsBack(0);
     return;
   }
+  LOG("add friend: found %s", r.card.name);
   popupFriend = r.card;
   rpsMine = r.myThrow;
   rpsTheirs = r.theirThrow;
@@ -978,17 +995,6 @@ static void handleKey(Event e) {
   }
 }
 
-static void friendTap() {
-  exchange::Result r = exchange::run(store::settings);
-  if (!r.found) return;
-  bool isNew = store::upsertFriend(r.card);
-  sortFriends();
-  popupFriend = r.card;
-  rpsMine = r.myThrow;
-  rpsTheirs = r.theirThrow;
-  showPopup(isNew ? S_ADDED : S_RPS);
-}
-
 // ---------------------------------------------------------------------------
 // main loop
 // ---------------------------------------------------------------------------
@@ -1051,8 +1057,11 @@ void loop() {
   bool home = mode == M_CAROUSEL && carousel == 0 && !sessionDirty;
   // At home: sleep until midnight. Elsewhere: until the idle timeout.
   uint32_t timeout = home ? hw::secondsToMidnight() * 1000UL + 2000UL : IDLE_TIMEOUT_MS;
+  const bool radioFirst = radioOn && radioLeft() < timeout;  // wake to turn the radio off on time
+  if (radioFirst) timeout = radioLeft();
   Event e = hw::wait(timeout);
   LOG("event %d", (int)e);
+  if (radioTick() && radioFirst && e == EV_TIMEOUT) return;  // only the radio's time was up
 
   if (e == EV_TIMEOUT) {
     const bool newDay = today() != shownDay;
@@ -1064,9 +1073,10 @@ void loop() {
     }
     return;
   }
-  if (e == EV_REED) {
-    friendTap();
-    goHome(false);
+  if (e == EV_REED) {  // a tap: the same as Friends > Add friend, from any screen
+    if (radioOn) return;
+    addFriend();
+    show(false);
     return;
   }
   handleKey(e);

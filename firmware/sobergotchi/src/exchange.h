@@ -15,14 +15,12 @@ struct Result {
   uint8_t myThrow, theirThrow;  // rock-paper-scissors: 1 rock, 2 paper, 3 scissors
 };
 
-// Reed switch tap: swap cards for EXCHANGE_MS with devices a few centimetres away, then radio off.
-Result run(const Settings& me);
-
-// Add friend mode, in steps so the app can show a screen and watch the buttons meanwhile:
-// start() turns the radio on, found() says whether another Sobergotchi has been heard, finish() turns it off and
-// returns the closest one.
+// Add friend mode (Friends > Add friend or a reed tap), in steps so the app can keep the radio on for the whole
+// window while it asks the question: start() turns the radio on, found() says whether another Sobergotchi has been
+// heard, best() gives the closest one so far, finish() turns the radio off.
 void start(const Settings& me, int8_t minRssi);
 bool found();
-Result finish();
+Result best();
+void finish();
 
 }  // namespace exchange

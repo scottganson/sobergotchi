@@ -37,7 +37,7 @@ struct Candidate {
 };
 
 static Candidate cands[4];
-static int8_t minRssi = EXCHANGE_MIN_RSSI;
+static int8_t minRssi = ADD_FRIEND_MIN_RSSI;
 static uint8_t myThrow = 1;
 
 static void onScan(ble_gap_evt_adv_report_t* report) {
@@ -130,10 +130,12 @@ bool found() {
   return false;
 }
 
-Result finish() {
+void finish() {
   Bluefruit.Scanner.stop();
   Bluefruit.Advertising.stop();
+}
 
+Result best() {
   Result res;
   memset(&res, 0, sizeof res);
   res.myThrow = myThrow;
@@ -161,13 +163,6 @@ Result finish() {
     f.phone[n] = 0;
   }
   return res;
-}
-
-Result run(const Settings& me) {
-  start(me, EXCHANGE_MIN_RSSI);
-  uint32_t t0 = millis();
-  while (millis() - t0 < EXCHANGE_MS) delay(50);
-  return finish();
 }
 
 }  // namespace exchange

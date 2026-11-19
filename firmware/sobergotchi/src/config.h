@@ -52,11 +52,9 @@
 #define IDLE_TIMEOUT_MS        30000UL  // back to the home screen after this long without a press
 #define LONG_PRESS_MS          700UL
 #define POPUP_MS               6000UL   // how long "Friend added" / rock-paper-scissors stay up
-#define EXCHANGE_MS            4000UL   // how long to swap cards after the reed closes
-#define EXCHANGE_MIN_RSSI      (-60)    // ignore devices further than a few centimetres away
-#define ADD_FRIEND_MS          30000UL  // Friends > Add friend: how long the radio looks for another Sobergotchi
-#define ADD_FRIEND_GRACE_MS    3000UL   // keep the radio on this much longer after a find, so they hear us too
-#define ADD_FRIEND_MIN_RSSI    (-80)    // Add friend reaches across a table (about 1-2 m), not just back to back
+#define ADD_FRIEND_MS          30000UL  // Add friend (menu or reed tap): the radio is on this long, always, so the
+                                        // other person has time to start theirs too
+#define ADD_FRIEND_MIN_RSSI    (-80)    // reaches across a table (about 1-2 m), not just back to back
 #define MAX_FRIENDS            200
 #define NAME_LEN               12
 #define PHONE_LEN              15
