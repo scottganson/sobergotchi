@@ -20,12 +20,13 @@ enum Mode : uint8_t {
   M_FRIENDS,        // picking a friend in the list
   M_FRIEND_CARD,    // one friend
   M_MENU,           // picking a setting
+  M_CONFIRM_SOBER,  // "Are you sure?" before the sobriety date editor
   M_EDIT_DATE,
   M_EDIT_TEXT,
 };
 
 static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME;
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
@@ -51,7 +52,8 @@ static int editField;
 static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
 static int editPos;
-static int editChoice = -1;  // -1 editing; else the Save / Cancel (/ Space) option highlighted
+static int editChoice = -1;
+static bool confirmYes = false;  // on the sobriety-date question: Yes highlighted (starts on Cancel)  // -1 editing; else the Save / Cancel (/ Space) option highlighted
 static const char NAME_CHARS[] = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-'";
 static const char PHONE_CHARS[] = " 0123456789";
 
@@ -356,6 +358,7 @@ class Data : public UiData {
     if (!strcmp(key, "friends.count")) return num(store::friendCount);
     if (!strcmp(key, "friends.sel")) return num(mode == M_FRIENDS ? friendSel : -1);
     if (!strcmp(key, "menu.sel")) return num(mode == M_MENU ? menuSel : -1);
+    if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
 
     if (!strncmp(key, "reflect.", 8)) {
       const Reflection& r = REFLECTIONS[dayOfYear366(t) % REFLECTION_COUNT];
@@ -499,6 +502,7 @@ class Data : public UiData {
     switch (mode) {
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
+      case M_CONFIRM_SOBER: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
       default:
         if (carousel == 3 && store::friendCount) snprintf(out, n, "\201 choose a friend");
         else if (carousel == 4) snprintf(out, n, "\201 choose a setting");
@@ -515,6 +519,7 @@ static Data data;
 static int currentScreen() {
   switch (mode) {
     case M_FRIEND_CARD: return S_FRIEND;
+    case M_CONFIRM_SOBER: return S_CONFIRM;
     case M_EDIT_DATE: return S_EDIT_DATE;
     case M_EDIT_TEXT: return S_EDIT_TEXT;
     case M_FRIENDS: return S_FRIENDS;
@@ -662,13 +667,22 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2_LONG) mode = M_CAROUSEL;
       else if (e == EV_KEY2) {
         switch (menuSel) {
-          case 0: startEditDate(E_SOBER); break;
+          case 0: mode = M_CONFIRM_SOBER; confirmYes = false; break;
           case 1: startEditDate(E_TODAY); break;
           case 2: startEditText(E_NAME); break;
           case 3: startEditText(E_PHONE); break;
           case MENU_BACK: mode = M_CAROUSEL; break;
           default: break;
         }
+      }
+      break;
+
+    case M_CONFIRM_SOBER:
+      if (e == EV_KEY1 || e == EV_KEY3) confirmYes = !confirmYes;
+      else if (e == EV_KEY2_LONG) mode = M_MENU;
+      else if (e == EV_KEY2) {
+        if (confirmYes) startEditDate(E_SOBER);
+        else mode = M_MENU;
       }
       break;
 
@@ -761,6 +775,7 @@ void begin() {
   S_MENU = ui::screenByName("menu");
   S_FRIEND = ui::screenByName("friend");
   S_EDIT_DATE = ui::screenByName("edit-date");
+  S_CONFIRM = ui::screenByName("confirm");
   S_EDIT_TEXT = ui::screenByName("edit-text");
   S_ADDED = ui::screenByName("added");
   S_RPS = ui::screenByName("rps");
