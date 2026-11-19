@@ -22,12 +22,13 @@ enum Mode : uint8_t {
   M_MENU,           // picking a setting
   M_CONFIRM,        // "Are you sure?" before the sobriety date editor or a factory reset
   M_INTRO,          // Pip's first-time setup (fresh flash or factory reset)
+  M_SYSINFO,        // battery, version and device ID, from Settings
   M_EDIT_DATE,
   M_EDIT_TEXT,
 };
 
 static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO;
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
@@ -56,6 +57,7 @@ static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel 
 static bool confirmYes = false;  // on an "Are you sure?" question: Yes highlighted (starts on Cancel)
 enum ConfirmWhat : uint8_t { C_SOBER, C_RESET };
 static ConfirmWhat confirmWhat = C_SOBER;
+static bool confirmAgain = false;  // factory reset: the second, "really?" question
 
 // Pip's first-time setup: a page per step; the name, sober date and phone pages open the usual editors.
 enum IntroStep : uint8_t { I_HELLO, I_NAME, I_SOBER, I_FRIENDS, I_PHONE, I_DONE, I_COUNT };
@@ -304,10 +306,11 @@ static int nextFriend() {  // index into store::friends of the soonest anniversa
 // ---------------------------------------------------------------------------
 // values for the screens
 // ---------------------------------------------------------------------------
-static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "Battery", "Version", "Factory reset", "Back"};
-static const int MENU_COUNT = 8;
-static const int MENU_RESET = 6;
-static const int MENU_BACK = 7;
+static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "System info", "Factory reset", "Back"};
+static const int MENU_COUNT = 7;
+static const int MENU_SYSINFO = 4;
+static const int MENU_RESET = 5;
+static const int MENU_BACK = 6;
 
 class Data : public UiData {
  public:
@@ -399,9 +402,24 @@ class Data : public UiData {
     if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
     if (!strcmp(key, "confirm.title")) return str(confirmWhat == C_RESET ? "Factory reset" : "Sobriety date");
     if (!strcmp(key, "confirm.text"))
-      return str(confirmWhat == C_RESET ? "Erase your name, date, phone and friends, and start over?"
-                                        : "Are you sure you want to change your sobriety date?");
-    if (!strcmp(key, "confirm.ok")) return str(confirmWhat == C_RESET ? "Yes, erase it" : "Yes, change it");
+      return str(confirmWhat == C_SOBER ? "Are you sure you want to change your sobriety date?"
+                 : confirmAgain ? "Really erase everything? This can't be undone."
+                                : "Erase your name, date, phone and friends, and start over?");
+    if (!strcmp(key, "confirm.ok"))
+      return str(confirmWhat == C_SOBER ? "Yes, change it" : confirmAgain ? "Yes, erase all" : "Yes, erase it");
+    if (!strncmp(key, "sys.", 4)) {
+      const char* k = key + 4;
+      if (!strcmp(k, "battery")) {
+        int cv = (int)(hw::batteryVolts() * 100 + 0.5f);  // no float printf on this core
+        snprintf(out, n, "%d%%  \177  %d.%02d V", hw::batteryPercent(), cv / 100, cv % 100);
+        return;
+      }
+      if (!strcmp(k, "power")) return str(hw::charging() ? "Charging" : "On battery");
+      if (!strcmp(k, "version")) return str(FIRMWARE_VERSION);
+      if (!strcmp(k, "friends")) return num(store::friendCount);
+      if (!strcmp(k, "id")) { snprintf(out, n, "%08lX", (unsigned long)store::settings.uid); return; }
+      return;
+    }
     if (!strncmp(key, "intro.", 6)) return introValue(key + 6, out, n);
 
     if (!strncmp(key, "reflect.", 8)) {
@@ -502,12 +520,7 @@ class Data : public UiData {
       case 1: formatDate(today(), "MMM d, yyyy", out, n); break;
       case 2: snprintf(out, n, "%s", store::settings.name); break;
       case 3: if (store::settings.phone[0]) formatPhone(store::settings.phone, out, n); else snprintf(out, n, "not set"); break;
-      case 4: {
-        int cv = (int)(hw::batteryVolts() * 100 + 0.5f);  // no float printf on this core
-        snprintf(out, n, "%d%%  \177  %d.%02d V%s", hw::batteryPercent(), cv / 100, cv % 100, hw::charging() ? "  \177  charging" : "");
-        break;
-      }
-      case 5: snprintf(out, n, "%s", FIRMWARE_VERSION); break;
+      case MENU_SYSINFO: snprintf(out, n, "battery, version"); break;
       case MENU_RESET: snprintf(out, n, "start over with Pip"); break;
     }
   }
@@ -610,6 +623,7 @@ static int currentScreen() {
     case M_FRIEND_CARD: return S_FRIEND;
     case M_CONFIRM: return S_CONFIRM;
     case M_INTRO: return S_INTRO;
+    case M_SYSINFO: return S_SYSINFO;
     case M_EDIT_DATE: return S_EDIT_DATE;
     case M_EDIT_TEXT: return S_EDIT_TEXT;
     case M_FRIENDS: return S_FRIENDS;
@@ -761,6 +775,10 @@ static void handleKey(Event e) {
       }
       break;
 
+    case M_SYSINFO:
+      mode = M_MENU;  // any button: back to Settings
+      break;
+
     case M_FRIENDS:
       if (e == EV_KEY1 && friendSel > 0) friendSel--;
       else if (e == EV_KEY3 && friendSel < store::friendCount) friendSel++;  // friendCount = the Back row
@@ -796,7 +814,8 @@ static void handleKey(Event e) {
           case 1: startEditDate(E_TODAY); break;
           case 2: startEditText(E_NAME); break;
           case 3: startEditText(E_PHONE); break;
-          case MENU_RESET: mode = M_CONFIRM; confirmWhat = C_RESET; confirmYes = false; break;
+          case MENU_SYSINFO: mode = M_SYSINFO; break;
+          case MENU_RESET: mode = M_CONFIRM; confirmWhat = C_RESET; confirmAgain = false; confirmYes = false; break;
           case MENU_BACK: mode = M_CAROUSEL; break;
           default: break;
         }
@@ -808,6 +827,7 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2) {
         if (!confirmYes) mode = M_MENU;
         else if (confirmWhat == C_SOBER) startEditDate(E_SOBER);
+        else if (!confirmAgain) { confirmAgain = true; confirmYes = false; }  // ask twice, Cancel highlighted again
         else {
           store::factoryReset();
           sortFriends();
@@ -896,6 +916,7 @@ void begin() {
   S_RPS = ui::screenByName("rps");
   S_GNOME = ui::screenByName("gnome");
   S_INTRO = ui::screenByName("intro");
+  S_SYSINFO = ui::screenByName("sysinfo");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();

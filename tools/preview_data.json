@@ -112,16 +112,16 @@
    "value": "416-555-0134"
   },
   {
-   "label": "Battery",
-   "value": "82%"
-  },
-  {
-   "label": "Version",
-   "value": "1.0"
+   "label": "System info",
+   "value": "battery, version"
   },
   {
    "label": "Factory reset",
    "value": "start over with Pip"
+  },
+  {
+   "label": "Back",
+   "value": ""
   }
  ],
  "friend.name": "Sam R.",
@@ -285,6 +285,11 @@
     "confirm.title": "Factory reset",
     "confirm.text": "Erase your name, date, phone and friends, and start over?",
     "confirm.ok": "Yes, erase it"
+   },
+   {
+    "confirm.title": "Factory reset",
+    "confirm.text": "Really erase everything? This can't be undone.",
+    "confirm.ok": "Yes, erase all"
    }
   ],
   "intro": [
@@ -412,5 +417,10 @@
  "kb.ah3": false,
  "confirm.title": "Sobriety date",
  "confirm.text": "Are you sure you want to change your sobriety date?",
- "confirm.ok": "Yes, change it"
+ "confirm.ok": "Yes, change it",
+ "sys.battery": "82%  · 3.94 V",
+ "sys.power": "On battery",
+ "sys.version": "1.13-world10",
+ "sys.friends": "4",
+ "sys.id": "5A3F09C2"
 }

@@ -346,6 +346,34 @@ static const UiNode SCREEN_rps_nodes[] = {
   {6, 0, 4, 0, 0, 0, 20, 202, 82, 9, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
   {1, 11, 5, 0, 0, 0, 0, 211, 122, 39, 0, 0, "{rps.result}", nullptr, nullptr, 0}, // <text>
 };
+static const UiNode SCREEN_sysinfo_nodes[] = {
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 25}, // <col>
+  {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
+  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "System info", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 21, 122, 27, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
+  {1, 2, 4, 0, 0, 0, 6, 24, 111, 13, 0, 0, "Battery", nullptr, nullptr, 0}, // <text>
+  {1, 0, 4, 0, 0, 0, 6, 37, 111, 9, 0, 0, "{sys.battery}", nullptr, nullptr, 0}, // <text>
+  {6, 0, 36, 0, 0, 0, 5, 48, 112, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
+  {0, 0, 4, 0, 0, 0, 0, 49, 122, 27, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
+  {1, 2, 4, 0, 0, 0, 6, 52, 111, 13, 0, 0, "Power", nullptr, nullptr, 0}, // <text>
+  {1, 0, 4, 0, 0, 0, 6, 65, 111, 9, 0, 0, "{sys.power}", nullptr, nullptr, 0}, // <text>
+  {6, 0, 36, 0, 0, 0, 5, 76, 112, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
+  {0, 0, 4, 0, 0, 0, 0, 77, 122, 27, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
+  {1, 2, 4, 0, 0, 0, 6, 80, 111, 13, 0, 0, "Version", nullptr, nullptr, 0}, // <text>
+  {1, 0, 4, 0, 0, 0, 6, 93, 111, 9, 0, 0, "{sys.version}", nullptr, nullptr, 0}, // <text>
+  {6, 0, 36, 0, 0, 0, 5, 104, 112, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
+  {0, 0, 4, 0, 0, 0, 0, 105, 122, 27, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
+  {1, 2, 4, 0, 0, 0, 6, 108, 111, 13, 0, 0, "Friends saved", nullptr, nullptr, 0}, // <text>
+  {1, 0, 4, 0, 0, 0, 6, 121, 111, 9, 0, 0, "{sys.friends}", nullptr, nullptr, 0}, // <text>
+  {6, 0, 36, 0, 0, 0, 5, 132, 112, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
+  {0, 0, 4, 0, 0, 0, 0, 133, 122, 27, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
+  {1, 2, 4, 0, 0, 0, 6, 136, 111, 13, 0, 0, "Device ID", nullptr, nullptr, 0}, // <text>
+  {1, 0, 4, 0, 0, 0, 6, 149, 111, 9, 0, 0, "{sys.id}", nullptr, nullptr, 0}, // <text>
+  {6, 0, 36, 0, 0, 0, 5, 160, 112, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
+  {0, 0, 4, 0, 0, 0, 0, 161, 122, 63, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {0, 0, 20, 1, 0, 6, 10, 224, 102, 18, 0, 0, nullptr, nullptr, nullptr, 1}, // <box>
+  {1, 2, 5, 0, 0, 0, 10, 224, 102, 18, 0, 0, "Back", nullptr, nullptr, 0}, // <text>
+};
 
 static const UiScreen UI_SCREENS[] = {
   {"added", SCREEN_added_nodes, 7},
@@ -361,6 +389,7 @@ static const UiScreen UI_SCREENS[] = {
   {"menu", SCREEN_menu_nodes, 10},
   {"reflection", SCREEN_reflection_nodes, 10},
   {"rps", SCREEN_rps_nodes, 8},
+  {"sysinfo", SCREEN_sysinfo_nodes, 26},
 };
 #define SCREEN_ADDED 0
 #define SCREEN_ANNIVERSARY 1
@@ -375,4 +404,5 @@ static const UiScreen UI_SCREENS[] = {
 #define SCREEN_MENU 10
 #define SCREEN_REFLECTION 11
 #define SCREEN_RPS 12
-#define SCREEN_COUNT 13
+#define SCREEN_SYSINFO 13
+#define SCREEN_COUNT 14
