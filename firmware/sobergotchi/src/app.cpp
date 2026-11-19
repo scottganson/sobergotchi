@@ -54,16 +54,13 @@ static char editBuf[PHONE_LEN + 2];
 static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
 static bool confirmYes = false;  // on the sobriety-date question: Yes highlighted (starts on Cancel)
 
-// Name / phone keyboard: up/down move through the rows of keys and the actions under them; enter on a row steps
-// into it, up/down then move along it, enter types that key and steps back out. Moving past either end of a row
-// also steps back out. '^' is the Aa key (flips the case of the next letter).
+// Name / phone keyboard: up/down step through every key, then the actions under them (wrapping round); enter types
+// the highlighted key or does the action. '^' is the Aa key (flips the case of the next letter).
 static const char* const NAME_ROWS[] = {"ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "Z.-'^"};
 static const char* const PHONE_ROWS[] = {"12345", "67890"};
 enum KbAction : uint8_t { A_SPACE, A_DELETE, A_SAVE, A_CANCEL };
 static const char* const KB_ACTION_LABELS[] = {"Space", "Delete", "Save", "Cancel"};
-static const int KB_ROWS_MAX = 6, KB_COLS_MAX = 5, KB_ACTIONS_MAX = 4;
-static int kbRow = 0;    // selected row or action (rows first)
-static int kbCol = -1;   // -1: choosing a row; else the key within kbRow
+static int kbSel = 0;    // highlighted key, counted across the rows; past the last key, the actions
 static bool kbShift = false;
 
 static int editMax() { return editTarget == E_NAME ? NAME_LEN : PHONE_LEN; }
@@ -72,7 +69,17 @@ static int kbRows() { return kbName() ? 6 : 2; }
 static const char* kbRowKeys(int r) { return r < 0 || r >= kbRows() ? "" : kbName() ? NAME_ROWS[r] : PHONE_ROWS[r]; }
 static int kbActions() { return kbName() ? 4 : 3; }
 static KbAction kbAction(int i) { return (KbAction)(kbName() ? i : i + 1); }  // the phone has no Space
-static int kbItems() { return kbRows() + kbActions(); }
+static int kbKeys() { int k = 0; for (int r = 0; r < kbRows(); r++) k += strlen(kbRowKeys(r)); return k; }
+static int kbItems() { return kbKeys() + kbActions(); }
+static char kbKeyAt(int sel) {  // the key at a position, or 0 past the keys
+  for (int r = 0; r < kbRows(); r++) {
+    const int len = strlen(kbRowKeys(r));
+    if (sel < len) return kbRowKeys(r)[sel];
+    sel -= len;
+  }
+  return 0;
+}
+static int kbIndex(int r, int c) { int k = c; for (int i = 0; i < r; i++) k += strlen(kbRowKeys(i)); return k; }
 // The character a key types: letters are capitalised at the start of each word, unless Aa flipped it.
 static char kbChar(char key) {
   if (key < 'A' || key > 'Z') return key;
@@ -509,11 +516,11 @@ class Data : public UiData {
     }
   }
 
-  // The keyboard: kb.v<r> row shown, kb.c<r><c> key label, kb.h<r><c> key highlighted, kb.rs<r> row chosen (inverted),
-  // kb.ri<r> inside that row (outlined), kb.a<i> action label, kb.ah<i> action highlighted.
+  // The keyboard: kb.v<r> row shown, kb.c<r><c> key label, kb.h<r><c> key highlighted, kb.a<i> action label,
+  // kb.ah<i> action highlighted.
   void kbValue(const char* k, char* out, size_t n) {
     auto flag = [&](bool b) { snprintf(out, n, "%s", b ? "1" : ""); };
-    const int r = k[1] == 's' || k[1] == 'i' || k[1] == 'h' ? k[2] - '0' : k[1] - '0';
+    const int r = k[1] == 'h' ? k[2] - '0' : k[1] - '0';
     if (k[0] == 'v') return flag(r < kbRows());
     if (k[0] == 'c') {
       const int c = k[2] - '0';
@@ -523,10 +530,8 @@ class Data : public UiData {
       else snprintf(out, n, "%c", kbChar(keys[c]));
       return;
     }
-    if (k[0] == 'h') return flag(kbCol >= 0 && kbRow == r && kbCol == k[2] - '0');
-    if (k[0] == 'r' && k[1] == 's') return flag(kbCol < 0 && kbRow == r);
-    if (k[0] == 'r' && k[1] == 'i') return flag(kbCol >= 0 && kbRow == r);
-    if (k[0] == 'a' && k[1] == 'h') { const int i = k[2] - '0'; return flag(i < kbActions() && kbRow == kbRows() + i); }
+    if (k[0] == 'h') { const int c = k[2] - '0'; return flag(c < (int)strlen(kbRowKeys(r)) && kbSel == kbIndex(r, c)); }
+    if (k[0] == 'a' && k[1] == 'h') { const int i = k[2] - '0'; return flag(i < kbActions() && kbSel == kbKeys() + i); }
     if (k[0] == 'a') { const int i = k[1] - '0'; if (i < kbActions()) snprintf(out, n, "%s", KB_ACTION_LABELS[kbAction(i)]); }
   }
 
@@ -535,7 +540,7 @@ class Data : public UiData {
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       case M_CONFIRM_SOBER: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
-      case M_EDIT_TEXT: snprintf(out, n, kbCol < 0 ? "\202 \203 move  \177  \201 pick" : "\202 \203 move  \177  \201 type"); break;
+      case M_EDIT_TEXT: snprintf(out, n, "\202 \203 move  \177  \201 pick"); break;
       default:
         if (carousel == 3 && store::friendCount) snprintf(out, n, "\201 choose a friend");
         else if (carousel == 4) snprintf(out, n, "\201 choose a setting");
@@ -609,8 +614,7 @@ static void startEditText(EditTarget target) {
   editTarget = target;
   memset(editBuf, 0, sizeof editBuf);
   strncpy(editBuf, target == E_NAME ? store::settings.name : store::settings.phone, editMax());
-  kbRow = 0;
-  kbCol = -1;
+  kbSel = 0;
   kbShift = false;
   mode = M_EDIT_TEXT;
 }
@@ -736,27 +740,18 @@ static void handleKey(Event e) {
 
     case M_EDIT_TEXT: {
       int len = strlen(editBuf);
-      if (kbCol < 0) {  // choosing a row or an action
-        if (e == EV_KEY1) kbRow = (kbRow + kbItems() - 1) % kbItems();
-        else if (e == EV_KEY3) kbRow = (kbRow + 1) % kbItems();
-        else if (e == EV_KEY2 && kbRow < kbRows()) kbCol = 0;
-        else if (e == EV_KEY2) {
-          switch (kbAction(kbRow - kbRows())) {
-            case A_SPACE: if (len > 0 && len < editMax() && editBuf[len - 1] != ' ') editBuf[len] = ' '; break;
-            case A_DELETE: if (len > 0) editBuf[len - 1] = 0; kbShift = false; break;
-            case A_SAVE: saveEditText(); mode = M_MENU; break;
-            case A_CANCEL: mode = M_MENU; break;
-          }
-        }
-      } else {  // inside a row
-        const char* keys = kbRowKeys(kbRow);
-        const int last = strlen(keys) - 1;
-        if (e == EV_KEY1) kbCol = kbCol > 0 ? kbCol - 1 : -1;
-        else if (e == EV_KEY3) kbCol = kbCol < last ? kbCol + 1 : -1;
-        else if (e == EV_KEY2) {
-          if (keys[kbCol] == '^') kbShift = !kbShift;
-          else if (len < editMax()) { editBuf[len] = kbChar(keys[kbCol]); kbShift = false; }
-          kbCol = -1;
+      if (e == EV_KEY1) kbSel = (kbSel + kbItems() - 1) % kbItems();
+      else if (e == EV_KEY3) kbSel = (kbSel + 1) % kbItems();
+      else if (e == EV_KEY2 && kbSel < kbKeys()) {  // type the key; stay on it so a double letter is one more press
+        const char key = kbKeyAt(kbSel);
+        if (key == '^') kbShift = !kbShift;
+        else if (len < editMax()) { editBuf[len] = kbChar(key); kbShift = false; }
+      } else if (e == EV_KEY2) {
+        switch (kbAction(kbSel - kbKeys())) {
+          case A_SPACE: if (len > 0 && len < editMax() && editBuf[len - 1] != ' ') editBuf[len] = ' '; break;
+          case A_DELETE: if (len > 0) editBuf[len - 1] = 0; kbShift = false; break;
+          case A_SAVE: saveEditText(); mode = M_MENU; break;
+          case A_CANCEL: mode = M_MENU; break;
         }
       }
       break;
