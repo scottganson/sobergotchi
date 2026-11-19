@@ -73,7 +73,7 @@ Named in `fonts/fonts.json`: `small`, `small-b`, `label`, `label-b`, `body`, `ti
 | `friend.name`, `friend.date`, `friend.years`, `friend.phone`, `friend.in`, `friend.confirm` | friend card and "Friend added" |
 | `rps.name`, `rps.mine`, `rps.theirs`, `rps.result` | rock-paper-scissors |
 | `edit.title`, `edit.l0..3`, `edit.v0..3`, `edit.s0..3`, `edit.has3`, `edit.text` | editors |
-| `kb.v<r>`, `kb.c<r><c>`, `kb.h<r><c>`, `kb.rs<r>`, `kb.ri<r>`, `kb.a<i>`, `kb.ah<i>` | name / phone keyboard: row shown, key label, key highlighted, row chosen, inside row, action label, action highlighted |
+| `kb.v<r>`, `kb.c<r><c>`, `kb.h<r><c>`, `kb.a<i>`, `kb.ah<i>` | name / phone keyboard: row shown, key label, key highlighted, action label, action highlighted |
 | `confirm.yes` | Yes highlighted on the sobriety-date question |
 
 Sample values for the previews live in `tools/preview_data.json`. To add a new value, add it to `Data::value()` in `firmware/sobergotchi/src/app.cpp` and to the preview data.
