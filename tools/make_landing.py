@@ -25,7 +25,7 @@ def main():
         pic.paste(255, (0, 0), m)
         pic.paste(layer(art, name), (0, 0), layer(art, name).point(lambda v: 255 - v))
     d = ImageDraw.Draw(pic)
-    for x, y, s in ((26, 30, 3), (36, 24, 2), (88, 14, 3), (97, 20, 2)):  # little "v" birds
+    for x, y, s in ((58, 9, 3), (67, 5, 2), (72, 12, 2)):  # little "v" birds
         d.line((x - s, y - s + 1, x, y), fill=0)
         d.line((x, y, x + s, y - s + 1), fill=0)
     pic = pic.crop((CROP, 0, pic.width - CROP, pic.height))
