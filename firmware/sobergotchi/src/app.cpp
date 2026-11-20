@@ -48,7 +48,6 @@ static uint8_t rpsMine, rpsTheirs;
 
 // Add friend (enter + up held): the radio looks for another Sobergotchi while the search screen is up
 static bool searching = false;    // the search screen is showing, the buttons are held and the radio is on
-static bool searchNone = false;   // the search ended without finding anyone
 
 // ---------------------------------------------------------------------------
 // editors
@@ -426,10 +425,9 @@ class Data : public UiData {
       return str(confirmWhat == C_DELETE ? "Yes, delete" : confirmWhat == C_SOBER ? "Yes, change it"
                  : confirmAgain ? "Yes, erase all" : "Yes, erase it");
     if (!strcmp(key, "search.title")) {
-      return str(searchNone ? "No one found" : "Looking...");
+      return str("Looking...");
     }
     if (!strcmp(key, "search.text")) {
-      if (searchNone) return str("Put your Sobergotchis head to head and both hold enter and up again.");
       return str("Keep holding while your friend holds theirs. Let go to stop.");
     }
     if (!strncmp(key, "sys.", 4)) {
@@ -626,7 +624,6 @@ class Data : public UiData {
 
   void hint(char* out, size_t n) {
     if (searching) { snprintf(out, n, "radio on while held"); return; }
-    if (searchNone) { snprintf(out, n, "\201 back"); return; }
     switch (mode) {
       case M_HOWTO: snprintf(out, n, "\201 back"); break;
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 %s", friendSel == 0 ? "add" : "open"); break;
@@ -807,7 +804,6 @@ static void friendsBack(uint32_t uid) {
 // refreshed and a game of rock-paper-scissors.
 static void addFriend() {
   searching = true;
-  searchNone = false;
   draw(S_SEARCH, false);
   sessionDirty = true;
   exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
@@ -824,13 +820,7 @@ static void addFriend() {
   if (!hw::comboHeld()) hw::flushKeys();  // letting go can bounce: don't let that close the pop-up that comes next
   const exchange::Result r = exchange::best();
   searching = false;
-  if (!r.found) {
-    searchNone = true;
-    showPopup(S_SEARCH);
-    searchNone = false;
-    friendsBack(0);
-    return;
-  }
+  if (!r.found) return;  // nobody: back to whatever was on screen, no message
   LOG("add friend: found %s", r.card.name);
   popupFriend = r.card;
   rpsMine = r.myThrow;
@@ -1005,7 +995,7 @@ struct UiState {
   uint32_t draws;
   int mode, carousel, reflectPage, friendSel, menuSel, introStep;
   int editTarget, editField, editY, editM, editD, editH, editChoice, kbSel, confirmWhat;
-  bool cardDelete, menuUser, confirmYes, confirmAgain, kbShift, searching, searchNone;
+  bool cardDelete, menuUser, confirmYes, confirmAgain, kbShift, searching;
   int friendCount;
   char editBuf[PHONE_LEN + 2];
 };
@@ -1018,7 +1008,7 @@ static void snapshot(UiState& u) {
   u.editTarget = editTarget; u.editField = editField; u.editY = editY; u.editM = editM; u.editD = editD;
   u.editH = editH; u.editChoice = editChoice; u.kbSel = kbSel; u.confirmWhat = confirmWhat;
   u.cardDelete = cardDelete; u.menuUser = menuUser; u.confirmYes = confirmYes; u.confirmAgain = confirmAgain;
-  u.kbShift = kbShift; u.searching = searching; u.searchNone = searchNone;
+  u.kbShift = kbShift; u.searching = searching;
   u.friendCount = store::friendCount;
   memcpy(u.editBuf, editBuf, sizeof editBuf);
 }
