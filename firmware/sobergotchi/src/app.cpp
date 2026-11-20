@@ -66,6 +66,7 @@ static bool confirmAgain = false;  // factory reset: the second, "really?" quest
 // Pip's first-time setup: a page per step; the name, sober date and phone pages open the usual editors.
 enum IntroStep : uint8_t { I_HELLO, I_BUTTONS, I_NAME, I_SOBER, I_FRIENDS, I_PHONE, I_DONE, I_COUNT };
 static int introStep = I_HELLO;
+static bool introBack = false;  // setup: the < Back button highlighted (else Next)
 static bool inIntro() { return !store::settings.setupDone; }
 
 // Name / phone keyboard: up/down step through every key, then the actions under them (wrapping round); enter types
@@ -491,6 +492,9 @@ class Data : public UiData {
     static const uint8_t POSE[I_COUNT] = {P_WAVE, P_WAVE, P_STAND, P_READ, P_TEA, P_LANTERN, P_CHEER};
     const char* name = store::settings.name;
     if (!strcmp(k, "title")) { snprintf(out, n, "%s", TITLE[introStep]); return; }
+    if (!strcmp(k, "hasback")) { snprintf(out, n, "%s", introStep > I_HELLO ? "1" : ""); return; }
+    if (!strcmp(k, "bsel")) { snprintf(out, n, "%s", introBack ? "1" : ""); return; }
+    if (!strcmp(k, "next")) { snprintf(out, n, "%s", introStep == I_DONE ? "Begin >" : "Next >"); return; }
     if (!strcmp(k, "buttons")) { snprintf(out, n, "%s", introStep == I_BUTTONS ? "1" : ""); return; }
     if (!strcmp(k, "pose")) { snprintf(out, n, "%d", POSE[introStep]); return; }
     if (!strcmp(k, "step")) { snprintf(out, n, "%d/%d", introStep + 1, (int)I_COUNT); return; }
@@ -634,10 +638,6 @@ class Data : public UiData {
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 %s", friendSel == 0 ? "add" : "open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       case M_CONFIRM: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
-      case M_INTRO:
-        if (introStep == I_HELLO) snprintf(out, n, "\201 next");
-        else snprintf(out, n, "\202 back  \177  \201 %s", introStep == I_DONE ? "begin" : "next");
-        break;
       case M_EDIT_TEXT: snprintf(out, n, "\202 \203 move  \177  \201 pick"); break;
       default:
         if (carousel == 3) snprintf(out, n, store::friendCount ? "\201 choose a friend" : "\201 add a friend");
@@ -774,6 +774,7 @@ static void editClosed(bool saved) {
 
 static void startIntro() {
   introStep = I_HELLO;
+  introBack = false;
   mode = M_INTRO;
 }
 
@@ -851,8 +852,10 @@ static void handleKey(Event e) {
   if (e == EV_KEY2_LONG) e = EV_KEY2;  // no hold actions: a long press is just enter
   switch (mode) {
     case M_INTRO:
-      if (e == EV_KEY1 && introStep > I_HELLO) introStep--;
-      else if (e == EV_KEY2) {  // enter only: down never moves on
+      // < Back and Next > buttons: up / down choose (no Back on the first page), enter presses
+      if ((e == EV_KEY1 || e == EV_KEY3) && introStep > I_HELLO) introBack = !introBack;
+      else if (e == EV_KEY2 && introBack) { introStep--; introBack = false; }
+      else if (e == EV_KEY2) {
         switch (introStep) {
           case I_NAME: startEditText(E_NAME); break;
           case I_SOBER: startEditDate(E_SOBER); break;
@@ -998,7 +1001,7 @@ struct UiState {
   uint32_t draws;
   int mode, carousel, reflectPage, friendSel, menuSel, introStep;
   int editTarget, editField, editY, editM, editD, editH, editChoice, kbSel, confirmWhat;
-  bool cardDelete, menuUser, confirmYes, confirmAgain, kbShift, searching;
+  bool cardDelete, menuUser, confirmYes, confirmAgain, kbShift, searching, introBack;
   int friendCount;
   char editBuf[PHONE_LEN + 2];
 };
@@ -1011,7 +1014,7 @@ static void snapshot(UiState& u) {
   u.editTarget = editTarget; u.editField = editField; u.editY = editY; u.editM = editM; u.editD = editD;
   u.editH = editH; u.editChoice = editChoice; u.kbSel = kbSel; u.confirmWhat = confirmWhat;
   u.cardDelete = cardDelete; u.menuUser = menuUser; u.confirmYes = confirmYes; u.confirmAgain = confirmAgain;
-  u.kbShift = kbShift; u.searching = searching;
+  u.kbShift = kbShift; u.searching = searching; u.introBack = introBack;
   u.friendCount = store::friendCount;
   memcpy(u.editBuf, editBuf, sizeof editBuf);
 }
