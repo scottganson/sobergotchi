@@ -1,12 +1,12 @@
 import os, sys
 from PIL import Image, ImageDraw, ImageFont
-ROOT=sys.argv[1]; ENTER_LOWER = sys.argv[2]=='lower'
+ROOT=sys.argv[1]
 S=4; W,H=122,115
 im=Image.new('L',(W*S,H*S),255); d=ImageDraw.Draw(im)
 def P(*a): return [v*S for v in a]
 lw=int(1.3*S)
 # one Sobergotchi standing up, like the enclosure CAD: black body, notches top and bottom, corner screws,
-# the SOBERGOTCHI band at the top, big screen; one button on the left side, two on the right
+# the SOBERGOTCHI band at the top, big screen; enter is the one button on the left side, up and down the two on the right
 x0,y0,w,h=42,6,38,96
 x1,y1=x0+w,y0+h
 d.rounded_rectangle(P(x0,y0,x1,y1),radius=5*S,fill=0)
@@ -25,7 +25,6 @@ def frac(cad): return y0+h*(cad-38)/667
 yl=frac(295); yr1=frac(235); yr2=frac(290)
 nub=lambda x,y,side: d.rectangle(P(x-2.2 if side<0 else x, y-3.5, x if side<0 else x+2.2, y+3.5),fill=0)
 nub(x0,yl,-1); nub(x1,yr1,1); nub(x1,yr2,1)
-ye = yr2 if ENTER_LOWER else yr1
 # arrows to the two buttons, with "hold" marks
 def arrow(xa,ya,xb,yb):
     d.line(P(xa,ya,xb,yb),fill=0,width=lw)
@@ -34,13 +33,13 @@ def arrow(xa,ya,xb,yb):
     for da in (2.6,-2.6):
         d.line(P(xb,yb,xb+4*math.cos(a+da),yb+4*math.sin(a+da)),fill=0,width=lw)
 arrow(6,yl,x0-4,yl)
-arrow(W-6,ye,x1+4,ye)
+arrow(W-6,yr1,x1+4,yr1)
 im=im.resize((W,H),Image.LANCZOS).point(lambda v:0 if v<140 else 255)
 d=ImageDraw.Draw(im); d.fontmode="1"
 f=ImageFont.truetype(os.path.join(ROOT,'fonts','DejaVuSans-Bold.ttf'),9)
 def label(t,cx,cy):
     bb=d.textbbox((0,0),t,font=f); tw=bb[2]-bb[0]
     d.text((cx-tw/2,cy-6),t,font=f,fill=0)
-label('UP',20,yl-6); label('ENTER',W-21,ye-6)
+label('ENTER',20,yl-6); label('UP',W-20,yr1-6)
 im.save(os.path.join(ROOT,'art','icons','howto.png'))
-if len(sys.argv)>3: im.resize((W*4,H*4),Image.NEAREST).save(sys.argv[3])
+if len(sys.argv)>2: im.resize((W*4,H*4),Image.NEAREST).save(sys.argv[2])
