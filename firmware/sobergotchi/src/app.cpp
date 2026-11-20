@@ -48,6 +48,8 @@ static uint8_t rpsMine, rpsTheirs;
 // Friends > Add friend: the radio looks for another Sobergotchi while the search screen is up
 static bool searching = false;    // the search screen is showing
 static bool searchNone = false;   // the search ended without finding anyone
+static bool searchHold = false;   // started by holding enter + up: the radio is on while they are held
+static bool searchFound = false;  // holding, and someone has been heard (popupFriend)
 static bool radioOn = false;      // Add friend window open: the radio stays on until radioOffAt
 static uint32_t radioOffAt = 0;   // millis()
 
@@ -440,9 +442,14 @@ class Data : public UiData {
     if (!strcmp(key, "confirm.ok"))
       return str(confirmWhat == C_FRIEND ? "Yes, add them" : confirmWhat == C_DELETE ? "Yes, delete" : confirmWhat == C_SOBER ? "Yes, change it"
                  : confirmAgain ? "Yes, erase all" : "Yes, erase it");
-    if (!strcmp(key, "search.title")) return str(searchNone ? "No one found" : "Looking...");
+    if (!strcmp(key, "search.title")) {
+      if (searchFound) { snprintf(out, n, "Found %s", popupFriend.name); return; }
+      return str(searchNone ? "No one found" : "Looking...");
+    }
     if (!strcmp(key, "search.text")) {
-      if (searchNone) return str("Ask your friend to pick Add friend too, hold them close and try again.");
+      if (searchNone) return str("Ask your friend to start Add friend too, stay close and try again.");
+      if (searchFound) return str("Let go when your friend has found you too.");
+      if (searchHold) return str("Keep holding while your friend holds theirs. Let go to stop.");
       snprintf(out, n, "Looking for Sobergotchis nearby for %d seconds. Ask your friend to pick Add friend too.",
                (int)(ADD_FRIEND_MS / 1000));
       return;
@@ -521,8 +528,8 @@ class Data : public UiData {
         snprintf(out, n, "It's good to meet you, %s. When did your sobriety begin? I'll count every day from there.", name);
         break;
       case I_FRIENDS:
-        snprintf(out, n, "Hold your Sobergotchi near another one to become friends. You'll swap your name, phone "
-                         "number and sobriety date.");
+        snprintf(out, n, "To make a friend, you both hold the left and right buttons together until I start "
+                         "looking. You'll swap names, phones and sober dates.");
         break;
       case I_PHONE:
         snprintf(out, n, "What number should your friends call? If you'd rather not share one, pick Cancel to skip.");
@@ -640,6 +647,7 @@ class Data : public UiData {
   }
 
   void hint(char* out, size_t n) {
+    if (searching && searchHold) { snprintf(out, n, "radio on while held"); return; }
     if (searching) { snprintf(out, n, "radio on for %d seconds", (int)(ADD_FRIEND_MS / 1000)); return; }
     if (searchNone) { snprintf(out, n, "\201 back"); return; }
     switch (mode) {
@@ -813,26 +821,46 @@ static void friendsBack(uint32_t uid) {
     if (uid && store::friends[order[i]].uid == uid) friendSel = i + 1;
 }
 
-// Add friend mode, from Friends > Add friend or a reed tap. The radio is on for ADD_FRIEND_MS whatever happens, so
-// the other person has time to start theirs: buttons don't stop it, and finding someone doesn't either. As soon as
-// someone is found we ask ("Make friends with Sam?", Cancel highlighted) while the radio carries on in the background;
-// a friend we already have just gets their card refreshed and a game of rock-paper-scissors.
-static void addFriend() {
-  if (radioOn) { exchange::finish(); radioOn = false; }  // picked Add friend again: a fresh 30 seconds
+// Add friend mode. From Friends > Add friend (hold = false) the radio is on for ADD_FRIEND_MS whatever happens, so the
+// other person has time to start theirs, and we ask as soon as someone is found while the radio carries on in the
+// background. From enter + up held (hold = true) the radio is on only while both are held; finding someone redraws the
+// screen ("Found Sam"), and letting go turns the radio off and then asks. Either way a new friend is asked about
+// ("Make friends with Sam?", Cancel highlighted); a friend we already have gets their card refreshed and a game of
+// rock-paper-scissors.
+static void addFriend(bool hold) {
+  if (radioOn) { exchange::finish(); radioOn = false; }  // started again: a fresh window
   searching = true;
+  searchHold = hold;
   searchNone = false;
+  searchFound = false;
   draw(S_SEARCH, false);
   sessionDirty = true;
   exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
   radioOn = true;
-  radioOffAt = millis() + ADD_FRIEND_MS;
-  LOG("add friend: radio on");
-  while (radioOn && !exchange::found()) {
-    hw::wait(radioLeft() < 100 ? radioLeft() : 100);  // buttons and taps are ignored while looking
-    radioTick();
+  radioOffAt = millis() + (hold ? ADD_FRIEND_HOLD_MAX_MS : ADD_FRIEND_MS);
+  LOG("add friend: radio on%s", hold ? " while held" : "");
+  if (hold) {
+    while (hw::comboHeld() && radioLeft() > 0) {
+      delay(20);
+      if (!searchFound && exchange::found()) {  // tell them, but keep the radio on so their device hears us too
+        searchFound = true;
+        popupFriend = exchange::best().card;
+        draw(S_SEARCH, false);
+      }
+    }
+    exchange::finish();
+    radioOn = false;
+    LOG("add friend: let go, radio off");
+    hw::flushKeys();  // letting go can bounce: don't let that answer the question that comes next
+  } else {
+    while (radioOn && !exchange::found()) {
+      hw::wait(radioLeft() < 100 ? radioLeft() : 100);  // buttons are ignored while looking
+      radioTick();
+    }
   }
   const exchange::Result r = exchange::best();
   searching = false;
+  searchFound = false;
   if (!r.found) {
     searchNone = true;
     showPopup(S_SEARCH);
@@ -890,7 +918,7 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2) {
         if (carousel == 2) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
         else if (carousel == 3 && store::friendCount) { mode = M_FRIENDS; friendSel = 1; }  // on the first friend
-        else if (carousel == 3) addFriend();                                                // no friends yet
+        else if (carousel == 3) addFriend(false);                                                // no friends yet
         else if (carousel == 4) { mode = M_MENU; menuUser = false; menuSel = 0; }
       }
       break;
@@ -902,7 +930,7 @@ static void handleKey(Event e) {
     case M_FRIENDS:  // rows: 0 Add friend, 1..friendCount the friends, friendCount + 1 Back
       if (e == EV_KEY1 && friendSel > 0) friendSel--;
       else if (e == EV_KEY3 && friendSel < store::friendCount + 1) friendSel++;
-      else if (e == EV_KEY2 && friendSel == 0) addFriend();
+      else if (e == EV_KEY2 && friendSel == 0) addFriend(false);
       else if (e == EV_KEY2 && friendSel > store::friendCount) mode = M_CAROUSEL;
       else if (e == EV_KEY2) {
         popupFriend = store::friends[order[friendSel - 1]];
@@ -1100,7 +1128,7 @@ void loop() {
   if (inIntro()) {  // setup waits for the buttons: no idle timeout, no friend taps until Pip knows who you are
     Event e = hw::wait(IDLE_TIMEOUT_MS);
     if (e == EV_TIMEOUT) { display::sleep(); return; }
-    if (e == EV_REED || e == EV_ADD_FRIEND) return;
+    if (e == EV_ADD_FRIEND) { while (hw::comboHeld()) delay(20); hw::flushKeys(); return; }  // not during setup
     if (!keyChanged(e)) return;
     if (mode == M_CAROUSEL) goHome(true);  // setup finished: a clean full refresh onto the home screen
     else show(false);
@@ -1125,9 +1153,8 @@ void loop() {
     }
     return;
   }
-  if (e == EV_REED || e == EV_ADD_FRIEND) {  // a tap or enter + up held: Friends > Add friend, from any screen
-    if (radioOn) return;
-    addFriend();
+  if (e == EV_ADD_FRIEND) {  // enter + up held: Add friend from any screen, radio on while they are held
+    addFriend(true);
     show(false);
     return;
   }

@@ -351,7 +351,7 @@
     "intro.step": "4/6",
     "intro.pose": 5,
     "hint": "▲ back  ·  ● next",
-    "intro.text": "Hold your Sobergotchi near another one to become friends. You'll swap your name, phone number and sobriety date."
+    "intro.text": "To make a friend, you both hold the left and right buttons together until I start looking. You'll swap names, phones and sober dates."
    },
    {
     "intro.title": "Your phone",
@@ -374,8 +374,17 @@
    },
    {
     "search.title": "No one found",
-    "search.text": "Ask your friend to pick Add friend too, hold them close and try again.",
+    "search.text": "Ask your friend to start Add friend too, stay close and try again.",
     "hint": "● back"
+   },
+   {
+    "search.text": "Keep holding while your friend holds theirs. Let go to stop.",
+    "hint": "radio on while held"
+   },
+   {
+    "search.title": "Found Sam R.",
+    "search.text": "Let go when your friend has found you too.",
+    "hint": "radio on while held"
    }
   ]
  },

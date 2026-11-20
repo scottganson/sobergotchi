@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.20-world17"
+#define FIRMWARE_VERSION "1.21-world18"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1
@@ -36,7 +36,6 @@
 #define PIN_KEY1        2    // left,   D2, active low: UP    (previous item, value +1)
 #define PIN_KEY2        1    // right,  D1, active low: ENTER (select / next field; hold = cancel or save in editors)
 #define PIN_KEY3        9    // middle, D9, active low: DOWN  (next item, value -1)
-#define PIN_REED        4    // D4, reed switch to GND (closes near a magnet). Was D0 until fix8; D0 is the battery input.
 
 // Battery, from Seeed's Ex05 schematic: the battery goes through a switch (on while D12 is high) and a
 // 10k/10k divider to D0/A0. Reading the XIAO's own battery pin (P0.31) is not possible here: it is the display DC line.
@@ -52,9 +51,11 @@
 #define IDLE_TIMEOUT_MS        30000UL  // back to the home screen after this long without a press
 #define LONG_PRESS_MS          700UL
 #define POPUP_MS               6000UL   // how long "Friend added" / rock-paper-scissors stay up
-#define ADD_FRIEND_MS          30000UL  // Add friend (menu or reed tap): the radio is on this long, always, so the
+#define ADD_FRIEND_MS          30000UL  // Friends > Add friend: the radio is on this long, always, so the
                                         // other person has time to start theirs too
-#define ADD_FRIEND_HOLD_MS     2000UL   // hold enter + up together this long to start Add friend from any screen
+#define ADD_FRIEND_HOLD_MS     2000UL   // hold enter + up together this long to start Add friend from any screen;
+                                        // the radio then stays on only while they are held
+#define ADD_FRIEND_HOLD_MAX_MS 120000UL // ...but never more than 2 minutes (a button stuck in a pocket)
 #define ADD_FRIEND_MIN_RSSI    (-80)    // reaches across a table (about 1-2 m), not just back to back
 #define MAX_FRIENDS            200
 #define NAME_LEN               12

@@ -258,8 +258,8 @@ static const UiNode SCREEN_friends_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, "!friends.any", 4}, // <col>
   {3, 0, 5, 0, 0, 0, 0, 21, 122, 122, 5, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 3, 5, 0, 0, 0, 0, 143, 122, 18, 0, 0, "No friends yet", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 161, 122, 13, 0, 0, "Hold the backs of two", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 174, 122, 13, 0, 0, "Sobergotchis together", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 161, 122, 13, 0, 0, "Hold left and right", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 174, 122, 13, 0, 0, "buttons together", nullptr, nullptr, 0}, // <text>
   {1, 0, 5, 0, 0, 0, 0, 229, 122, 12, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };

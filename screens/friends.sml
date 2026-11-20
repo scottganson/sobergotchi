@@ -26,8 +26,8 @@
     <col if="!friends.any">
       <image h="122" src="addfriend"/>
       <text h="18" font="label-b" align="center">No friends yet</text>
-      <text h="13" font="small" align="center">Hold the backs of two</text>
-      <text h="13" font="small" align="center">Sobergotchis together</text>
+      <text h="13" font="small" align="center">Hold left and right</text>
+      <text h="13" font="small" align="center">buttons together</text>
     </col>
   </stack>
   <text h="12" font="small" align="center">{hint}</text>
