@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.22-world19"
+#define FIRMWARE_VERSION "1.23-world20"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1
@@ -51,8 +51,6 @@
 #define IDLE_TIMEOUT_MS        30000UL  // back to the home screen after this long without a press
 #define LONG_PRESS_MS          700UL
 #define POPUP_MS               6000UL   // how long "Friend added" / rock-paper-scissors stay up
-#define ADD_FRIEND_MS          30000UL  // Friends > Add friend: the radio is on this long, always, so the
-                                        // other person has time to start theirs too
 #define ADD_FRIEND_HOLD_MS     2000UL   // hold enter + up together this long to start Add friend from any screen;
                                         // the radio then stays on only while they are held
 #define ADD_FRIEND_HOLD_MAX_MS 120000UL // ...but never more than 2 minutes (a button stuck in a pocket)

@@ -365,11 +365,12 @@
   ],
   "search": [
    {
-    "hint": "radio on for 30 seconds"
+    "search.text": "Keep holding while your friend holds theirs. Let go to stop.",
+    "hint": "radio on while held"
    },
    {
     "search.title": "No one found",
-    "search.text": "Ask your friend to start Add friend too, stay close and try again.",
+    "search.text": "Hold your Sobergotchis head to head, both holding left and right, and try again.",
     "hint": "● back"
    },
    {
@@ -380,6 +381,11 @@
     "search.title": "Found Sam R.",
     "search.text": "Let go when your friend has found you too.",
     "hint": "radio on while held"
+   }
+  ],
+  "howto": [
+   {
+    "hint": "● back"
    }
   ]
  },
