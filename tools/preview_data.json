@@ -314,11 +314,6 @@
     "confirm.ok": "Yes, erase all"
    },
    {
-    "confirm.title": "Add friend",
-    "confirm.text": "Make friends with Sam R.?",
-    "confirm.ok": "Yes, add them"
-   },
-   {
     "confirm.title": "Delete friend",
     "confirm.text": "Delete Sam R. from your friends? This can't be undone.",
     "confirm.ok": "Yes, delete"

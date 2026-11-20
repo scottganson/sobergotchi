@@ -76,7 +76,7 @@ static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
 static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
 static bool confirmYes = false;  // on an "Are you sure?" question: Yes highlighted (starts on Cancel)
-enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_FRIEND, C_DELETE };
+enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_DELETE };
 static ConfirmWhat confirmWhat = C_SOBER;
 static bool confirmAgain = false;  // factory reset: the second, "really?" question
 
@@ -427,10 +427,9 @@ class Data : public UiData {
     if (!strcmp(key, "menu.title")) return str(menuUser ? "User settings" : "Settings");
     if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
     if (!strcmp(key, "confirm.title"))
-      return str(confirmWhat == C_RESET ? "Factory reset" : confirmWhat == C_FRIEND ? "Add friend"
+      return str(confirmWhat == C_RESET ? "Factory reset"
                  : confirmWhat == C_DELETE ? "Delete friend" : "Sobriety date");
     if (!strcmp(key, "confirm.text")) {
-      if (confirmWhat == C_FRIEND) { snprintf(out, n, "Make friends with %s?", popupFriend.name); return; }
       if (confirmWhat == C_DELETE) {
         snprintf(out, n, "Delete %s from your friends? This can't be undone.", popupFriend.name);
         return;
@@ -440,7 +439,7 @@ class Data : public UiData {
                                 : "Erase your name, date, phone and friends, and start over?");
     }
     if (!strcmp(key, "confirm.ok"))
-      return str(confirmWhat == C_FRIEND ? "Yes, add them" : confirmWhat == C_DELETE ? "Yes, delete" : confirmWhat == C_SOBER ? "Yes, change it"
+      return str(confirmWhat == C_DELETE ? "Yes, delete" : confirmWhat == C_SOBER ? "Yes, change it"
                  : confirmAgain ? "Yes, erase all" : "Yes, erase it");
     if (!strcmp(key, "search.title")) {
       if (searchFound) { snprintf(out, n, "Found %s", popupFriend.name); return; }
@@ -822,11 +821,10 @@ static void friendsBack(uint32_t uid) {
 }
 
 // Add friend mode. From Friends > Add friend (hold = false) the radio is on for ADD_FRIEND_MS whatever happens, so the
-// other person has time to start theirs, and we ask as soon as someone is found while the radio carries on in the
+// other person has time to start theirs; someone found is added at once while the radio carries on in the
 // background. From enter + up held (hold = true) the radio is on only while both are held; finding someone redraws the
-// screen ("Found Sam"), and letting go turns the radio off and then asks. Either way a new friend is asked about
-// ("Make friends with Sam?", Cancel highlighted); a friend we already have gets their card refreshed and a game of
-// rock-paper-scissors.
+// screen ("Found Sam"), and letting go turns the radio off. Either way a new friend is saved straight away ("Friend
+// added!"); a friend we already have gets their card refreshed and a game of rock-paper-scissors.
 static void addFriend(bool hold) {
   if (radioOn) { exchange::finish(); radioOn = false; }  // started again: a fresh window
   searching = true;
@@ -872,16 +870,10 @@ static void addFriend(bool hold) {
   popupFriend = r.card;
   rpsMine = r.myThrow;
   rpsTheirs = r.theirThrow;
-  if (isFriend(r.card.uid)) {
-    store::upsertFriend(r.card);
-    sortFriends();
-    showPopup(S_RPS);
-    friendsBack(r.card.uid);
-    return;
-  }
-  mode = M_CONFIRM;
-  confirmWhat = C_FRIEND;
-  confirmYes = false;  // Cancel highlighted
+  const bool isNew = store::upsertFriend(r.card);  // no question: starting Add friend says you want to
+  sortFriends();
+  showPopup(isNew ? S_ADDED : S_RPS);
+  friendsBack(r.card.uid);
 }
 
 static void stepDate(int dir) {
@@ -983,13 +975,6 @@ static void handleKey(Event e) {
             cardDelete = false;
             mode = M_FRIEND_CARD;  // Cancel: back to their card, on Back
           }
-        } else if (confirmWhat == C_FRIEND) {
-          if (confirmYes) {
-            store::upsertFriend(popupFriend);
-            sortFriends();
-            showPopup(S_ADDED);
-          }
-          friendsBack(confirmYes ? popupFriend.uid : 0);
         } else if (!confirmYes) mode = M_MENU;
         else if (confirmWhat == C_SOBER) startEditDate(E_SOBER);
         else if (!confirmAgain) { confirmAgain = true; confirmYes = false; }  // ask twice, Cancel highlighted again
