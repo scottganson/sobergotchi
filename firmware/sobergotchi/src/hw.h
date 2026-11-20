@@ -7,6 +7,7 @@ enum Event : uint8_t {
   EV_KEY1, EV_KEY2, EV_KEY3,     // short presses
   EV_KEY2_LONG,                  // KEY2 held
   EV_REED,                       // a magnet closed the reed switch
+  EV_ADD_FRIEND,                 // enter + up held together for ADD_FRIEND_HOLD_MS
   EV_TIMEOUT,                    // nothing happened before the timeout
 };
 

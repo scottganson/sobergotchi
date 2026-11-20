@@ -1100,7 +1100,7 @@ void loop() {
   if (inIntro()) {  // setup waits for the buttons: no idle timeout, no friend taps until Pip knows who you are
     Event e = hw::wait(IDLE_TIMEOUT_MS);
     if (e == EV_TIMEOUT) { display::sleep(); return; }
-    if (e == EV_REED) return;
+    if (e == EV_REED || e == EV_ADD_FRIEND) return;
     if (!keyChanged(e)) return;
     if (mode == M_CAROUSEL) goHome(true);  // setup finished: a clean full refresh onto the home screen
     else show(false);
@@ -1125,7 +1125,7 @@ void loop() {
     }
     return;
   }
-  if (e == EV_REED) {  // a tap: the same as Friends > Add friend, from any screen
+  if (e == EV_REED || e == EV_ADD_FRIEND) {  // a tap or enter + up held: Friends > Add friend, from any screen
     if (radioOn) return;
     addFriend();
     show(false);

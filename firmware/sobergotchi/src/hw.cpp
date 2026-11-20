@@ -114,6 +114,21 @@ void begin() {
   attachInterrupt(digitalPinToInterrupt(PIN_REED), isrReed, FALLING);
 }
 
+// Enter (KEY2) and up (KEY1) are both down. Held together for ADD_FRIEND_HOLD_MS: Add friend, straight away (the
+// search screen comes up while they are still held; the search ignores buttons). Let go sooner: nothing, once both are
+// up, so the combo never also counts as an enter or an up.
+static Event comboHold() {
+  const uint32_t t0 = millis();
+  while (digitalRead(PIN_KEY1) == LOW && digitalRead(PIN_KEY2) == LOW) {
+    if (millis() - t0 >= ADD_FRIEND_HOLD_MS) return EV_ADD_FRIEND;
+    delay(10);
+  }
+  while (digitalRead(PIN_KEY1) == LOW || digitalRead(PIN_KEY2) == LOW) delay(10);
+  return EV_NONE;
+}
+
+static bool comboDown() { return digitalRead(PIN_KEY1) == LOW && digitalRead(PIN_KEY2) == LOW; }
+
 static Event classify(uint8_t bits) {
   if (bits & B_REED) {
     delay(30);
@@ -124,8 +139,12 @@ static Event classify(uint8_t bits) {
     if (digitalRead(PIN_KEY2) == LOW) {
       uint32_t t0 = millis();
       while (digitalRead(PIN_KEY2) == LOW) {
+        if (comboDown()) return comboHold();
         if (millis() - t0 >= LONG_PRESS_MS) {
-          while (digitalRead(PIN_KEY2) == LOW) delay(10);
+          while (digitalRead(PIN_KEY2) == LOW) {
+            if (comboDown()) return comboHold();  // up joined late: still the combo, not enter
+            delay(10);
+          }
           return EV_KEY2_LONG;
         }
         delay(10);
@@ -135,7 +154,13 @@ static Event classify(uint8_t bits) {
   }
   if (bits & B_KEY1) {
     delay(20);
-    if (digitalRead(PIN_KEY1) == LOW) { while (digitalRead(PIN_KEY1) == LOW) delay(10); return EV_KEY1; }
+    if (digitalRead(PIN_KEY1) == LOW) {
+      while (digitalRead(PIN_KEY1) == LOW) {
+        if (comboDown()) return comboHold();  // enter joined: the combo, not up
+        delay(10);
+      }
+      return EV_KEY1;
+    }
   }
   if (bits & B_KEY3) {
     delay(20);
