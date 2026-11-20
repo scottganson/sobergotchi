@@ -23,18 +23,19 @@ enum Mode : uint8_t {
   M_CONFIRM,        // "Are you sure?" before the sobriety date editor or a factory reset
   M_INTRO,          // Pip's first-time setup (fresh flash or factory reset)
   M_SYSINFO,        // battery, version and device ID, from Settings
+  M_HOWTO,          // Friends > Add friend: how to make a friend (hold left + right, devices head to head)
   M_EDIT_DATE,
   M_EDIT_TEXT,
 };
 
 static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO;
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH, S_HOWTO;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
 static int reflectPage = 0, reflectPages = 1;
 static int friendSel = -1, menuSel = -1;
-static bool confirmDelete = false;
+static bool cardDelete = false;  // friend card: Delete highlighted (else Back)
 static bool sessionDirty = false;  // a partial refresh happened since the last full one
 
 // sorted view of friends: soonest anniversary first
@@ -44,6 +45,9 @@ static int32_t orderToday = -1;
 // rock-paper-scissors / friend-added pop-ups
 static Friend popupFriend;
 static uint8_t rpsMine, rpsTheirs;
+
+// Add friend (enter + up held): the radio looks for another Sobergotchi while the search screen is up
+static bool searching = false;    // the search screen is showing, the buttons are held and the radio is on
 
 // ---------------------------------------------------------------------------
 // editors
@@ -55,13 +59,14 @@ static int editY, editM, editD, editH;
 static char editBuf[PHONE_LEN + 2];
 static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
 static bool confirmYes = false;  // on an "Are you sure?" question: Yes highlighted (starts on Cancel)
-enum ConfirmWhat : uint8_t { C_SOBER, C_RESET };
+enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_DELETE };
 static ConfirmWhat confirmWhat = C_SOBER;
 static bool confirmAgain = false;  // factory reset: the second, "really?" question
 
 // Pip's first-time setup: a page per step; the name, sober date and phone pages open the usual editors.
-enum IntroStep : uint8_t { I_HELLO, I_NAME, I_SOBER, I_FRIENDS, I_PHONE, I_DONE, I_COUNT };
+enum IntroStep : uint8_t { I_HELLO, I_BUTTONS, I_NAME, I_SOBER, I_FRIENDS, I_PHONE, I_DONE, I_COUNT };
 static int introStep = I_HELLO;
+static bool introBack = false;  // setup: the < Back button highlighted (else Next)
 static bool inIntro() { return !store::settings.setupDone; }
 
 // Name / phone keyboard: up/down step through every key, then the actions under them (wrapping round); enter types
@@ -308,7 +313,7 @@ static int nextFriend() {  // index into store::friends of the soonest anniversa
 // ---------------------------------------------------------------------------
 // Settings has a User settings submenu; rows are named by item so both lists share one screen.
 enum MenuItem : uint8_t { MI_SOBER, MI_TODAY, MI_NAME, MI_PHONE, MI_USER, MI_SYSINFO, MI_RESET, MI_BACK };
-static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "User settings", "System info", "Factory reset", "Back"};
+static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "User settings", "System info", "Factory reset", "< Back"};
 static const uint8_t MENU_TOP[] = {MI_USER, MI_SYSINFO, MI_RESET, MI_BACK};
 static const uint8_t MENU_USER[] = {MI_NAME, MI_PHONE, MI_SOBER, MI_TODAY, MI_BACK};
 static bool menuUser = false;  // in the User settings submenu
@@ -323,7 +328,8 @@ class Data : public UiData {
   void wrapPages(int pages) override { reflectPages = pages; }
 
   int listCount(const char* name) override {
-    if (!strcmp(name, "friends")) return store::friendCount ? store::friendCount + 1 : 0;  // last row is "Back"
+    // first row "Add friend", then the friends, last row "Back"; no friends: the empty page (enter adds one)
+    if (!strcmp(name, "friends")) return store::friendCount + 2;  // with no friends: just Add friend and Back
     if (!strcmp(name, "menu")) return menuCount();
     return 0;
   }
@@ -404,13 +410,27 @@ class Data : public UiData {
     if (!strcmp(key, "menu.sel")) return num(mode == M_MENU ? menuSel : -1);
     if (!strcmp(key, "menu.title")) return str(menuUser ? "User settings" : "Settings");
     if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
-    if (!strcmp(key, "confirm.title")) return str(confirmWhat == C_RESET ? "Factory reset" : "Sobriety date");
-    if (!strcmp(key, "confirm.text"))
+    if (!strcmp(key, "confirm.title"))
+      return str(confirmWhat == C_RESET ? "Factory reset"
+                 : confirmWhat == C_DELETE ? "Delete friend" : "Sobriety date");
+    if (!strcmp(key, "confirm.text")) {
+      if (confirmWhat == C_DELETE) {
+        snprintf(out, n, "Delete %s from your friends? This can't be undone.", popupFriend.name);
+        return;
+      }
       return str(confirmWhat == C_SOBER ? "Are you sure you want to change your sobriety date?"
                  : confirmAgain ? "Really erase everything? This can't be undone."
                                 : "Erase your name, date, phone and friends, and start over?");
+    }
     if (!strcmp(key, "confirm.ok"))
-      return str(confirmWhat == C_SOBER ? "Yes, change it" : confirmAgain ? "Yes, erase all" : "Yes, erase it");
+      return str(confirmWhat == C_DELETE ? "Yes, delete" : confirmWhat == C_SOBER ? "Yes, change it"
+                 : confirmAgain ? "Yes, erase all" : "Yes, erase it");
+    if (!strcmp(key, "search.title")) {
+      return str("Looking...");
+    }
+    if (!strcmp(key, "search.text")) {
+      return str("Keep holding while your friend holds theirs. Let go to stop.");
+    }
     if (!strncmp(key, "sys.", 4)) {
       const char* k = key + 4;
       if (!strcmp(k, "battery")) {
@@ -446,7 +466,7 @@ class Data : public UiData {
       if (!strcmp(k, "years")) return num(yearsNow(f.soberDay, t));
       if (!strcmp(k, "phone")) return formatPhone(f.phone, out, n);
       if (!strcmp(k, "in")) return formatUntil(nextAnniversary(f.soberDay, t) - t, out, n);
-      if (!strcmp(k, "confirm")) return flag(confirmDelete);
+      if (!strcmp(k, "del")) return flag(cardDelete);
     }
 
     if (!strncmp(key, "rps.", 4)) {
@@ -468,10 +488,14 @@ class Data : public UiData {
  private:
   // Pip's setup pages: intro.title, intro.text, intro.pose, intro.step
   void introValue(const char* k, char* out, size_t n) {
-    static const char* const TITLE[I_COUNT] = {"Hello!", "Your name", "Sobriety date", "Friends", "Your phone", "All set"};
-    static const uint8_t POSE[I_COUNT] = {P_WAVE, P_STAND, P_READ, P_TEA, P_LANTERN, P_CHEER};
+    static const char* const TITLE[I_COUNT] = {"Hello!", "Your buttons", "Your name", "Sobriety date", "Friends", "Your phone", "All set"};
+    static const uint8_t POSE[I_COUNT] = {P_WAVE, P_WAVE, P_STAND, P_READ, P_TEA, P_LANTERN, P_CHEER};
     const char* name = store::settings.name;
     if (!strcmp(k, "title")) { snprintf(out, n, "%s", TITLE[introStep]); return; }
+    if (!strcmp(k, "hasback")) { snprintf(out, n, "%s", introStep > I_HELLO ? "1" : ""); return; }
+    if (!strcmp(k, "bsel")) { snprintf(out, n, "%s", introBack ? "1" : ""); return; }
+    if (!strcmp(k, "next")) { snprintf(out, n, "%s", introStep == I_DONE ? "Begin >" : "Next >"); return; }
+    if (!strcmp(k, "buttons")) { snprintf(out, n, "%s", introStep == I_BUTTONS ? "1" : ""); return; }
     if (!strcmp(k, "pose")) { snprintf(out, n, "%d", POSE[introStep]); return; }
     if (!strcmp(k, "step")) { snprintf(out, n, "%d/%d", introStep + 1, (int)I_COUNT); return; }
     if (strcmp(k, "text")) return;
@@ -480,13 +504,16 @@ class Data : public UiData {
         snprintf(out, n, "Hello there, friend. I'm Pip. I look after the little garden in here, and I'd love to keep "
                          "you company, one day at a time.");
         break;
+      case I_BUTTONS:
+        snprintf(out, n, "Up and down move around, and enter picks. Hold enter and up together to make a friend.");
+        break;
       case I_NAME: snprintf(out, n, "Let's get to know each other. What would you like me to call you?"); break;
       case I_SOBER:
         snprintf(out, n, "It's good to meet you, %s. When did your sobriety begin? I'll count every day from there.", name);
         break;
       case I_FRIENDS:
-        snprintf(out, n, "Hold your Sobergotchi near another one to become friends. You'll swap your name, phone "
-                         "number and sobriety date.");
+        snprintf(out, n, "To make a friend, put your Sobergotchis head to head and both hold the enter and up "
+                         "buttons until your friend is added.");
         break;
       case I_PHONE:
         snprintf(out, n, "What number should your friends call? If you'd rather not share one, pick Cancel to skip.");
@@ -499,14 +526,16 @@ class Data : public UiData {
 
   void itemValue(const char* k, const char* fmt, char* out, size_t n, int32_t t) {
     if (list && !strcmp(list, "menu")) return menuValue(k, out, n);
-    if (item == store::friendCount) {  // the "Back" row
-      if (!strcmp(k, "name")) snprintf(out, n, "Back");
-      else if (!strcmp(k, "back")) snprintf(out, n, "1");
+    if (item == 0 || item == store::friendCount + 1) {  // the "Add friend" and "Back" rows
+      if (!strcmp(k, "name")) snprintf(out, n, "%s", item ? "Back" : "Add friend");
+      else if (!strcmp(k, "back")) snprintf(out, n, "1");  // plain row: no date badge
+      else if (!strcmp(k, "add")) snprintf(out, n, "%s", item ? "" : "1");
+      else if (!strcmp(k, "ret")) snprintf(out, n, "%s", item ? "1" : "");  // Back: a "<" badge
       return;
     }
-    if (item < 0 || item >= store::friendCount) return;
+    if (item < 1 || item > store::friendCount) return;
     if (orderToday != t) sortFriends();
-    const Friend& f = store::friends[order[item]];
+    const Friend& f = store::friends[order[item - 1]];
     int32_t a = nextAnniversary(f.soberDay, t);
     if (!strcmp(k, "name")) snprintf(out, n, "%s", f.name);
     else if (!strcmp(k, "date")) formatDate(f.soberDay, fmt, out, n);
@@ -557,17 +586,13 @@ class Data : public UiData {
       }
       return;
     }
+    if (!strcmp(k, "choose")) { snprintf(out, n, "%s", editChoice >= 0 ? "1" : ""); return; }
+    if (!strcmp(k, "csel")) { snprintf(out, n, "%s", editChoice == 1 ? "1" : ""); return; }
     if (!strcmp(k, "has3")) { snprintf(out, n, "%s", editTarget == E_TODAY ? "1" : ""); return; }
     if (!strncmp(k, "hint", 4)) {
       const char* h = "";
-      char opts[48];
-      if (editChoice >= 0) {
-        static const char* O[] = {"Save", "Cancel"};
-        int m = 0;
-        for (int i = 0; i < 2; i++)
-          m += snprintf(opts + m, sizeof opts - m, i == editChoice ? "%s[%s]" : "%s %s ", i ? " " : "", O[i]);
-        if (k[4] == '1') h = opts;
-        else if (k[4] == '2') h = "\202 \203 choose  \177  \201 ok";
+      if (editChoice >= 0) {  // Save / Cancel are drawn as buttons
+        if (k[4] == '2') h = "\202 \203 choose  \177  \201 ok";
       } else {
         if (k[4] == '1') h = "\202 more  less \203";
         else if (k[4] == '2') h = "\201 next";
@@ -603,17 +628,15 @@ class Data : public UiData {
   }
 
   void hint(char* out, size_t n) {
+    if (searching) { snprintf(out, n, "radio on while held"); return; }
     switch (mode) {
-      case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
+      case M_HOWTO: snprintf(out, n, "\201 back"); break;
+      case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 %s", friendSel == 0 ? "add" : "open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       case M_CONFIRM: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
-      case M_INTRO:
-        if (introStep == I_HELLO) snprintf(out, n, "\201 next");
-        else snprintf(out, n, "\202 back  \177  \201 %s", introStep == I_DONE ? "begin" : "next");
-        break;
       case M_EDIT_TEXT: snprintf(out, n, "\202 \203 move  \177  \201 pick"); break;
       default:
-        if (carousel == 3 && store::friendCount) snprintf(out, n, "\201 choose a friend");
+        if (carousel == 3) snprintf(out, n, store::friendCount ? "\201 choose a friend" : "\201 add a friend");
         else if (carousel == 4) snprintf(out, n, "\201 choose a setting");
         break;
     }
@@ -631,6 +654,7 @@ static int currentScreen() {
     case M_CONFIRM: return S_CONFIRM;
     case M_INTRO: return S_INTRO;
     case M_SYSINFO: return S_SYSINFO;
+    case M_HOWTO: return S_HOWTO;
     case M_EDIT_DATE: return S_EDIT_DATE;
     case M_EDIT_TEXT: return S_EDIT_TEXT;
     case M_FRIENDS: return S_FRIENDS;
@@ -650,22 +674,35 @@ static int currentScreen() {
   }
 }
 
+static uint32_t draws = 0;  // every screen drawn; lets loop() tell whether a key changed anything
+
+static void draw(int screenId, bool full) {
+  draws++;
+  display::show(screenId, data, full);
+}
+
 static void show(bool full) {
   if (hw::batteryStale()) hw::readBattery();
   int id = currentScreen();
   int pagesBefore = reflectPages;
-  display::show(id, data, full);
-  if (id == S_REFLECT && reflectPages != pagesBefore && reflectPages > 1) display::show(id, data, false);  // page count now known
+  draw(id, full);
+  if (id == S_REFLECT && reflectPages != pagesBefore && reflectPages > 1) draw(id, false);  // page count now known
   if (!full) sessionDirty = true;
 }
 
+// A pop-up for POPUP_MS or until enter. If enter + up are still held (Add friend), it waits for them to be let go
+// first, so letting go doesn't close it.
 static void showPopup(int screenId) {
-  display::show(screenId, data, false);
+  draw(screenId, false);
   sessionDirty = true;
+  if (hw::comboHeld()) {
+    while (hw::comboHeld()) delay(20);
+    hw::flushKeys();
+  }
   uint32_t t0 = millis();
   while (millis() - t0 < POPUP_MS) {
     Event e = hw::wait(POPUP_MS - (millis() - t0));
-    if (e != EV_TIMEOUT && e != EV_REED) break;  // any button closes the pop-up early
+    if (e == EV_KEY2) break;  // enter closes the pop-up early; up / down only ever select
   }
 }
 
@@ -733,6 +770,7 @@ static void editClosed(bool saved) {
 
 static void startIntro() {
   introStep = I_HELLO;
+  introBack = false;
   mode = M_INTRO;
 }
 
@@ -742,6 +780,56 @@ static void finishIntro() {
   store::saveSettings();
   sortFriends();
   mode = M_CAROUSEL;
+}
+
+// ---------------------------------------------------------------------------
+// Friends > Add friend
+// ---------------------------------------------------------------------------
+static bool isFriend(uint32_t uid) {
+  for (int i = 0; i < store::friendCount; i++)
+    if (store::friends[i].uid == uid) return true;
+  return false;
+}
+
+// Back to the friends list after adding (or not), on the given friend's row if there is one.
+static void friendsBack(uint32_t uid) {
+  mode = M_FRIENDS;
+  if (friendSel < 0) friendSel = 1;
+  if (friendSel > store::friendCount + 1) friendSel = store::friendCount + 1;
+  for (int i = 0; i < store::friendCount; i++)
+    if (uid && store::friends[order[i]].uid == uid) friendSel = i + 1;
+}
+
+// Add friend mode, from enter + up held for ADD_FRIEND_HOLD_MS on any screen. The radio is on only while both are
+// held (at most ADD_FRIEND_HOLD_MAX_MS), and ADD_FRIEND_SWAP_MS after someone is heard it turns off and they are added. A new friend is saved straight away ("Friend added!"); a friend we already have gets their card
+// refreshed and a game of rock-paper-scissors.
+static void addFriend() {
+  searching = true;
+  draw(S_SEARCH, false);
+  sessionDirty = true;
+  exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
+  LOG("add friend: radio on while held");
+  const uint32_t t0 = millis();
+  uint32_t foundAt = 0;
+  while (hw::comboHeld() && millis() - t0 < ADD_FRIEND_HOLD_MAX_MS) {
+    delay(20);
+    if (!foundAt && exchange::found()) foundAt = millis();  // keep the radio on a moment so they hear us too
+    if (foundAt && millis() - foundAt >= ADD_FRIEND_SWAP_MS) break;  // done: added while still held
+  }
+  exchange::finish();
+  LOG("add friend: radio off (%s)", hw::comboHeld() ? "still held" : "let go");
+  if (!hw::comboHeld()) hw::flushKeys();  // letting go can bounce: don't let that close the pop-up that comes next
+  const exchange::Result r = exchange::best();
+  searching = false;
+  if (!r.found) return;  // nobody: back to whatever was on screen, no message
+  LOG("add friend: found %s", r.card.name);
+  popupFriend = r.card;
+  rpsMine = r.myThrow;
+  rpsTheirs = r.theirThrow;
+  const bool isNew = store::upsertFriend(r.card);  // no question: starting Add friend says you want to
+  sortFriends();
+  showPopup(isNew ? S_ADDED : S_RPS);
+  friendsBack(r.card.uid);
 }
 
 static void stepDate(int dir) {
@@ -760,8 +848,10 @@ static void handleKey(Event e) {
   if (e == EV_KEY2_LONG) e = EV_KEY2;  // no hold actions: a long press is just enter
   switch (mode) {
     case M_INTRO:
-      if (e == EV_KEY1 && introStep > I_HELLO) introStep--;
-      else if (e == EV_KEY2 || e == EV_KEY3) {
+      // < Back and Next > buttons: up / down choose (no Back on the first page), enter presses
+      if ((e == EV_KEY1 || e == EV_KEY3) && introStep > I_HELLO) introBack = !introBack;
+      else if (e == EV_KEY2 && introBack) { introStep--; introBack = false; }
+      else if (e == EV_KEY2) {
         switch (introStep) {
           case I_NAME: startEditText(E_NAME); break;
           case I_SOBER: startEditDate(E_SOBER); break;
@@ -777,37 +867,38 @@ static void handleKey(Event e) {
       else if (e == EV_KEY3) { carousel = (carousel + 1) % CAROUSEL_COUNT; reflectPage = 0; }
       else if (e == EV_KEY2) {
         if (carousel == 2) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
-        else if (carousel == 3 && store::friendCount) { mode = M_FRIENDS; friendSel = 0; }
+        else if (carousel == 3) { mode = M_FRIENDS; friendSel = store::friendCount ? 1 : 0; }  // first friend, or Add
         else if (carousel == 4) { mode = M_MENU; menuUser = false; menuSel = 0; }
       }
       break;
 
     case M_SYSINFO:
-      mode = M_MENU;  // any button: back to Settings
+      if (e == EV_KEY2) mode = M_MENU;  // enter: back to Settings (up / down do nothing here)
       break;
 
-    case M_FRIENDS:
+    case M_HOWTO:
+      if (e == EV_KEY2) friendsBack(0);  // enter: back to Friends (on Add friend)
+      break;
+
+    case M_FRIENDS:  // rows: 0 Add friend, 1..friendCount the friends, friendCount + 1 Back
       if (e == EV_KEY1 && friendSel > 0) friendSel--;
-      else if (e == EV_KEY3 && friendSel < store::friendCount) friendSel++;  // friendCount = the Back row
-      else if (e == EV_KEY2 && friendSel >= store::friendCount) mode = M_CAROUSEL;
-      else if (e == EV_KEY2 && store::friendCount) {
-        popupFriend = store::friends[order[friendSel]];
-        confirmDelete = false;
+      else if (e == EV_KEY3 && friendSel < store::friendCount + 1) friendSel++;
+      else if (e == EV_KEY2 && friendSel == 0) mode = M_HOWTO;
+      else if (e == EV_KEY2 && friendSel > store::friendCount) mode = M_CAROUSEL;
+      else if (e == EV_KEY2) {
+        popupFriend = store::friends[order[friendSel - 1]];
+        cardDelete = false;  // Back highlighted
         mode = M_FRIEND_CARD;
-      } else if (e == EV_KEY2_LONG) mode = M_CAROUSEL;
+      }
       break;
 
-    case M_FRIEND_CARD:
-      if (e == EV_KEY3) {
-        if (!confirmDelete) confirmDelete = true;
-        else {
-          store::deleteFriend(order[friendSel]);
-          sortFriends();
-          if (friendSel >= store::friendCount) friendSel = store::friendCount - 1;
-          mode = store::friendCount ? M_FRIENDS : M_CAROUSEL;
-        }
-      } else if (e == EV_KEY1 || e == EV_KEY2 || e == EV_KEY2_LONG) {
-        mode = M_FRIENDS;
+    case M_FRIEND_CARD:  // up / down choose Back or Delete; enter does it, and Delete asks first
+      if (e == EV_KEY1 || e == EV_KEY3) cardDelete = !cardDelete;
+      else if (e == EV_KEY2 && !cardDelete) mode = M_FRIENDS;
+      else if (e == EV_KEY2) {
+        mode = M_CONFIRM;
+        confirmWhat = C_DELETE;
+        confirmYes = false;  // Cancel highlighted
       }
       break;
 
@@ -835,7 +926,17 @@ static void handleKey(Event e) {
     case M_CONFIRM:
       if (e == EV_KEY1 || e == EV_KEY3) confirmYes = !confirmYes;
       else if (e == EV_KEY2) {
-        if (!confirmYes) mode = M_MENU;
+        if (confirmWhat == C_DELETE) {
+          if (confirmYes) {
+            store::deleteFriend(order[friendSel - 1]);
+            sortFriends();
+            if (friendSel > store::friendCount) friendSel = store::friendCount;
+            mode = M_FRIENDS;  // with none left, on Add friend
+          } else {
+            cardDelete = false;
+            mode = M_FRIEND_CARD;  // Cancel: back to their card, on Back
+          }
+        } else if (!confirmYes) mode = M_MENU;
         else if (confirmWhat == C_SOBER) startEditDate(E_SOBER);
         else if (!confirmAgain) { confirmAgain = true; confirmYes = false; }  // ask twice, Cancel highlighted again
         else {
@@ -885,21 +986,45 @@ static void handleKey(Event e) {
   }
 }
 
-static void friendTap() {
-  exchange::Result r = exchange::run(store::settings);
-  if (!r.found) return;
-  bool isNew = store::upsertFriend(r.card);
-  sortFriends();
-  popupFriend = r.card;
-  rpsMine = r.myThrow;
-  rpsTheirs = r.theirThrow;
-  showPopup(isNew ? S_ADDED : S_RPS);
-}
-
 // ---------------------------------------------------------------------------
 // main loop
 // ---------------------------------------------------------------------------
 static int32_t shownDay = -1;
+
+// Everything a screen is drawn from, so a key that changes none of it (enter on the home screen, say) leaves the
+// panel alone: redrawing the same picture with a partial refresh still drives the ink and turns it grey.
+struct UiState {
+  uint32_t draws;
+  int mode, carousel, reflectPage, friendSel, menuSel, introStep;
+  int editTarget, editField, editY, editM, editD, editH, editChoice, kbSel, confirmWhat;
+  bool cardDelete, menuUser, confirmYes, confirmAgain, kbShift, searching, introBack;
+  int friendCount;
+  char editBuf[PHONE_LEN + 2];
+};
+
+static void snapshot(UiState& u) {
+  memset(&u, 0, sizeof u);  // zero the padding too, so memcmp sees only the fields
+  u.draws = draws;
+  u.mode = mode; u.carousel = carousel; u.reflectPage = reflectPage; u.friendSel = friendSel; u.menuSel = menuSel;
+  u.introStep = introStep;
+  u.editTarget = editTarget; u.editField = editField; u.editY = editY; u.editM = editM; u.editD = editD;
+  u.editH = editH; u.editChoice = editChoice; u.kbSel = kbSel; u.confirmWhat = confirmWhat;
+  u.cardDelete = cardDelete; u.menuUser = menuUser; u.confirmYes = confirmYes; u.confirmAgain = confirmAgain;
+  u.kbShift = kbShift; u.searching = searching; u.introBack = introBack;
+  u.friendCount = store::friendCount;
+  memcpy(u.editBuf, editBuf, sizeof editBuf);
+}
+
+// Handle a key; true if it changed something on screen (false: leave the panel alone).
+static bool keyChanged(Event e) {
+  UiState before, after;
+  snapshot(before);
+  handleKey(e);
+  snapshot(after);
+  if (memcmp(&before, &after, sizeof before) != 0) return true;
+  LOG("key %d: nothing changed, no redraw", (int)e);
+  return false;
+}
 
 // Full refresh only at power-up and the midnight redraw; partial otherwise (Scott saw ghosting right after full ones).
 static void goHome(bool full) {
@@ -907,7 +1032,7 @@ static void goHome(bool full) {
   carousel = 0;
   menuUser = false;
   reflectPage = 0;
-  confirmDelete = false;
+  cardDelete = false;
   show(full);
   sessionDirty = false;
   shownDay = today();
@@ -929,6 +1054,8 @@ void begin() {
   S_GNOME = ui::screenByName("gnome");
   S_INTRO = ui::screenByName("intro");
   S_SYSINFO = ui::screenByName("sysinfo");
+  S_SEARCH = ui::screenByName("search");
+  S_HOWTO = ui::screenByName("howto");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();
@@ -948,8 +1075,8 @@ void loop() {
   if (inIntro()) {  // setup waits for the buttons: no idle timeout, no friend taps until Pip knows who you are
     Event e = hw::wait(IDLE_TIMEOUT_MS);
     if (e == EV_TIMEOUT) { display::sleep(); return; }
-    if (e == EV_REED) return;
-    handleKey(e);
+    if (e == EV_ADD_FRIEND) { while (hw::comboHeld()) delay(20); hw::flushKeys(); return; }  // not during setup
+    if (!keyChanged(e)) return;
     if (mode == M_CAROUSEL) goHome(true);  // setup finished: a clean full refresh onto the home screen
     else show(false);
     return;
@@ -970,13 +1097,12 @@ void loop() {
     }
     return;
   }
-  if (e == EV_REED) {
-    friendTap();
-    goHome(false);
+  if (e == EV_ADD_FRIEND) {  // enter + up held: Add friend from any screen, radio on while they are held
+    addFriend();
+    show(false);
     return;
   }
-  handleKey(e);
-  show(false);
+  if (keyChanged(e)) show(false);
 }
 
 }  // namespace app

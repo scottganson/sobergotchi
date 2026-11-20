@@ -7,12 +7,11 @@ namespace hw {
 
 static SemaphoreHandle_t wakeSem;
 static volatile uint8_t pending;  // bit per input that fired
-enum { B_KEY1 = 1, B_KEY2 = 2, B_KEY3 = 4, B_REED = 8 };
+enum { B_KEY1 = 1, B_KEY2 = 2, B_KEY3 = 4 };
 
 static void isrKey1() { pending |= B_KEY1; BaseType_t w = pdFALSE; xSemaphoreGiveFromISR(wakeSem, &w); portYIELD_FROM_ISR(w); }
 static void isrKey2() { pending |= B_KEY2; BaseType_t w = pdFALSE; xSemaphoreGiveFromISR(wakeSem, &w); portYIELD_FROM_ISR(w); }
 static void isrKey3() { pending |= B_KEY3; BaseType_t w = pdFALSE; xSemaphoreGiveFromISR(wakeSem, &w); portYIELD_FROM_ISR(w); }
-static void isrReed() { pending |= B_REED; BaseType_t w = pdFALSE; xSemaphoreGiveFromISR(wakeSem, &w); portYIELD_FROM_ISR(w); }
 
 // ---- clock ----------------------------------------------------------------
 static uint32_t baseSecs;       // local time at baseTick
@@ -106,26 +105,49 @@ void begin() {
   pinMode(PIN_BAT_ENABLE, OUTPUT);
   digitalWrite(PIN_BAT_ENABLE, LOW);  // Seeed: keep low so P0.31 never sees the raw battery while charging
   pinMode(PIN_CHARGING, INPUT);
-  const uint8_t pins[] = {PIN_KEY1, PIN_KEY2, PIN_KEY3, PIN_REED};
+  const uint8_t pins[] = {PIN_KEY1, PIN_KEY2, PIN_KEY3};
   for (uint8_t p : pins) pinMode(p, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(PIN_KEY1), isrKey1, FALLING);
   attachInterrupt(digitalPinToInterrupt(PIN_KEY2), isrKey2, FALLING);
   attachInterrupt(digitalPinToInterrupt(PIN_KEY3), isrKey3, FALLING);
-  attachInterrupt(digitalPinToInterrupt(PIN_REED), isrReed, FALLING);
+}
+
+// Enter (KEY2) and up (KEY1) are both down. Held together for ADD_FRIEND_HOLD_MS: Add friend, straight away, while they
+// are still held (the radio stays on until they are let go). Let go sooner: nothing, once both are
+// up, so the combo never also counts as an enter or an up.
+static Event comboHold() {
+  const uint32_t t0 = millis();
+  while (digitalRead(PIN_KEY1) == LOW && digitalRead(PIN_KEY2) == LOW) {
+    if (millis() - t0 >= ADD_FRIEND_HOLD_MS) return EV_ADD_FRIEND;
+    delay(10);
+  }
+  while (digitalRead(PIN_KEY1) == LOW || digitalRead(PIN_KEY2) == LOW) delay(10);
+  return EV_NONE;
+}
+
+static bool comboDown() { return digitalRead(PIN_KEY1) == LOW && digitalRead(PIN_KEY2) == LOW; }
+bool comboHeld() { return comboDown(); }
+
+void flushKeys() {
+  delay(30);
+  noInterrupts();
+  pending = 0;
+  interrupts();
+  xSemaphoreTake(wakeSem, 0);
 }
 
 static Event classify(uint8_t bits) {
-  if (bits & B_REED) {
-    delay(30);
-    if (digitalRead(PIN_REED) == LOW) return EV_REED;
-  }
   if (bits & B_KEY2) {
     delay(20);
     if (digitalRead(PIN_KEY2) == LOW) {
       uint32_t t0 = millis();
       while (digitalRead(PIN_KEY2) == LOW) {
+        if (comboDown()) return comboHold();
         if (millis() - t0 >= LONG_PRESS_MS) {
-          while (digitalRead(PIN_KEY2) == LOW) delay(10);
+          while (digitalRead(PIN_KEY2) == LOW) {
+            if (comboDown()) return comboHold();  // up joined late: still the combo, not enter
+            delay(10);
+          }
           return EV_KEY2_LONG;
         }
         delay(10);
@@ -135,7 +157,13 @@ static Event classify(uint8_t bits) {
   }
   if (bits & B_KEY1) {
     delay(20);
-    if (digitalRead(PIN_KEY1) == LOW) { while (digitalRead(PIN_KEY1) == LOW) delay(10); return EV_KEY1; }
+    if (digitalRead(PIN_KEY1) == LOW) {
+      while (digitalRead(PIN_KEY1) == LOW) {
+        if (comboDown()) return comboHold();  // enter joined: the combo, not up
+        delay(10);
+      }
+      return EV_KEY1;
+    }
   }
   if (bits & B_KEY3) {
     delay(20);

@@ -1,4 +1,4 @@
-<!-- Date editor. KEY1 (up) plus, KEY3 (down) minus, KEY2 (enter) next field; after the last field a Save / Cancel choice. -->
+<!-- Date editor. KEY1 (up) plus, KEY3 (down) minus, KEY2 (enter) next field; after the last field Cancel / Save buttons. -->
 <screen id="edit-date">
   <row h="21" fill="ink" pad="0 4 0 5">
     <text w="*" font="label-b">{edit.title}</text>
@@ -21,7 +21,13 @@
     <row if="edit.s3" fill="ink" radius="6" pad="0 8"><text w="*" font="small">{edit.l3}</text><text w="50" font="phone" align="right">{edit.v3}</text></row>
   </stack>
   <spacer h="*"/>
-  <text h="13" font="small" align="center">{edit.hint1}</text>
+  <stack h="22" margin="0 4 2 4">
+    <row if="edit.choose" gap="6">
+      <stack w="*"><text if="edit.csel" font="small-b" align="center" fill="ink" radius="5">Cancel</text><text if="!edit.csel" font="small-b" align="center" border="1" radius="5">Cancel</text></stack>
+      <stack w="*"><text if="!edit.csel" font="small-b" align="center" fill="ink" radius="5">Save</text><text if="edit.csel" font="small-b" align="center" border="1" radius="5">Save</text></stack>
+    </row>
+    <text if="!edit.choose" font="small" align="center" valign="bottom">{edit.hint1}</text>
+  </stack>
   <text h="13" font="small" align="center">{edit.hint2}</text>
   <spacer h="4"/>
 </screen>

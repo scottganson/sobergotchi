@@ -37,11 +37,13 @@ struct Candidate {
 };
 
 static Candidate cands[4];
+static int8_t minRssi = ADD_FRIEND_MIN_RSSI;
+static uint8_t myThrow = 1;
 
 static void onScan(ble_gap_evt_adv_report_t* report) {
   uint8_t buf[32];
   int len = Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA, buf, sizeof buf);
-  if (len >= 7 && buf[2] == 'S' && buf[3] == 'G' && report->rssi >= EXCHANGE_MIN_RSSI) {
+  if (len >= 7 && buf[2] == 'S' && buf[3] == 'G' && report->rssi >= minRssi) {
     uint16_t company = buf[0] | (buf[1] << 8);
     uint32_t uid;
     uint8_t kind = buf[4];
@@ -76,11 +78,10 @@ static uint8_t randomThrow() {
   return 1 + r % 3;
 }
 
-Result run(const Settings& me) {
-  Result res;
-  memset(&res, 0, sizeof res);
+void start(const Settings& me, int8_t rssiFloor) {
   memset(cands, 0, sizeof cands);
-  res.myThrow = randomThrow();
+  minRssi = rssiFloor;
+  myThrow = randomThrow();
 
   CardAdv card;
   memset(&card, 0, sizeof card);
@@ -90,7 +91,7 @@ Result run(const Settings& me) {
   card.version = VERSION;
   card.uid = me.uid;
   card.soberDay2000 = (uint16_t)(me.soberDay - DAY_2000);
-  card.rps = res.myThrow;
+  card.rps = myThrow;
   memcpy(card.name, me.name, strnlen(me.name, NAME_LEN));
 
   PhoneRsp phone;
@@ -121,13 +122,23 @@ Result run(const Settings& me) {
   Bluefruit.Scanner.setInterval(160, 160);
   Bluefruit.Scanner.restartOnDisconnect(false);
   Bluefruit.Scanner.start(0);
+}
 
-  uint32_t t0 = millis();
-  while (millis() - t0 < EXCHANGE_MS) delay(50);
+bool found() {
+  for (auto& k : cands)
+    if (k.used && k.gotCard) return true;
+  return false;
+}
 
+void finish() {
   Bluefruit.Scanner.stop();
   Bluefruit.Advertising.stop();
+}
 
+Result best() {
+  Result res;
+  memset(&res, 0, sizeof res);
+  res.myThrow = myThrow;
   Candidate* best = nullptr;
   for (auto& k : cands)
     if (k.used && k.gotCard && (!best || k.rssi > best->rssi)) best = &k;

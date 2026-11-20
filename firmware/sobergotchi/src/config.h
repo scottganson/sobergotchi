@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.15-world12"
+#define FIRMWARE_VERSION "1.31-world28"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1
@@ -36,7 +36,6 @@
 #define PIN_KEY1        2    // left,   D2, active low: UP    (previous item, value +1)
 #define PIN_KEY2        1    // right,  D1, active low: ENTER (select / next field; hold = cancel or save in editors)
 #define PIN_KEY3        9    // middle, D9, active low: DOWN  (next item, value -1)
-#define PIN_REED        4    // D4, reed switch to GND (closes near a magnet). Was D0 until fix8; D0 is the battery input.
 
 // Battery, from Seeed's Ex05 schematic: the battery goes through a switch (on while D12 is high) and a
 // 10k/10k divider to D0/A0. Reading the XIAO's own battery pin (P0.31) is not possible here: it is the display DC line.
@@ -52,8 +51,11 @@
 #define IDLE_TIMEOUT_MS        30000UL  // back to the home screen after this long without a press
 #define LONG_PRESS_MS          700UL
 #define POPUP_MS               6000UL   // how long "Friend added" / rock-paper-scissors stay up
-#define EXCHANGE_MS            4000UL   // how long to swap cards after the reed closes
-#define EXCHANGE_MIN_RSSI      (-60)    // ignore devices further than a few centimetres away
+#define ADD_FRIEND_HOLD_MS     2000UL   // hold enter + up together this long to start Add friend from any screen;
+                                        // the radio then stays on only while they are held
+#define ADD_FRIEND_SWAP_MS     3000UL   // after a find, keep the radio on this long (so they hear us too), then add
+#define ADD_FRIEND_HOLD_MAX_MS 120000UL // ...but never more than 2 minutes (a button stuck in a pocket)
+#define ADD_FRIEND_MIN_RSSI    (-80)    // reaches across a table (about 1-2 m), not just back to back
 #define MAX_FRIENDS            200
 #define NAME_LEN               12
 #define PHONE_LEN              15

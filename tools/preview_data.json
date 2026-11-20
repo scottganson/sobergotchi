@@ -35,6 +35,11 @@
  "friends.sel": -1,
  "friends": [
   {
+   "name": "Add friend",
+   "back": true,
+   "add": true
+  },
+  {
    "name": "Sam R.",
    "date": {
     "date": "2021-12-02"
@@ -87,6 +92,11 @@
    "years": 3,
    "in": "10 mos",
    "phone": "289-555-0166"
+  },
+  {
+   "name": "Back",
+   "back": true,
+   "ret": true
   }
  ],
  "reflect.title": "Language of the Heart",
@@ -108,7 +118,7 @@
    "value": "start over with Pip"
   },
   {
-   "label": "Back",
+   "label": "< Back",
    "value": ""
   }
  ],
@@ -119,7 +129,6 @@
  "friend.years": 5,
  "friend.in": "17 days",
  "friend.phone": "416-555-0101",
- "friend.confirm": false,
  "edit.title": "Your name",
  "edit.l0": "Month",
  "edit.v0": "Aug",
@@ -203,12 +212,24 @@
   "friends": [
    {},
    {
-    "friends.sel": 2,
+    "friends.sel": 0,
     "hint": "● open  ·  hold ● back"
    },
    {
     "friends.any": false,
-    "friends.count": 0
+    "friends.count": 0,
+    "friends": [
+     {
+      "name": "Add friend",
+      "back": true,
+      "add": true
+     },
+     {
+      "name": "Back",
+      "back": true,
+      "ret": true
+     }
+    ]
    }
   ],
   "menu": [
@@ -284,6 +305,12 @@
     "edit.v0": "Nov",
     "edit.v1": "15",
     "edit.v2": "2026"
+   },
+   {
+    "edit.title": "Sobriety date",
+    "edit.choose": true,
+    "edit.csel": false,
+    "edit.hint2": "  choose     ok"
    }
   ],
   "anniversary": [
@@ -304,50 +331,94 @@
     "confirm.title": "Factory reset",
     "confirm.text": "Really erase everything? This can't be undone.",
     "confirm.ok": "Yes, erase all"
+   },
+   {
+    "confirm.title": "Delete friend",
+    "confirm.text": "Delete Sam R. from your friends? This can't be undone.",
+    "confirm.ok": "Yes, delete"
    }
   ],
   "intro": [
    {
     "intro.title": "Hello!",
-    "intro.step": "1/6",
+    "intro.step": "1/7",
     "intro.pose": 1,
     "hint": "● next",
-    "intro.text": "Hello there, friend. I'm Pip. I look after the little garden in here, and I'd love to keep you company, one day at a time."
+    "intro.text": "Hello there, friend. I'm Pip. I look after the little garden in here, and I'd love to keep you company, one day at a time.",
+    "intro.hasback": false,
+    "intro.bsel": false,
+    "intro.next": "Next >"
+   },
+   {
+    "intro.title": "Your buttons",
+    "intro.step": "2/7",
+    "intro.buttons": true,
+    "intro.text": "Up and down move around, and enter picks. Hold enter and up together to make a friend.",
+    "hint": "▲ back  ·  ● next",
+    "intro.hasback": true,
+    "intro.bsel": false,
+    "intro.next": "Next >"
    },
    {
     "intro.title": "Your name",
-    "intro.step": "2/6",
+    "intro.step": "3/7",
     "intro.pose": 0,
     "hint": "▲ back  ·  ● next",
-    "intro.text": "Let's get to know each other. What would you like me to call you?"
+    "intro.text": "Let's get to know each other. What would you like me to call you?",
+    "intro.hasback": true,
+    "intro.bsel": false,
+    "intro.next": "Next >"
    },
    {
     "intro.title": "Sobriety date",
-    "intro.step": "3/6",
+    "intro.step": "4/7",
     "intro.pose": 4,
     "hint": "▲ back  ·  ● next",
-    "intro.text": "It's good to meet you, Scott. When did your sobriety begin? I'll count every day from there."
+    "intro.text": "It's good to meet you, Scott. When did your sobriety begin? I'll count every day from there.",
+    "intro.hasback": true,
+    "intro.bsel": false,
+    "intro.next": "Next >"
    },
    {
     "intro.title": "Friends",
-    "intro.step": "4/6",
+    "intro.step": "5/7",
     "intro.pose": 5,
     "hint": "▲ back  ·  ● next",
-    "intro.text": "Hold your Sobergotchi near another one to become friends. You'll swap your name, phone number and sobriety date."
+    "intro.text": "To make a friend, put your Sobergotchis head to head and both hold the enter and up buttons until your friend is added.",
+    "intro.hasback": true,
+    "intro.bsel": false,
+    "intro.next": "Next >"
    },
    {
     "intro.title": "Your phone",
-    "intro.step": "5/6",
+    "intro.step": "6/7",
     "intro.pose": 7,
     "hint": "▲ back  ·  ● next",
-    "intro.text": "What number should your friends call? If you'd rather not share one, pick Cancel to skip."
+    "intro.text": "What number should your friends call? If you'd rather not share one, pick Cancel to skip.",
+    "intro.hasback": true,
+    "intro.bsel": false,
+    "intro.next": "Next >"
    },
    {
     "intro.title": "All set",
-    "intro.step": "6/6",
+    "intro.step": "7/7",
     "intro.pose": 9,
     "hint": "▲ back  ·  ● begin",
-    "intro.text": "That's everything, Scott. Our garden grows with every sober day. Come and visit me any time."
+    "intro.text": "That's everything, Scott. Our garden grows with every sober day. Come and visit me any time.",
+    "intro.hasback": true,
+    "intro.bsel": false,
+    "intro.next": "Begin >"
+   }
+  ],
+  "search": [
+   {
+    "search.text": "Keep holding while your friend holds theirs. Let go to stop.",
+    "hint": "radio on while held"
+   }
+  ],
+  "howto": [
+   {
+    "hint": "● back"
    }
   ]
  },
@@ -437,5 +508,8 @@
  "sys.version": "1.15-world12",
  "sys.friends": "4",
  "sys.id": "5A3F09C2",
- "menu.title": "Settings"
+ "menu.title": "Settings",
+ "search.title": "Looking...",
+ "search.text": "Looking for Sobergotchis nearby for 30 seconds. Ask your friend to pick Add friend too.",
+ "friend.del": false
 }

@@ -5,7 +5,7 @@
 static const UiNode SCREEN_added_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 6}, // <col>
   {1, 12, 5, 0, 0, 0, 0, 4, 122, 32, 0, 0, "Friend added!", nullptr, nullptr, 0}, // <text>
-  {3, 0, 5, 0, 0, 0, 0, 36, 122, 118, 5, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 36, 122, 118, 7, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 6, 5, 0, 0, 0, 0, 154, 122, 32, 0, 0, "{friend.name}", nullptr, nullptr, 0}, // <text>
   {1, 3, 5, 0, 0, 0, 0, 186, 122, 15, 0, 0, "{friend.years} years sober", nullptr, nullptr, 0}, // <text>
   {1, 0, 5, 0, 0, 0, 0, 201, 122, 13, 0, 0, "since {friend.date:MMM d, yyyy}", nullptr, nullptr, 0}, // <text>
@@ -16,39 +16,35 @@ static const UiNode SCREEN_anniversary_nodes[] = {
   {1, 11, 9, 0, 0, 0, 0, 0, 122, 33, 0, 0, "Happy", nullptr, nullptr, 0}, // <text>
   {1, 11, 5, 0, 0, 0, 0, 33, 122, 30, 0, 0, "Birthday", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 63, 122, 106, 0, 0, nullptr, nullptr, nullptr, 4}, // <stack>
-  {3, 0, 5, 0, 0, 0, 0, 63, 122, 106, 1, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 63, 122, 106, 2, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {0, 0, 4, 0, 0, 0, 0, 63, 122, 106, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
   {1, 10, 5, 0, 0, 0, 0, 87, 122, 44, 0, 0, "{sober.num}", nullptr, nullptr, 0}, // <text>
   {1, 1, 5, 0, 0, 0, 0, 131, 122, 12, 0, 0, "{sober.unit}", nullptr, nullptr, 0}, // <text>
   {1, 6, 5, 0, 0, 0, 0, 169, 122, 30, 0, 0, "{user.name}", nullptr, nullptr, 0}, // <text>
-  {3, 0, 5, 0, 0, 0, 0, 199, 122, 10, 4, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 199, 122, 10, 6, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 0, 5, 0, 0, 0, 0, 209, 122, 13, 0, 0, "sober since {sober.date:MMM d, yyyy}", nullptr, nullptr, 0}, // <text>
   {1, 1, 5, 0, 0, 0, 0, 222, 122, 19, 0, 0, "One day at a time", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
 static const UiNode SCREEN_confirm_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 18}, // <col>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 14}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "{confirm.title}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 22, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
   {2, 3, 1, 0, 0, 0, 6, 43, 110, 70, 15, 0, "{confirm.text}", "0", nullptr, 0}, // <wrap>
-  {0, 0, 4, 0, 0, 0, 0, 113, 122, 22, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {0, 0, 4, 0, 0, 0, 10, 137, 102, 34, 0, 0, nullptr, nullptr, nullptr, 4}, // <stack>
-  {0, 0, 4, 0, 1, 6, 10, 137, 102, 34, 0, 0, nullptr, nullptr, "!confirm.yes", 1}, // <row>
-  {1, 2, 5, 0, 0, 0, 10, 137, 102, 34, 0, 0, "{confirm.ok}", nullptr, nullptr, 0}, // <text>
-  {0, 0, 20, 1, 0, 6, 10, 137, 102, 34, 0, 0, nullptr, nullptr, "confirm.yes", 1}, // <row>
-  {1, 2, 5, 0, 0, 0, 10, 137, 102, 34, 0, 0, "{confirm.ok}", nullptr, nullptr, 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 10, 175, 102, 34, 0, 0, nullptr, nullptr, nullptr, 4}, // <stack>
-  {0, 0, 4, 0, 1, 6, 10, 175, 102, 34, 0, 0, nullptr, nullptr, "confirm.yes", 1}, // <row>
-  {1, 2, 5, 0, 0, 0, 10, 175, 102, 34, 0, 0, "Cancel", nullptr, nullptr, 0}, // <text>
-  {0, 0, 20, 1, 0, 6, 10, 175, 102, 34, 0, 0, nullptr, nullptr, "!confirm.yes", 1}, // <row>
-  {1, 2, 5, 0, 0, 0, 10, 175, 102, 34, 0, 0, "Cancel", nullptr, nullptr, 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 0, 211, 122, 22, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {0, 0, 4, 0, 0, 0, 0, 113, 122, 38, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {0, 0, 4, 0, 0, 0, 8, 154, 106, 16, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
+  {1, 1, 21, 1, 0, 5, 8, 154, 106, 16, 0, 0, "{confirm.ok}", nullptr, "confirm.yes", 0}, // <text>
+  {1, 1, 5, 0, 1, 5, 8, 154, 106, 16, 0, 0, "{confirm.ok}", nullptr, "!confirm.yes", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 8, 176, 106, 16, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
+  {1, 1, 21, 1, 0, 5, 8, 176, 106, 16, 0, 0, "Cancel", nullptr, "!confirm.yes", 0}, // <text>
+  {1, 1, 5, 0, 1, 5, 8, 176, 106, 16, 0, 0, "Cancel", nullptr, "confirm.yes", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 195, 122, 38, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
   {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };
 static const UiNode SCREEN_edit_date_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 35}, // <col>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 43}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "{edit.title}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 10, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
@@ -80,8 +76,16 @@ static const UiNode SCREEN_edit_date_nodes[] = {
   {0, 0, 20, 1, 0, 6, 6, 147, 110, 34, 0, 0, nullptr, nullptr, "edit.s3", 2}, // <row>
   {1, 0, 4, 0, 0, 0, 14, 147, 44, 34, 0, 0, "{edit.l3}", nullptr, nullptr, 0}, // <text>
   {1, 8, 6, 0, 0, 0, 58, 147, 50, 34, 0, 0, "{edit.v3}", nullptr, nullptr, 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 0, 183, 122, 37, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {1, 0, 5, 0, 0, 0, 0, 220, 122, 13, 0, 0, "{edit.hint1}", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 183, 122, 28, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {0, 0, 4, 0, 0, 0, 4, 211, 114, 20, 0, 0, nullptr, nullptr, nullptr, 8}, // <stack>
+  {0, 0, 4, 0, 0, 0, 4, 211, 114, 20, 0, 0, nullptr, nullptr, "edit.choose", 6}, // <row>
+  {0, 0, 4, 0, 0, 0, 4, 211, 54, 20, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
+  {1, 1, 21, 1, 0, 5, 4, 211, 54, 20, 0, 0, "Cancel", nullptr, "edit.csel", 0}, // <text>
+  {1, 1, 5, 0, 1, 5, 4, 211, 54, 20, 0, 0, "Cancel", nullptr, "!edit.csel", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 64, 211, 54, 20, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
+  {1, 1, 21, 1, 0, 5, 64, 211, 54, 20, 0, 0, "Save", nullptr, "!edit.csel", 0}, // <text>
+  {1, 1, 5, 0, 1, 5, 64, 211, 54, 20, 0, 0, "Save", nullptr, "edit.csel", 0}, // <text>
+  {1, 0, 9, 0, 0, 0, 4, 211, 114, 20, 0, 0, "{edit.hint1}", nullptr, "!edit.choose", 0}, // <text>
   {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{edit.hint2}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };
@@ -196,44 +200,46 @@ static const UiNode SCREEN_edit_text_nodes[] = {
   {1, 3, 5, 0, 0, 0, 94, 161, 22, 17, 0, 0, "{kb.c54}", nullptr, "!kb.h54", 0}, // <text>
   {1, 3, 21, 1, 0, 3, 94, 161, 22, 17, 0, 0, "{kb.c54}", nullptr, "kb.h54", 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 180, 122, 5, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {0, 0, 4, 0, 0, 0, 8, 186, 106, 16, 0, 0, nullptr, nullptr, nullptr, 6}, // <row>
-  {0, 0, 4, 0, 0, 0, 8, 186, 50, 16, 0, 0, nullptr, nullptr, "kb.a0", 2}, // <stack>
-  {1, 0, 5, 0, 1, 4, 8, 186, 50, 16, 0, 0, "{kb.a0}", nullptr, "!kb.ah0", 0}, // <text>
-  {1, 1, 21, 1, 0, 4, 8, 186, 50, 16, 0, 0, "{kb.a0}", nullptr, "kb.ah0", 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 64, 186, 50, 16, 0, 0, nullptr, nullptr, "kb.a1", 2}, // <stack>
-  {1, 0, 5, 0, 1, 4, 64, 186, 50, 16, 0, 0, "{kb.a1}", nullptr, "!kb.ah1", 0}, // <text>
-  {1, 1, 21, 1, 0, 4, 64, 186, 50, 16, 0, 0, "{kb.a1}", nullptr, "kb.ah1", 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 8, 204, 106, 16, 0, 0, nullptr, nullptr, nullptr, 6}, // <row>
-  {0, 0, 4, 0, 0, 0, 8, 204, 50, 16, 0, 0, nullptr, nullptr, "kb.a2", 2}, // <stack>
-  {1, 0, 5, 0, 1, 4, 8, 204, 50, 16, 0, 0, "{kb.a2}", nullptr, "!kb.ah2", 0}, // <text>
-  {1, 1, 21, 1, 0, 4, 8, 204, 50, 16, 0, 0, "{kb.a2}", nullptr, "kb.ah2", 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 64, 204, 50, 16, 0, 0, nullptr, nullptr, "kb.a3", 2}, // <stack>
-  {1, 0, 5, 0, 1, 4, 64, 204, 50, 16, 0, 0, "{kb.a3}", nullptr, "!kb.ah3", 0}, // <text>
-  {1, 1, 21, 1, 0, 4, 64, 204, 50, 16, 0, 0, "{kb.a3}", nullptr, "kb.ah3", 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 0, 221, 122, 13, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {0, 0, 4, 0, 0, 0, 4, 186, 114, 18, 0, 0, nullptr, nullptr, nullptr, 6}, // <row>
+  {0, 0, 4, 0, 0, 0, 4, 186, 54, 18, 0, 0, nullptr, nullptr, "kb.a0", 2}, // <stack>
+  {1, 1, 5, 0, 1, 5, 4, 186, 54, 18, 0, 0, "{kb.a0}", nullptr, "!kb.ah0", 0}, // <text>
+  {1, 1, 21, 1, 0, 5, 4, 186, 54, 18, 0, 0, "{kb.a0}", nullptr, "kb.ah0", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 64, 186, 54, 18, 0, 0, nullptr, nullptr, "kb.a1", 2}, // <stack>
+  {1, 1, 5, 0, 1, 5, 64, 186, 54, 18, 0, 0, "{kb.a1}", nullptr, "!kb.ah1", 0}, // <text>
+  {1, 1, 21, 1, 0, 5, 64, 186, 54, 18, 0, 0, "{kb.a1}", nullptr, "kb.ah1", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 4, 206, 114, 18, 0, 0, nullptr, nullptr, nullptr, 6}, // <row>
+  {0, 0, 4, 0, 0, 0, 4, 206, 54, 18, 0, 0, nullptr, nullptr, "kb.a2", 2}, // <stack>
+  {1, 1, 5, 0, 1, 5, 4, 206, 54, 18, 0, 0, "{kb.a2}", nullptr, "!kb.ah2", 0}, // <text>
+  {1, 1, 21, 1, 0, 5, 4, 206, 54, 18, 0, 0, "{kb.a2}", nullptr, "kb.ah2", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 64, 206, 54, 18, 0, 0, nullptr, nullptr, "kb.a3", 2}, // <stack>
+  {1, 1, 5, 0, 1, 5, 64, 206, 54, 18, 0, 0, "{kb.a3}", nullptr, "!kb.ah3", 0}, // <text>
+  {1, 1, 21, 1, 0, 5, 64, 206, 54, 18, 0, 0, "{kb.a3}", nullptr, "kb.ah3", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 225, 122, 9, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
   {1, 0, 5, 0, 0, 0, 0, 234, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 247, 122, 3, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };
 static const UiNode SCREEN_friend_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 18}, // <col>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 20}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Friend", nullptr, nullptr, 0}, // <text>
   {1, 6, 5, 0, 0, 0, 2, 27, 118, 30, 0, 0, "{friend.name}", nullptr, nullptr, 0}, // <text>
   {1, 3, 5, 0, 0, 0, 0, 57, 122, 16, 0, 0, "{friend.years} years sober", nullptr, nullptr, 0}, // <text>
   {1, 0, 5, 0, 0, 0, 0, 73, 122, 13, 0, 0, "since {friend.date:MMM d, yyyy}", nullptr, nullptr, 0}, // <text>
-  {3, 0, 5, 0, 0, 0, 0, 86, 122, 16, 4, 1, nullptr, nullptr, nullptr, 0}, // <image>
-  {3, 0, 5, 0, 0, 0, 0, 102, 122, 16, 2, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 86, 122, 16, 6, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 102, 122, 16, 3, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 3, 5, 0, 0, 0, 0, 118, 122, 20, 0, 0, "{friend.phone}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 138, 122, 8, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
   {0, 0, 4, 0, 1, 6, 6, 146, 110, 40, 0, 0, nullptr, nullptr, nullptr, 2}, // <box>
   {1, 0, 5, 0, 0, 0, 8, 149, 106, 15, 0, 0, "Anniversary", nullptr, nullptr, 0}, // <text>
   {1, 1, 5, 0, 0, 0, 8, 164, 106, 19, 0, 0, "{friend.date:MMM d} \177 {friend.in}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 186, 122, 40, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, nullptr, 4}, // <stack>
-  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, "!friend.confirm", 2}, // <row>
-  {1, 1, 5, 0, 1, 5, 4, 226, 54, 20, 0, 0, "\202 Back", nullptr, nullptr, 0}, // <text>
-  {1, 1, 5, 0, 1, 5, 64, 226, 54, 20, 0, 0, "Delete \203", nullptr, nullptr, 0}, // <text>
-  {1, 1, 21, 1, 0, 5, 4, 226, 114, 20, 0, 0, "Press \203 again to delete", nullptr, "friend.confirm", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, nullptr, 6}, // <stack>
+  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, "!friend.del", 2}, // <row>
+  {1, 1, 21, 1, 0, 5, 4, 226, 54, 20, 0, 0, "< Back", nullptr, nullptr, 0}, // <text>
+  {1, 1, 5, 0, 1, 5, 64, 226, 54, 20, 0, 0, "Delete", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 4, 226, 114, 20, 0, 0, nullptr, nullptr, "friend.del", 2}, // <row>
+  {1, 1, 5, 0, 1, 5, 4, 226, 54, 20, 0, 0, "< Back", nullptr, nullptr, 0}, // <text>
+  {1, 1, 21, 1, 0, 5, 64, 226, 54, 20, 0, 0, "Delete", nullptr, nullptr, 0}, // <text>
 };
 static const UiNode SCREEN_friends_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 20}, // <col>
@@ -241,20 +247,20 @@ static const UiNode SCREEN_friends_nodes[] = {
   {1, 3, 4, 0, 0, 0, 5, 0, 83, 21, 0, 0, "Friends", nullptr, nullptr, 0}, // <text>
   {1, 1, 6, 0, 0, 0, 88, 0, 30, 21, 0, 0, "{friends.count}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, nullptr, 14}, // <stack>
-  {7, 0, 4, 0, 0, 0, 0, 21, 122, 208, 32, 0, "friends", "{friends.sel}", "friends.any", 8}, // <list>
-  {0, 0, 4, 0, 0, 0, 0, 21, 122, 31, 0, 0, nullptr, nullptr, nullptr, 6}, // <row>
+  {7, 0, 4, 0, 0, 0, 0, 21, 122, 208, 32, 0, "friends", "{friends.sel}", nullptr, 13}, // <list>
+  {0, 0, 4, 0, 0, 0, 0, 21, 122, 31, 0, 0, nullptr, nullptr, nullptr, 11}, // <row>
+  {0, 0, 4, 0, 0, 0, 4, 24, 27, 26, 0, 0, nullptr, nullptr, nullptr, 7}, // <stack>
   {0, 0, 4, 0, 1, 4, 4, 24, 27, 26, 0, 0, nullptr, nullptr, "!item.back", 2}, // <col>
   {1, 1, 21, 1, 0, 3, 4, 24, 27, 11, 0, 0, "{item.date:MMM}", nullptr, nullptr, 0}, // <text>
   {1, 3, 5, 0, 0, 0, 4, 35, 27, 15, 0, 0, "{item.date:d}", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 1, 4, 4, 24, 27, 26, 0, 0, nullptr, nullptr, "item.add", 1}, // <col>
+  {1, 3, 5, 0, 0, 0, 4, 24, 27, 26, 0, 0, "+", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 1, 4, 4, 24, 27, 26, 0, 0, nullptr, nullptr, "item.ret", 1}, // <col>
+  {1, 3, 5, 0, 0, 0, 4, 24, 27, 26, 0, 0, "<", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 36, 24, 82, 26, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
   {1, 2, 4, 0, 0, 0, 36, 24, 82, 14, 0, 0, "{item.name}", nullptr, nullptr, 0}, // <text>
   {1, 0, 4, 0, 0, 0, 36, 38, 82, 12, 0, 0, "{item.years} yrs \177 {item.in}", nullptr, "!item.back", 0}, // <text>
   {6, 0, 36, 0, 0, 0, 4, 52, 114, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
-  {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, "!friends.any", 4}, // <col>
-  {3, 0, 5, 0, 0, 0, 0, 21, 122, 122, 5, 1, nullptr, nullptr, nullptr, 0}, // <image>
-  {1, 3, 5, 0, 0, 0, 0, 143, 122, 18, 0, 0, "No friends yet", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 161, 122, 13, 0, 0, "Hold the backs of two", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 174, 122, 13, 0, 0, "Sobergotchis together", nullptr, nullptr, 0}, // <text>
   {1, 0, 5, 0, 0, 0, 0, 229, 122, 12, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
@@ -263,21 +269,40 @@ static const UiNode SCREEN_gnome_nodes[] = {
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 71, 21, 0, 0, "Pip", nullptr, nullptr, 0}, // <text>
   {1, 1, 6, 0, 0, 0, 76, 0, 42, 21, 0, 0, "{today:MMM d}", nullptr, nullptr, 0}, // <text>
-  {3, 0, 9, 0, 0, 0, 0, 21, 122, 126, 95, 10, "{gnome.pose}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 9, 0, 0, 0, 0, 21, 122, 126, 97, 10, "{gnome.pose}", nullptr, nullptr, 0}, // <image>
   {0, 0, 4, 0, 0, 0, 0, 147, 122, 18, 0, 0, nullptr, nullptr, nullptr, 1}, // <stack>
   {1, 3, 5, 0, 0, 0, 0, 147, 122, 18, 0, 0, "{note.short}", nullptr, "note.any", 0}, // <text>
   {2, 2, 1, 0, 0, 0, 4, 167, 114, 74, 13, 0, "{note.full}", "0", nullptr, 0}, // <wrap>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
+static const UiNode SCREEN_howto_nodes[] = {
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 6}, // <col>
+  {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
+  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Add friend", nullptr, nullptr, 0}, // <text>
+  {3, 0, 5, 0, 0, 0, 0, 21, 122, 115, 5, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {2, 2, 1, 0, 0, 0, 5, 140, 112, 93, 13, 0, "Put your Sobergotchis head to head. Both of you hold the enter and up buttons together until your friend is added.", "0", nullptr, 0}, // <wrap>
+  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+};
 static const UiNode SCREEN_intro_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 7}, // <col>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 17}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 83, 21, 0, 0, "{intro.title}", nullptr, nullptr, 0}, // <text>
   {1, 1, 6, 0, 0, 0, 88, 0, 30, 21, 0, 0, "{intro.step}", nullptr, nullptr, 0}, // <text>
-  {3, 0, 9, 0, 0, 0, 0, 21, 122, 96, 95, 10, "{intro.pose}", nullptr, nullptr, 0}, // <image>
-  {2, 2, 1, 0, 0, 0, 4, 120, 114, 113, 13, 0, "{intro.text}", "0", nullptr, 0}, // <wrap>
-  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {0, 0, 4, 0, 0, 0, 0, 21, 122, 96, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
+  {3, 0, 9, 0, 0, 0, 0, 21, 122, 96, 97, 10, "{intro.pose}", nullptr, "!intro.buttons", 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 21, 122, 96, 0, 1, nullptr, nullptr, "intro.buttons", 0}, // <image>
+  {2, 2, 1, 0, 0, 0, 4, 120, 114, 108, 13, 0, "{intro.text}", "0", nullptr, 0}, // <wrap>
+  {0, 0, 4, 0, 0, 0, 4, 230, 114, 16, 0, 0, nullptr, nullptr, nullptr, 9}, // <stack>
+  {0, 0, 4, 0, 0, 0, 4, 230, 114, 16, 0, 0, nullptr, nullptr, "intro.hasback", 6}, // <row>
+  {0, 0, 4, 0, 0, 0, 4, 230, 54, 16, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
+  {1, 1, 21, 1, 0, 5, 4, 230, 54, 16, 0, 0, "< Back", nullptr, "intro.bsel", 0}, // <text>
+  {1, 1, 5, 0, 1, 5, 4, 230, 54, 16, 0, 0, "< Back", nullptr, "!intro.bsel", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 64, 230, 54, 16, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
+  {1, 1, 21, 1, 0, 5, 64, 230, 54, 16, 0, 0, "{intro.next}", nullptr, "!intro.bsel", 0}, // <text>
+  {1, 1, 5, 0, 1, 5, 64, 230, 54, 16, 0, 0, "{intro.next}", nullptr, "intro.bsel", 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 4, 230, 114, 16, 0, 0, nullptr, nullptr, "!intro.hasback", 1}, // <row>
+  {1, 1, 21, 1, 0, 5, 34, 230, 54, 16, 0, 0, "{intro.next}", nullptr, nullptr, 0}, // <text>
 };
 static const UiNode SCREEN_main_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 30}, // <col>
@@ -286,15 +311,15 @@ static const UiNode SCREEN_main_nodes[] = {
   {4, 0, 6, 0, 0, 0, 91, 3, 28, 12, 0, 0, "{battery.pct}", "battery.charging", nullptr, 0}, // <battery>
   {1, 6, 5, 0, 0, 0, 0, 15, 122, 27, 0, 0, "{user.name}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 42, 122, 112, 0, 0, nullptr, nullptr, nullptr, 9}, // <stack>
-  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 60, 13, "{sky.index}", nullptr, nullptr, 0}, // <image>
-  {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 33, 27, "{tree.stage}", nullptr, nullptr, 0}, // <image>
-  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 6, 27, "{tree.stage}", nullptr, nullptr, 0}, // <image>
-  {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 131, 26, "{world.index}", nullptr, nullptr, 0}, // <image>
-  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 105, 26, "{world.index}", nullptr, nullptr, 0}, // <image>
-  {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 84, 11, "{gnome.home}", nullptr, nullptr, 0}, // <image>
-  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 73, 11, "{gnome.home}", nullptr, nullptr, 0}, // <image>
-  {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 181, 24, "{home.index}", nullptr, nullptr, 0}, // <image>
-  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 157, 24, "{home.index}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 62, 13, "{sky.index}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 35, 27, "{tree.stage}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 8, 27, "{tree.stage}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 133, 26, "{world.index}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 107, 26, "{world.index}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 86, 11, "{gnome.home}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 75, 11, "{gnome.home}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 183, 24, "{home.index}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 159, 24, "{home.index}", nullptr, nullptr, 0}, // <image>
   {0, 0, 20, 1, 0, 10, 3, 155, 116, 51, 0, 0, nullptr, nullptr, nullptr, 2}, // <box>
   {1, 9, 1, 0, 0, 0, 7, 159, 108, 31, 0, 0, "{sober.days:,}", nullptr, nullptr, 0}, // <text>
   {1, 1, 5, 0, 0, 0, 7, 190, 108, 11, 0, 0, "DAYS \177 {sober.short}", nullptr, nullptr, 0}, // <text>
@@ -303,12 +328,12 @@ static const UiNode SCREEN_main_nodes[] = {
   {1, 1, 5, 0, 0, 0, 0, 206, 122, 14, 0, 0, "{note.short}", nullptr, "note.any", 0}, // <text>
   {0, 0, 4, 0, 0, 0, 3, 220, 116, 20, 0, 0, nullptr, nullptr, nullptr, 8}, // <stack>
   {0, 0, 4, 0, 1, 5, 3, 220, 116, 20, 0, 0, nullptr, nullptr, "!next.today", 4}, // <row>
-  {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 0, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 1, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {0, 0, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
-  {1, 1, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "{next.name} \177 {next.years} yrs \177 {next.date:MMM d}", nullptr, "next.any", 0}, // <text>
+  {1, 1, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "{next.name} - {next.date:MMM d}", nullptr, "next.any", 0}, // <text>
   {1, 0, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "No friends yet", nullptr, "!next.any", 0}, // <text>
   {0, 0, 20, 1, 0, 5, 3, 220, 116, 20, 0, 0, nullptr, nullptr, "next.today", 2}, // <row>
-  {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 0, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 1, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 1, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "{next.name} \177 {next.years} yrs!", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
@@ -329,9 +354,9 @@ static const UiNode SCREEN_reflection_nodes[] = {
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 71, 21, 0, 0, "Reflection", nullptr, nullptr, 0}, // <text>
   {1, 1, 6, 0, 0, 0, 76, 0, 42, 21, 0, 0, "{today:MMM d}", nullptr, nullptr, 0}, // <text>
-  {3, 0, 8, 0, 0, 0, 6, 21, 116, 19, 3, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 8, 0, 0, 0, 6, 21, 116, 19, 4, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {2, 4, 0, 0, 0, 0, 6, 43, 111, 161, 16, 0, "{reflect.text}", "{reflect.page}", nullptr, 0}, // <wrap>
-  {3, 0, 5, 0, 0, 0, 0, 204, 122, 11, 4, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 204, 122, 11, 6, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 1, 5, 0, 0, 0, 0, 215, 122, 15, 0, 0, "{reflect.title}", nullptr, nullptr, 0}, // <text>
   {1, 0, 5, 0, 0, 0, 0, 230, 122, 11, 0, 0, "{reflect.more}", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
@@ -339,12 +364,22 @@ static const UiNode SCREEN_reflection_nodes[] = {
 static const UiNode SCREEN_rps_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 7}, // <col>
   {1, 7, 5, 0, 0, 0, 0, 6, 122, 26, 0, 0, "{user.name}", nullptr, nullptr, 0}, // <text>
-  {3, 0, 5, 0, 0, 0, 0, 32, 122, 56, 205, 3, "{rps.mine}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 32, 122, 56, 207, 3, "{rps.mine}", nullptr, nullptr, 0}, // <image>
   {1, 3, 5, 0, 0, 0, 0, 88, 122, 26, 0, 0, "VS", nullptr, nullptr, 0}, // <text>
-  {3, 0, 5, 0, 0, 0, 0, 114, 122, 56, 205, 3, "{rps.theirs}", nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 114, 122, 56, 207, 3, "{rps.theirs}", nullptr, nullptr, 0}, // <image>
   {1, 7, 5, 0, 0, 0, 0, 170, 122, 32, 0, 0, "{rps.name}", nullptr, nullptr, 0}, // <text>
   {6, 0, 4, 0, 0, 0, 20, 202, 82, 9, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
   {1, 11, 5, 0, 0, 0, 0, 211, 122, 39, 0, 0, "{rps.result}", nullptr, nullptr, 0}, // <text>
+};
+static const UiNode SCREEN_search_nodes[] = {
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 7}, // <col>
+  {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
+  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Communicating", nullptr, nullptr, 0}, // <text>
+  {3, 0, 5, 0, 0, 0, 0, 21, 122, 122, 5, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {1, 3, 5, 0, 0, 0, 0, 143, 122, 18, 0, 0, "{search.title}", nullptr, nullptr, 0}, // <text>
+  {2, 2, 1, 0, 0, 0, 6, 163, 110, 70, 13, 0, "{search.text}", "0", nullptr, 0}, // <wrap>
+  {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };
 static const UiNode SCREEN_sysinfo_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 25}, // <col>
@@ -370,25 +405,27 @@ static const UiNode SCREEN_sysinfo_nodes[] = {
   {1, 2, 4, 0, 0, 0, 6, 136, 111, 13, 0, 0, "Device ID", nullptr, nullptr, 0}, // <text>
   {1, 0, 4, 0, 0, 0, 6, 149, 111, 9, 0, 0, "{sys.id}", nullptr, nullptr, 0}, // <text>
   {6, 0, 36, 0, 0, 0, 5, 160, 112, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
-  {0, 0, 4, 0, 0, 0, 0, 161, 122, 63, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {0, 0, 20, 1, 0, 6, 10, 224, 102, 18, 0, 0, nullptr, nullptr, nullptr, 1}, // <box>
-  {1, 2, 5, 0, 0, 0, 10, 224, 102, 18, 0, 0, "Back", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 161, 122, 67, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {0, 0, 4, 0, 0, 0, 4, 228, 114, 18, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
+  {1, 1, 21, 1, 0, 5, 34, 228, 54, 18, 0, 0, "< Back", nullptr, nullptr, 0}, // <text>
 };
 
 static const UiScreen UI_SCREENS[] = {
   {"added", SCREEN_added_nodes, 7},
   {"anniversary", SCREEN_anniversary_nodes, 13},
-  {"confirm", SCREEN_confirm_nodes, 19},
-  {"edit-date", SCREEN_edit_date_nodes, 36},
+  {"confirm", SCREEN_confirm_nodes, 15},
+  {"edit-date", SCREEN_edit_date_nodes, 44},
   {"edit-text", SCREEN_edit_text_nodes, 127},
-  {"friend", SCREEN_friend_nodes, 19},
+  {"friend", SCREEN_friend_nodes, 21},
   {"friends", SCREEN_friends_nodes, 21},
   {"gnome", SCREEN_gnome_nodes, 9},
-  {"intro", SCREEN_intro_nodes, 8},
+  {"howto", SCREEN_howto_nodes, 7},
+  {"intro", SCREEN_intro_nodes, 18},
   {"main", SCREEN_main_nodes, 31},
   {"menu", SCREEN_menu_nodes, 10},
   {"reflection", SCREEN_reflection_nodes, 10},
   {"rps", SCREEN_rps_nodes, 8},
+  {"search", SCREEN_search_nodes, 8},
   {"sysinfo", SCREEN_sysinfo_nodes, 26},
 };
 #define SCREEN_ADDED 0
@@ -399,10 +436,12 @@ static const UiScreen UI_SCREENS[] = {
 #define SCREEN_FRIEND 5
 #define SCREEN_FRIENDS 6
 #define SCREEN_GNOME 7
-#define SCREEN_INTRO 8
-#define SCREEN_MAIN 9
-#define SCREEN_MENU 10
-#define SCREEN_REFLECTION 11
-#define SCREEN_RPS 12
-#define SCREEN_SYSINFO 13
-#define SCREEN_COUNT 14
+#define SCREEN_HOWTO 8
+#define SCREEN_INTRO 9
+#define SCREEN_MAIN 10
+#define SCREEN_MENU 11
+#define SCREEN_REFLECTION 12
+#define SCREEN_RPS 13
+#define SCREEN_SEARCH 14
+#define SCREEN_SYSINFO 15
+#define SCREEN_COUNT 16

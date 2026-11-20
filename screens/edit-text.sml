@@ -27,13 +27,13 @@
     <row pad="2 2"><stack w="*"><text if="!kb.h50" font="label-b" align="center">{kb.c50}</text><text if="kb.h50" fill="ink" radius="3" font="label-b" align="center">{kb.c50}</text></stack><stack w="*"><text if="!kb.h51" font="label-b" align="center">{kb.c51}</text><text if="kb.h51" fill="ink" radius="3" font="label-b" align="center">{kb.c51}</text></stack><stack w="*"><text if="!kb.h52" font="label-b" align="center">{kb.c52}</text><text if="kb.h52" fill="ink" radius="3" font="label-b" align="center">{kb.c52}</text></stack><stack w="*"><text if="!kb.h53" font="label-b" align="center">{kb.c53}</text><text if="kb.h53" fill="ink" radius="3" font="label-b" align="center">{kb.c53}</text></stack><stack w="*"><text if="!kb.h54" font="label-b" align="center">{kb.c54}</text><text if="kb.h54" fill="ink" radius="3" font="label-b" align="center">{kb.c54}</text></stack></row>
   </stack>
   <spacer h="5"/>
-  <row h="18" margin="1 8" gap="6">
-    <stack w="*" if="kb.a0"><text if="!kb.ah0" font="small" align="center" border="1" radius="4">{kb.a0}</text><text if="kb.ah0" fill="ink" radius="4" font="small-b" align="center">{kb.a0}</text></stack>
-    <stack w="*" if="kb.a1"><text if="!kb.ah1" font="small" align="center" border="1" radius="4">{kb.a1}</text><text if="kb.ah1" fill="ink" radius="4" font="small-b" align="center">{kb.a1}</text></stack>
+  <row h="20" margin="1 4" gap="6">
+    <stack w="*" if="kb.a0"><text if="!kb.ah0" font="small-b" align="center" border="1" radius="5">{kb.a0}</text><text if="kb.ah0" fill="ink" radius="5" font="small-b" align="center">{kb.a0}</text></stack>
+    <stack w="*" if="kb.a1"><text if="!kb.ah1" font="small-b" align="center" border="1" radius="5">{kb.a1}</text><text if="kb.ah1" fill="ink" radius="5" font="small-b" align="center">{kb.a1}</text></stack>
   </row>
-  <row h="18" margin="1 8" gap="6">
-    <stack w="*" if="kb.a2"><text if="!kb.ah2" font="small" align="center" border="1" radius="4">{kb.a2}</text><text if="kb.ah2" fill="ink" radius="4" font="small-b" align="center">{kb.a2}</text></stack>
-    <stack w="*" if="kb.a3"><text if="!kb.ah3" font="small" align="center" border="1" radius="4">{kb.a3}</text><text if="kb.ah3" fill="ink" radius="4" font="small-b" align="center">{kb.a3}</text></stack>
+  <row h="20" margin="1 4" gap="6">
+    <stack w="*" if="kb.a2"><text if="!kb.ah2" font="small-b" align="center" border="1" radius="5">{kb.a2}</text><text if="kb.ah2" fill="ink" radius="5" font="small-b" align="center">{kb.a2}</text></stack>
+    <stack w="*" if="kb.a3"><text if="!kb.ah3" font="small-b" align="center" border="1" radius="5">{kb.a3}</text><text if="kb.ah3" fill="ink" radius="5" font="small-b" align="center">{kb.a3}</text></stack>
   </row>
   <spacer h="*"/>
   <text h="13" font="small" align="center">{hint}</text>
