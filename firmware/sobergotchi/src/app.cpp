@@ -689,17 +689,24 @@ static int currentScreen() {
   }
 }
 
+static uint32_t draws = 0;  // every screen drawn; lets loop() tell whether a key changed anything
+
+static void draw(int screenId, bool full) {
+  draws++;
+  display::show(screenId, data, full);
+}
+
 static void show(bool full) {
   if (hw::batteryStale()) hw::readBattery();
   int id = currentScreen();
   int pagesBefore = reflectPages;
-  display::show(id, data, full);
-  if (id == S_REFLECT && reflectPages != pagesBefore && reflectPages > 1) display::show(id, data, false);  // page count now known
+  draw(id, full);
+  if (id == S_REFLECT && reflectPages != pagesBefore && reflectPages > 1) draw(id, false);  // page count now known
   if (!full) sessionDirty = true;
 }
 
 static void showPopup(int screenId) {
-  display::show(screenId, data, false);
+  draw(screenId, false);
   sessionDirty = true;
   uint32_t t0 = millis();
   while (millis() - t0 < POPUP_MS) {
@@ -814,7 +821,7 @@ static void addFriend() {
   if (radioOn) { exchange::finish(); radioOn = false; }  // picked Add friend again: a fresh 30 seconds
   searching = true;
   searchNone = false;
-  display::show(S_SEARCH, data, false);
+  draw(S_SEARCH, false);
   sessionDirty = true;
   exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
   radioOn = true;
@@ -1010,6 +1017,41 @@ static void handleKey(Event e) {
 // ---------------------------------------------------------------------------
 static int32_t shownDay = -1;
 
+// Everything a screen is drawn from, so a key that changes none of it (enter on the home screen, say) leaves the
+// panel alone: redrawing the same picture with a partial refresh still drives the ink and turns it grey.
+struct UiState {
+  uint32_t draws;
+  int mode, carousel, reflectPage, friendSel, menuSel, introStep;
+  int editTarget, editField, editY, editM, editD, editH, editChoice, kbSel, confirmWhat;
+  bool cardDelete, menuUser, confirmYes, confirmAgain, kbShift, searching, searchNone;
+  int friendCount;
+  char editBuf[PHONE_LEN + 2];
+};
+
+static void snapshot(UiState& u) {
+  memset(&u, 0, sizeof u);  // zero the padding too, so memcmp sees only the fields
+  u.draws = draws;
+  u.mode = mode; u.carousel = carousel; u.reflectPage = reflectPage; u.friendSel = friendSel; u.menuSel = menuSel;
+  u.introStep = introStep;
+  u.editTarget = editTarget; u.editField = editField; u.editY = editY; u.editM = editM; u.editD = editD;
+  u.editH = editH; u.editChoice = editChoice; u.kbSel = kbSel; u.confirmWhat = confirmWhat;
+  u.cardDelete = cardDelete; u.menuUser = menuUser; u.confirmYes = confirmYes; u.confirmAgain = confirmAgain;
+  u.kbShift = kbShift; u.searching = searching; u.searchNone = searchNone;
+  u.friendCount = store::friendCount;
+  memcpy(u.editBuf, editBuf, sizeof editBuf);
+}
+
+// Handle a key; true if it changed something on screen (false: leave the panel alone).
+static bool keyChanged(Event e) {
+  UiState before, after;
+  snapshot(before);
+  handleKey(e);
+  snapshot(after);
+  if (memcmp(&before, &after, sizeof before) != 0) return true;
+  LOG("key %d: nothing changed, no redraw", (int)e);
+  return false;
+}
+
 // Full refresh only at power-up and the midnight redraw; partial otherwise (Scott saw ghosting right after full ones).
 static void goHome(bool full) {
   mode = M_CAROUSEL;
@@ -1059,7 +1101,7 @@ void loop() {
     Event e = hw::wait(IDLE_TIMEOUT_MS);
     if (e == EV_TIMEOUT) { display::sleep(); return; }
     if (e == EV_REED) return;
-    handleKey(e);
+    if (!keyChanged(e)) return;
     if (mode == M_CAROUSEL) goHome(true);  // setup finished: a clean full refresh onto the home screen
     else show(false);
     return;
@@ -1089,8 +1131,7 @@ void loop() {
     show(false);
     return;
   }
-  handleKey(e);
-  show(false);
+  if (keyChanged(e)) show(false);
 }
 
 }  // namespace app
