@@ -3,7 +3,7 @@
 <screen id="landing">
   <col h="*" margin="1" border="1" radius="6">
     <spacer h="*"/>
-    <text h="40" margin="0 3 0 0" font="script" align="center">Sobergotchi</text>
+    <image h="40" src="title"/>
     <text h="16" font="body" align="center">one day at a time</text>
     <spacer h="*"/>
     <image h="130" src="landing" valign="bottom"/>
