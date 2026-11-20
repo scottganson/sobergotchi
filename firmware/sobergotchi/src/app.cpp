@@ -312,7 +312,7 @@ static int nextFriend() {  // index into store::friends of the soonest anniversa
 // ---------------------------------------------------------------------------
 // Settings has a User settings submenu; rows are named by item so both lists share one screen.
 enum MenuItem : uint8_t { MI_SOBER, MI_TODAY, MI_NAME, MI_PHONE, MI_USER, MI_SYSINFO, MI_RESET, MI_BACK };
-static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "User settings", "System info", "Factory reset", "Back"};
+static const char* MENU_LABELS[] = {"Sober date", "Today", "Name", "Phone", "User settings", "System info", "Factory reset", "< Back"};
 static const uint8_t MENU_TOP[] = {MI_USER, MI_SYSINFO, MI_RESET, MI_BACK};
 static const uint8_t MENU_USER[] = {MI_NAME, MI_PHONE, MI_SOBER, MI_TODAY, MI_BACK};
 static bool menuUser = false;  // in the User settings submenu
@@ -526,6 +526,7 @@ class Data : public UiData {
       if (!strcmp(k, "name")) snprintf(out, n, "%s", item ? "Back" : "Add friend");
       else if (!strcmp(k, "back")) snprintf(out, n, "1");  // plain row: no date badge
       else if (!strcmp(k, "add")) snprintf(out, n, "%s", item ? "" : "1");
+      else if (!strcmp(k, "ret")) snprintf(out, n, "%s", item ? "1" : "");  // Back: a "<" badge
       return;
     }
     if (item < 1 || item > store::friendCount) return;

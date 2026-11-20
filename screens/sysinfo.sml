@@ -30,6 +30,6 @@
   <rule h="1" style="dotted" margin="0 5"/>
   <spacer h="*"/>
   <box h="26" margin="0 10 8 10" fill="ink" radius="6">
-    <text h="*" font="label" align="center">Back</text>
+    <text h="*" font="label" align="center">&lt; Back</text>
   </box>
 </screen>

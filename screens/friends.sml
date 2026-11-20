@@ -15,6 +15,9 @@
           <col if="item.add" border="1" radius="4">
             <text h="*" font="label-b" align="center">+</text>
           </col>
+          <col if="item.ret" border="1" radius="4">
+            <text h="*" font="label-b" align="center">&lt;</text>
+          </col>
         </stack>
         <col w="*">
           <text h="14" font="label">{item.name}</text>

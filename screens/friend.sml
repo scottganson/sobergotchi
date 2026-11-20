@@ -17,11 +17,11 @@
   <spacer h="*"/>
   <stack h="24" margin="0 4 4 4">
     <row if="!friend.del" gap="6">
-      <text w="*" font="small-b" align="center" fill="ink" radius="5">Back</text>
+      <text w="*" font="small-b" align="center" fill="ink" radius="5">&lt; Back</text>
       <text w="*" font="small-b" align="center" border="1" radius="5">Delete</text>
     </row>
     <row if="friend.del" gap="6">
-      <text w="*" font="small-b" align="center" border="1" radius="5">Back</text>
+      <text w="*" font="small-b" align="center" border="1" radius="5">&lt; Back</text>
       <text w="*" font="small-b" align="center" fill="ink" radius="5">Delete</text>
     </row>
   </stack>
