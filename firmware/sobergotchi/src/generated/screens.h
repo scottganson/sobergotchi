@@ -258,8 +258,8 @@ static const UiNode SCREEN_friends_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, "!friends.any", 4}, // <col>
   {3, 0, 5, 0, 0, 0, 0, 21, 122, 122, 6, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 3, 5, 0, 0, 0, 0, 143, 122, 18, 0, 0, "No friends yet", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 161, 122, 13, 0, 0, "Hold left and right", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 174, 122, 13, 0, 0, "buttons together", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 161, 122, 13, 0, 0, "Head to head, both", nullptr, nullptr, 0}, // <text>
+  {1, 0, 5, 0, 0, 0, 0, 174, 122, 13, 0, 0, "hold enter and up", nullptr, nullptr, 0}, // <text>
   {1, 0, 5, 0, 0, 0, 0, 229, 122, 12, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
@@ -279,7 +279,7 @@ static const UiNode SCREEN_howto_nodes[] = {
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Add friend", nullptr, nullptr, 0}, // <text>
   {3, 0, 5, 0, 0, 0, 0, 21, 122, 115, 4, 1, nullptr, nullptr, nullptr, 0}, // <image>
-  {2, 2, 1, 0, 0, 0, 5, 140, 112, 93, 13, 0, "Put your Sobergotchis head to head. Both of you hold left and right together until it says Looking.", "0", nullptr, 0}, // <wrap>
+  {2, 2, 1, 0, 0, 0, 5, 140, 112, 93, 13, 0, "Put your Sobergotchis head to head. Both of you hold the enter and up buttons together until your friend is added.", "0", nullptr, 0}, // <wrap>
   {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };

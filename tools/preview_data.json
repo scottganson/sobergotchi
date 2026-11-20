@@ -346,7 +346,7 @@
     "intro.step": "4/6",
     "intro.pose": 5,
     "hint": "▲ back  ·  ● next",
-    "intro.text": "To make a friend, you both hold the left and right buttons together until I start looking. You'll swap names, phones and sober dates."
+    "intro.text": "To make a friend, put your Sobergotchis head to head and both hold the enter and up buttons until your friend is added."
    },
    {
     "intro.title": "Your phone",
@@ -370,7 +370,7 @@
    },
    {
     "search.title": "No one found",
-    "search.text": "Hold your Sobergotchis head to head, both holding left and right, and try again.",
+    "search.text": "Put your Sobergotchis head to head and both hold enter and up again.",
     "hint": "● back"
    },
    {
@@ -379,7 +379,7 @@
    },
    {
     "search.title": "Found Sam R.",
-    "search.text": "Let go when your friend has found you too.",
+    "search.text": "Keep holding a moment while you swap cards.",
     "hint": "radio on while held"
    }
   ],

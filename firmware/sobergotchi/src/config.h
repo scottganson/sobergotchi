@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.23-world20"
+#define FIRMWARE_VERSION "1.24-world21"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1
@@ -53,6 +53,7 @@
 #define POPUP_MS               6000UL   // how long "Friend added" / rock-paper-scissors stay up
 #define ADD_FRIEND_HOLD_MS     2000UL   // hold enter + up together this long to start Add friend from any screen;
                                         // the radio then stays on only while they are held
+#define ADD_FRIEND_SWAP_MS     3000UL   // after a find, keep the radio on this long (so they hear us too), then add
 #define ADD_FRIEND_HOLD_MAX_MS 120000UL // ...but never more than 2 minutes (a button stuck in a pocket)
 #define ADD_FRIEND_MIN_RSSI    (-80)    // reaches across a table (about 1-2 m), not just back to back
 #define MAX_FRIENDS            200

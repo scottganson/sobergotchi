@@ -431,8 +431,8 @@ class Data : public UiData {
       return str(searchNone ? "No one found" : "Looking...");
     }
     if (!strcmp(key, "search.text")) {
-      if (searchNone) return str("Hold your Sobergotchis head to head, both holding left and right, and try again.");
-      if (searchFound) return str("Let go when your friend has found you too.");
+      if (searchNone) return str("Put your Sobergotchis head to head and both hold enter and up again.");
+      if (searchFound) return str("Keep holding a moment while you swap cards.");
       return str("Keep holding while your friend holds theirs. Let go to stop.");
     }
     if (!strncmp(key, "sys.", 4)) {
@@ -509,8 +509,8 @@ class Data : public UiData {
         snprintf(out, n, "It's good to meet you, %s. When did your sobriety begin? I'll count every day from there.", name);
         break;
       case I_FRIENDS:
-        snprintf(out, n, "To make a friend, you both hold the left and right buttons together until I start "
-                         "looking. You'll swap names, phones and sober dates.");
+        snprintf(out, n, "To make a friend, put your Sobergotchis head to head and both hold the enter and up "
+                         "buttons until your friend is added.");
         break;
       case I_PHONE:
         snprintf(out, n, "What number should your friends call? If you'd rather not share one, pick Cancel to skip.");
@@ -695,9 +695,15 @@ static void show(bool full) {
   if (!full) sessionDirty = true;
 }
 
+// A pop-up for POPUP_MS or until enter. If enter + up are still held (Add friend), it waits for them to be let go
+// first, so letting go doesn't close it.
 static void showPopup(int screenId) {
   draw(screenId, false);
   sessionDirty = true;
+  if (hw::comboHeld()) {
+    while (hw::comboHeld()) delay(20);
+    hw::flushKeys();
+  }
   uint32_t t0 = millis();
   while (millis() - t0 < POPUP_MS) {
     Event e = hw::wait(POPUP_MS - (millis() - t0));
@@ -812,17 +818,20 @@ static void addFriend() {
   exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
   LOG("add friend: radio on while held");
   const uint32_t t0 = millis();
+  uint32_t foundAt = 0;
   while (hw::comboHeld() && millis() - t0 < ADD_FRIEND_HOLD_MAX_MS) {
     delay(20);
     if (!searchFound && exchange::found()) {  // tell them, but keep the radio on so their device hears us too
       searchFound = true;
       popupFriend = exchange::best().card;
       draw(S_SEARCH, false);
+      foundAt = millis();
     }
+    if (foundAt && millis() - foundAt >= ADD_FRIEND_SWAP_MS) break;  // done: added while still held
   }
   exchange::finish();
-  LOG("add friend: let go, radio off");
-  hw::flushKeys();  // letting go can bounce: don't let that close the pop-up that comes next
+  LOG("add friend: radio off (%s)", hw::comboHeld() ? "still held" : "let go");
+  if (!hw::comboHeld()) hw::flushKeys();  // letting go can bounce: don't let that close the pop-up that comes next
   const exchange::Result r = exchange::best();
   searching = false;
   searchFound = false;
