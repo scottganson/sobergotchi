@@ -23,12 +23,6 @@
       </row>
       <rule h="1" style="dotted" margin="0 4"/>
     </list>
-    <col if="!friends.any">
-      <spacer h="74"/>
-      <text h="18" font="label-b" align="center">No friends yet</text>
-      <text h="13" font="small" align="center">Pick Add friend to</text>
-      <text h="13" font="small" align="center">see how to make one</text>
-    </col>
   </stack>
   <text h="12" font="small" align="center">{hint}</text>
   <dots h="9" count="5"/>

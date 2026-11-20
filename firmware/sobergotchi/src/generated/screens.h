@@ -238,11 +238,11 @@ static const UiNode SCREEN_friend_nodes[] = {
   {1, 1, 21, 1, 0, 5, 64, 226, 54, 20, 0, 0, "Delete", nullptr, nullptr, 0}, // <text>
 };
 static const UiNode SCREEN_friends_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 23}, // <col>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 18}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 83, 21, 0, 0, "Friends", nullptr, nullptr, 0}, // <text>
   {1, 1, 6, 0, 0, 0, 88, 0, 30, 21, 0, 0, "{friends.count}", nullptr, nullptr, 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, nullptr, 17}, // <stack>
+  {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, nullptr, 12}, // <stack>
   {7, 0, 4, 0, 0, 0, 0, 21, 122, 208, 32, 0, "friends", "{friends.sel}", nullptr, 11}, // <list>
   {0, 0, 4, 0, 0, 0, 0, 21, 122, 31, 0, 0, nullptr, nullptr, nullptr, 9}, // <row>
   {0, 0, 4, 0, 0, 0, 4, 24, 27, 26, 0, 0, nullptr, nullptr, nullptr, 5}, // <stack>
@@ -255,11 +255,6 @@ static const UiNode SCREEN_friends_nodes[] = {
   {1, 2, 4, 0, 0, 0, 36, 24, 82, 14, 0, 0, "{item.name}", nullptr, nullptr, 0}, // <text>
   {1, 0, 4, 0, 0, 0, 36, 38, 82, 12, 0, 0, "{item.years} yrs \177 {item.in}", nullptr, "!item.back", 0}, // <text>
   {6, 0, 36, 0, 0, 0, 4, 52, 114, 1, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
-  {0, 0, 4, 0, 0, 0, 0, 21, 122, 208, 0, 0, nullptr, nullptr, "!friends.any", 4}, // <col>
-  {0, 0, 4, 0, 0, 0, 0, 21, 122, 74, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {1, 3, 5, 0, 0, 0, 0, 95, 122, 18, 0, 0, "No friends yet", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 113, 122, 13, 0, 0, "Pick Add friend to", nullptr, nullptr, 0}, // <text>
-  {1, 0, 5, 0, 0, 0, 0, 126, 122, 13, 0, 0, "see how to make one", nullptr, nullptr, 0}, // <text>
   {1, 0, 5, 0, 0, 0, 0, 229, 122, 12, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
@@ -408,7 +403,7 @@ static const UiScreen UI_SCREENS[] = {
   {"edit-date", SCREEN_edit_date_nodes, 36},
   {"edit-text", SCREEN_edit_text_nodes, 127},
   {"friend", SCREEN_friend_nodes, 21},
-  {"friends", SCREEN_friends_nodes, 24},
+  {"friends", SCREEN_friends_nodes, 19},
   {"gnome", SCREEN_gnome_nodes, 9},
   {"howto", SCREEN_howto_nodes, 7},
   {"intro", SCREEN_intro_nodes, 10},
