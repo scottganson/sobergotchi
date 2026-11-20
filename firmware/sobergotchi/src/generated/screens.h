@@ -278,17 +278,19 @@ static const UiNode SCREEN_howto_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 6}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Add friend", nullptr, nullptr, 0}, // <text>
-  {3, 0, 5, 0, 0, 0, 0, 21, 122, 115, 1, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 21, 122, 115, 5, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {2, 2, 1, 0, 0, 0, 5, 140, 112, 93, 13, 0, "Put your Sobergotchis head to head. Both of you hold the enter and up buttons together until your friend is added.", "0", nullptr, 0}, // <wrap>
   {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
 };
 static const UiNode SCREEN_intro_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 7}, // <col>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 9}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
   {1, 3, 4, 0, 0, 0, 5, 0, 83, 21, 0, 0, "{intro.title}", nullptr, nullptr, 0}, // <text>
   {1, 1, 6, 0, 0, 0, 88, 0, 30, 21, 0, 0, "{intro.step}", nullptr, nullptr, 0}, // <text>
-  {3, 0, 9, 0, 0, 0, 0, 21, 122, 96, 97, 10, "{intro.pose}", nullptr, nullptr, 0}, // <image>
+  {0, 0, 4, 0, 0, 0, 0, 21, 122, 96, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
+  {3, 0, 9, 0, 0, 0, 0, 21, 122, 96, 97, 10, "{intro.pose}", nullptr, "!intro.buttons", 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 0, 21, 122, 96, 0, 1, nullptr, nullptr, "intro.buttons", 0}, // <image>
   {2, 2, 1, 0, 0, 0, 4, 120, 114, 113, 13, 0, "{intro.text}", "0", nullptr, 0}, // <wrap>
   {1, 0, 5, 0, 0, 0, 0, 233, 122, 13, 0, 0, "{hint}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 246, 122, 4, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
@@ -317,12 +319,12 @@ static const UiNode SCREEN_main_nodes[] = {
   {1, 1, 5, 0, 0, 0, 0, 206, 122, 14, 0, 0, "{note.short}", nullptr, "note.any", 0}, // <text>
   {0, 0, 4, 0, 0, 0, 3, 220, 116, 20, 0, 0, nullptr, nullptr, nullptr, 8}, // <stack>
   {0, 0, 4, 0, 1, 5, 3, 220, 116, 20, 0, 0, nullptr, nullptr, "!next.today", 4}, // <row>
-  {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 0, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 1, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {0, 0, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, nullptr, nullptr, nullptr, 2}, // <stack>
   {1, 1, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "{next.name} - {next.date:MMM d}", nullptr, "next.any", 0}, // <text>
   {1, 0, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "No friends yet", nullptr, "!next.any", 0}, // <text>
   {0, 0, 20, 1, 0, 5, 3, 220, 116, 20, 0, 0, nullptr, nullptr, "next.today", 2}, // <row>
-  {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 0, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {3, 0, 5, 0, 0, 0, 5, 222, 16, 17, 1, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 1, 4, 0, 0, 0, 26, 222, 91, 17, 0, 0, "{next.name} \177 {next.years} yrs!", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
@@ -409,7 +411,7 @@ static const UiScreen UI_SCREENS[] = {
   {"friends", SCREEN_friends_nodes, 24},
   {"gnome", SCREEN_gnome_nodes, 9},
   {"howto", SCREEN_howto_nodes, 7},
-  {"intro", SCREEN_intro_nodes, 8},
+  {"intro", SCREEN_intro_nodes, 10},
   {"main", SCREEN_main_nodes, 31},
   {"menu", SCREEN_menu_nodes, 10},
   {"reflection", SCREEN_reflection_nodes, 10},

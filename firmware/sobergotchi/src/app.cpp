@@ -64,7 +64,7 @@ static ConfirmWhat confirmWhat = C_SOBER;
 static bool confirmAgain = false;  // factory reset: the second, "really?" question
 
 // Pip's first-time setup: a page per step; the name, sober date and phone pages open the usual editors.
-enum IntroStep : uint8_t { I_HELLO, I_NAME, I_SOBER, I_FRIENDS, I_PHONE, I_DONE, I_COUNT };
+enum IntroStep : uint8_t { I_HELLO, I_BUTTONS, I_NAME, I_SOBER, I_FRIENDS, I_PHONE, I_DONE, I_COUNT };
 static int introStep = I_HELLO;
 static bool inIntro() { return !store::settings.setupDone; }
 
@@ -487,10 +487,11 @@ class Data : public UiData {
  private:
   // Pip's setup pages: intro.title, intro.text, intro.pose, intro.step
   void introValue(const char* k, char* out, size_t n) {
-    static const char* const TITLE[I_COUNT] = {"Hello!", "Your name", "Sobriety date", "Friends", "Your phone", "All set"};
-    static const uint8_t POSE[I_COUNT] = {P_WAVE, P_STAND, P_READ, P_TEA, P_LANTERN, P_CHEER};
+    static const char* const TITLE[I_COUNT] = {"Hello!", "Your buttons", "Your name", "Sobriety date", "Friends", "Your phone", "All set"};
+    static const uint8_t POSE[I_COUNT] = {P_WAVE, P_WAVE, P_STAND, P_READ, P_TEA, P_LANTERN, P_CHEER};
     const char* name = store::settings.name;
     if (!strcmp(k, "title")) { snprintf(out, n, "%s", TITLE[introStep]); return; }
+    if (!strcmp(k, "buttons")) { snprintf(out, n, "%s", introStep == I_BUTTONS ? "1" : ""); return; }
     if (!strcmp(k, "pose")) { snprintf(out, n, "%d", POSE[introStep]); return; }
     if (!strcmp(k, "step")) { snprintf(out, n, "%d/%d", introStep + 1, (int)I_COUNT); return; }
     if (strcmp(k, "text")) return;
@@ -498,6 +499,9 @@ class Data : public UiData {
       case I_HELLO:
         snprintf(out, n, "Hello there, friend. I'm Pip. I look after the little garden in here, and I'd love to keep "
                          "you company, one day at a time.");
+        break;
+      case I_BUTTONS:
+        snprintf(out, n, "Up and down move around, and enter picks. Hold enter and up together to make a friend.");
         break;
       case I_NAME: snprintf(out, n, "Let's get to know each other. What would you like me to call you?"); break;
       case I_SOBER:
