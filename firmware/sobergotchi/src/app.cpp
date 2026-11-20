@@ -328,7 +328,7 @@ class Data : public UiData {
 
   int listCount(const char* name) override {
     // first row "Add friend", then the friends, last row "Back"; no friends: the empty page (enter adds one)
-    if (!strcmp(name, "friends")) return store::friendCount ? store::friendCount + 2 : 0;
+    if (!strcmp(name, "friends")) return store::friendCount + 2;  // with no friends: just Add friend and Back
     if (!strcmp(name, "menu")) return menuCount();
     return 0;
   }
@@ -791,7 +791,6 @@ static bool isFriend(uint32_t uid) {
 
 // Back to the friends list after adding (or not), on the given friend's row if there is one.
 static void friendsBack(uint32_t uid) {
-  if (!store::friendCount) { mode = M_CAROUSEL; carousel = 3; return; }
   mode = M_FRIENDS;
   if (friendSel < 0) friendSel = 1;
   if (friendSel > store::friendCount + 1) friendSel = store::friendCount + 1;
@@ -864,8 +863,7 @@ static void handleKey(Event e) {
       else if (e == EV_KEY3) { carousel = (carousel + 1) % CAROUSEL_COUNT; reflectPage = 0; }
       else if (e == EV_KEY2) {
         if (carousel == 2) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
-        else if (carousel == 3 && store::friendCount) { mode = M_FRIENDS; friendSel = 1; }  // on the first friend
-        else if (carousel == 3) mode = M_HOWTO;                                              // no friends yet
+        else if (carousel == 3) { mode = M_FRIENDS; friendSel = store::friendCount ? 1 : 0; }  // first friend, or Add
         else if (carousel == 4) { mode = M_MENU; menuUser = false; menuSel = 0; }
       }
       break;
@@ -929,7 +927,7 @@ static void handleKey(Event e) {
             store::deleteFriend(order[friendSel - 1]);
             sortFriends();
             if (friendSel > store::friendCount) friendSel = store::friendCount;
-            mode = store::friendCount ? M_FRIENDS : M_CAROUSEL;
+            mode = M_FRIENDS;  // with none left, on Add friend
           } else {
             cardDelete = false;
             mode = M_FRIEND_CARD;  // Cancel: back to their card, on Back

@@ -216,7 +216,18 @@
    },
    {
     "friends.any": false,
-    "friends.count": 0
+    "friends.count": 0,
+    "friends": [
+     {
+      "name": "Add friend",
+      "back": true,
+      "add": true
+     },
+     {
+      "name": "Back",
+      "back": true
+     }
+    ]
    }
   ],
   "menu": [

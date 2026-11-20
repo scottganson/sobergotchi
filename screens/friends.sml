@@ -5,7 +5,7 @@
     <text w="30" font="small-b" align="right">{friends.count}</text>
   </row>
   <stack h="*">
-    <list if="friends.any" bind="friends" rowh="32" sel="{friends.sel}">
+    <list bind="friends" rowh="32" sel="{friends.sel}">
       <row h="31" pad="3 4 2 4" gap="5">
         <stack w="27">
           <col if="!item.back" border="1" radius="4">
@@ -24,10 +24,10 @@
       <rule h="1" style="dotted" margin="0 4"/>
     </list>
     <col if="!friends.any">
-      <image h="122" src="addfriend"/>
+      <spacer h="74"/>
       <text h="18" font="label-b" align="center">No friends yet</text>
-      <text h="13" font="small" align="center">Head to head, both</text>
-      <text h="13" font="small" align="center">hold enter and up</text>
+      <text h="13" font="small" align="center">Pick Add friend to</text>
+      <text h="13" font="small" align="center">see how to make one</text>
     </col>
   </stack>
   <text h="12" font="small" align="center">{hint}</text>
