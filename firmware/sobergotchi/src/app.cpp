@@ -49,7 +49,6 @@ static uint8_t rpsMine, rpsTheirs;
 // Add friend (enter + up held): the radio looks for another Sobergotchi while the search screen is up
 static bool searching = false;    // the search screen is showing, the buttons are held and the radio is on
 static bool searchNone = false;   // the search ended without finding anyone
-static bool searchFound = false;  // still held, and someone has been heard (popupFriend)
 
 // ---------------------------------------------------------------------------
 // editors
@@ -427,12 +426,10 @@ class Data : public UiData {
       return str(confirmWhat == C_DELETE ? "Yes, delete" : confirmWhat == C_SOBER ? "Yes, change it"
                  : confirmAgain ? "Yes, erase all" : "Yes, erase it");
     if (!strcmp(key, "search.title")) {
-      if (searchFound) { snprintf(out, n, "Found %s", popupFriend.name); return; }
       return str(searchNone ? "No one found" : "Looking...");
     }
     if (!strcmp(key, "search.text")) {
       if (searchNone) return str("Put your Sobergotchis head to head and both hold enter and up again.");
-      if (searchFound) return str("Keep holding a moment while you swap cards.");
       return str("Keep holding while your friend holds theirs. Let go to stop.");
     }
     if (!strncmp(key, "sys.", 4)) {
@@ -806,13 +803,11 @@ static void friendsBack(uint32_t uid) {
 }
 
 // Add friend mode, from enter + up held for ADD_FRIEND_HOLD_MS on any screen. The radio is on only while both are
-// held (at most ADD_FRIEND_HOLD_MAX_MS); finding someone redraws the screen ("Found Sam"), and letting go turns the
-// radio off. A new friend is saved straight away ("Friend added!"); a friend we already have gets their card
+// held (at most ADD_FRIEND_HOLD_MAX_MS), and ADD_FRIEND_SWAP_MS after someone is heard it turns off and they are added. A new friend is saved straight away ("Friend added!"); a friend we already have gets their card
 // refreshed and a game of rock-paper-scissors.
 static void addFriend() {
   searching = true;
   searchNone = false;
-  searchFound = false;
   draw(S_SEARCH, false);
   sessionDirty = true;
   exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
@@ -821,12 +816,7 @@ static void addFriend() {
   uint32_t foundAt = 0;
   while (hw::comboHeld() && millis() - t0 < ADD_FRIEND_HOLD_MAX_MS) {
     delay(20);
-    if (!searchFound && exchange::found()) {  // tell them, but keep the radio on so their device hears us too
-      searchFound = true;
-      popupFriend = exchange::best().card;
-      draw(S_SEARCH, false);
-      foundAt = millis();
-    }
+    if (!foundAt && exchange::found()) foundAt = millis();  // keep the radio on a moment so they hear us too
     if (foundAt && millis() - foundAt >= ADD_FRIEND_SWAP_MS) break;  // done: added while still held
   }
   exchange::finish();
@@ -834,7 +824,6 @@ static void addFriend() {
   if (!hw::comboHeld()) hw::flushKeys();  // letting go can bounce: don't let that close the pop-up that comes next
   const exchange::Result r = exchange::best();
   searching = false;
-  searchFound = false;
   if (!r.found) {
     searchNone = true;
     showPopup(S_SEARCH);
