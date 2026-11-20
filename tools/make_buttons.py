@@ -7,7 +7,7 @@ def P(*a): return [v*S for v in a]
 lw=int(1.3*S)
 # one Sobergotchi standing up, like the enclosure CAD: black body, notches top and bottom, corner screws,
 # the SOBERGOTCHI band at the top, big screen; enter is the one button on the left side, up and down the two on the right
-x0,y0,w,h=44,4,34,88
+x0,y0,w,h=44,10,34,76
 x1,y1=x0+w,y0+h
 d.rounded_rectangle(P(x0,y0,x1,y1),radius=5*S,fill=0)
 for ny in (y0,y1-4):
@@ -22,8 +22,8 @@ for i,ln in enumerate((0.7,0.5,0.8,0.4)):
     ly=y0+25+i*5; L=(w-16)*ln
     d.line(P(x0+8,ly,x0+8+L,ly),fill=0,width=int(1.0*S))
 def frac(cad): return y0+h*(cad-38)/667
-yl=frac(295); yr1=frac(235); yr2=frac(290)
-nub=lambda x,y,side: d.rectangle(P(x-2.2 if side<0 else x, y-3.5, x if side<0 else x+2.2, y+3.5),fill=0)
+yl=frac(295); yr1=frac(235)-2.5; yr2=frac(290)+2.5  # a visible gap between up and down
+nub=lambda x,y,side: d.rectangle(P(x-2.2 if side<0 else x, y-3, x if side<0 else x+2.2, y+3),fill=0)
 nub(x0,yl,-1); nub(x1,yr1,1); nub(x1,yr2,1)
 # arrows to the two buttons, with "hold" marks
 def arrow(xa,ya,xb,yb):
