@@ -586,17 +586,13 @@ class Data : public UiData {
       }
       return;
     }
+    if (!strcmp(k, "choose")) { snprintf(out, n, "%s", editChoice >= 0 ? "1" : ""); return; }
+    if (!strcmp(k, "csel")) { snprintf(out, n, "%s", editChoice == 1 ? "1" : ""); return; }
     if (!strcmp(k, "has3")) { snprintf(out, n, "%s", editTarget == E_TODAY ? "1" : ""); return; }
     if (!strncmp(k, "hint", 4)) {
       const char* h = "";
-      char opts[48];
-      if (editChoice >= 0) {
-        static const char* O[] = {"Save", "Cancel"};
-        int m = 0;
-        for (int i = 0; i < 2; i++)
-          m += snprintf(opts + m, sizeof opts - m, i == editChoice ? "%s[%s]" : "%s %s ", i ? " " : "", O[i]);
-        if (k[4] == '1') h = opts;
-        else if (k[4] == '2') h = "\202 \203 choose  \177  \201 ok";
+      if (editChoice >= 0) {  // Save / Cancel are drawn as buttons
+        if (k[4] == '2') h = "\202 \203 choose  \177  \201 ok";
       } else {
         if (k[4] == '1') h = "\202 more  less \203";
         else if (k[4] == '2') h = "\201 next";

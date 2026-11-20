@@ -29,7 +29,7 @@
   </col>
   <rule h="1" style="dotted" margin="0 5"/>
   <spacer h="*"/>
-  <box h="26" margin="0 10 8 10" fill="ink" radius="6">
-    <text h="*" font="label" align="center">&lt; Back</text>
-  </box>
+  <row h="22" margin="0 4 4 4" pad="0 30">
+    <text w="*" font="small-b" align="center" fill="ink" radius="5">&lt; Back</text>
+  </row>
 </screen>

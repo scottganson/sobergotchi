@@ -305,6 +305,12 @@
     "edit.v0": "Nov",
     "edit.v1": "15",
     "edit.v2": "2026"
+   },
+   {
+    "edit.title": "Sobriety date",
+    "edit.choose": true,
+    "edit.csel": false,
+    "edit.hint2": "  choose     ok"
    }
   ],
   "anniversary": [
