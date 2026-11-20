@@ -1,7 +1,7 @@
 <!-- Add friend (enter + up held): the radio is on while held, looking for another Sobergotchi. Also "No one found". -->
 <screen id="search">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">Add friend</text>
+    <text w="*" font="label-b">Communicating</text>
   </row>
   <image h="122" src="signal"/>
   <text h="18" font="label-b" align="center">{search.title}</text>

@@ -363,7 +363,7 @@ static const UiNode SCREEN_rps_nodes[] = {
 static const UiNode SCREEN_search_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 7}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
-  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Add friend", nullptr, nullptr, 0}, // <text>
+  {1, 3, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Communicating", nullptr, nullptr, 0}, // <text>
   {3, 0, 5, 0, 0, 0, 0, 21, 122, 122, 4, 1, nullptr, nullptr, nullptr, 0}, // <image>
   {1, 3, 5, 0, 0, 0, 0, 143, 122, 18, 0, 0, "{search.title}", nullptr, nullptr, 0}, // <text>
   {2, 2, 1, 0, 0, 0, 6, 163, 110, 70, 13, 0, "{search.text}", "0", nullptr, 0}, // <wrap>
