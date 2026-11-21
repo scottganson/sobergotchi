@@ -26,6 +26,17 @@ static const UiNode SCREEN_anniversary_nodes[] = {
   {1, 1, 5, 0, 0, 0, 0, 222, 122, 19, 0, 0, "One day at a time", nullptr, nullptr, 0}, // <text>
   {5, 0, 5, 0, 0, 0, 0, 241, 122, 9, 5, 0, "{screen.index}", nullptr, nullptr, 0}, // <dots>
 };
+static const UiNode SCREEN_calm_nodes[] = {
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 8}, // <col>
+  {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
+  {1, 13, 4, 0, 0, 0, 5, 0, 113, 21, 0, 0, "Breathe", nullptr, nullptr, 0}, // <text>
+  {3, 0, 5, 0, 0, 0, 0, 24, 122, 77, 212, 5, "{calm.frame}", nullptr, nullptr, 0}, // <image>
+  {1, 2, 5, 0, 0, 0, 0, 101, 122, 15, 0, 0, "{calm.say}", nullptr, nullptr, 0}, // <text>
+  {6, 0, 36, 0, 0, 0, 30, 116, 62, 7, 0, 0, nullptr, nullptr, nullptr, 0}, // <rule>
+  {2, 2, 1, 0, 0, 0, 4, 124, 114, 104, 13, 0, "God, grant me the serenity to accept the things I cannot change, courage to change the things I can, and wisdom to know the difference.", "0", nullptr, 0}, // <wrap>
+  {0, 0, 4, 0, 0, 0, 4, 228, 114, 18, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
+  {1, 1, 21, 1, 0, 5, 34, 228, 54, 18, 0, 0, "< Back", nullptr, nullptr, 0}, // <text>
+};
 static const UiNode SCREEN_confirm_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 14}, // <col>
   {0, 0, 20, 1, 0, 0, 0, 0, 122, 21, 0, 0, nullptr, nullptr, nullptr, 1}, // <row>
@@ -426,6 +437,7 @@ static const UiNode SCREEN_sysinfo_nodes[] = {
 static const UiScreen UI_SCREENS[] = {
   {"added", SCREEN_added_nodes, 7},
   {"anniversary", SCREEN_anniversary_nodes, 13},
+  {"calm", SCREEN_calm_nodes, 9},
   {"confirm", SCREEN_confirm_nodes, 15},
   {"edit-date", SCREEN_edit_date_nodes, 44},
   {"edit-text", SCREEN_edit_text_nodes, 127},
@@ -444,19 +456,20 @@ static const UiScreen UI_SCREENS[] = {
 };
 #define SCREEN_ADDED 0
 #define SCREEN_ANNIVERSARY 1
-#define SCREEN_CONFIRM 2
-#define SCREEN_EDIT_DATE 3
-#define SCREEN_EDIT_TEXT 4
-#define SCREEN_FRIEND 5
-#define SCREEN_FRIENDS 6
-#define SCREEN_GNOME 7
-#define SCREEN_HOWTO 8
-#define SCREEN_INTRO 9
-#define SCREEN_LANDING 10
-#define SCREEN_MAIN 11
-#define SCREEN_MENU 12
-#define SCREEN_REFLECTION 13
-#define SCREEN_RPS 14
-#define SCREEN_SEARCH 15
-#define SCREEN_SYSINFO 16
-#define SCREEN_COUNT 17
+#define SCREEN_CALM 2
+#define SCREEN_CONFIRM 3
+#define SCREEN_EDIT_DATE 4
+#define SCREEN_EDIT_TEXT 5
+#define SCREEN_FRIEND 6
+#define SCREEN_FRIENDS 7
+#define SCREEN_GNOME 8
+#define SCREEN_HOWTO 9
+#define SCREEN_INTRO 10
+#define SCREEN_LANDING 11
+#define SCREEN_MAIN 12
+#define SCREEN_MENU 13
+#define SCREEN_REFLECTION 14
+#define SCREEN_RPS 15
+#define SCREEN_SEARCH 16
+#define SCREEN_SYSINFO 17
+#define SCREEN_COUNT 18

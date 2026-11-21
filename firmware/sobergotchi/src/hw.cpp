@@ -127,6 +127,7 @@ static Event comboHold() {
 
 static bool comboDown() { return digitalRead(PIN_KEY1) == LOW && digitalRead(PIN_KEY2) == LOW; }
 bool comboHeld() { return comboDown(); }
+bool downHeld() { return digitalRead(PIN_KEY3) == LOW; }
 
 void flushKeys() {
   delay(30);
@@ -167,7 +168,15 @@ static Event classify(uint8_t bits) {
   }
   if (bits & B_KEY3) {
     delay(20);
-    if (digitalRead(PIN_KEY3) == LOW) { while (digitalRead(PIN_KEY3) == LOW) delay(10); return EV_KEY3; }
+    if (digitalRead(PIN_KEY3) == LOW) {
+      // a short press of down selects; held for CALM_HOLD_MS it opens the calm screen straight away (still held)
+      const uint32_t t0 = millis();
+      while (digitalRead(PIN_KEY3) == LOW) {
+        if (millis() - t0 >= CALM_HOLD_MS) return EV_CALM;
+        delay(10);
+      }
+      return EV_KEY3;
+    }
   }
   return EV_NONE;
 }

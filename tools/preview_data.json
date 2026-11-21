@@ -420,6 +420,24 @@
    {
     "hint": "● back"
    }
+  ],
+  "calm": [
+   {
+    "calm.frame": 0,
+    "calm.say": "breathe in"
+   },
+   {
+    "calm.frame": 2,
+    "calm.say": "breathe in"
+   },
+   {
+    "calm.frame": 4,
+    "calm.say": "breathe out"
+   },
+   {
+    "calm.frame": 2,
+    "calm.say": "one day at a time"
+   }
   ]
  },
  "sober.short": "2y 2m 27d",
@@ -511,5 +529,7 @@
  "menu.title": "Settings",
  "search.title": "Looking...",
  "search.text": "Looking for Sobergotchis nearby for 30 seconds. Ask your friend to pick Add friend too.",
- "friend.del": false
+ "friend.del": false,
+ "calm.frame": 3,
+ "calm.say": "breathe in"
 }
