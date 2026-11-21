@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Landing page title (art/icons/title.png): "Sobergotchi" in Great Vibes script, drawn large and brought down
-to size with a slightly heavier pen so the thin hairlines stay joined on the e-paper (the 1-bit font left holes).
-Usage: python tools/make_title.py [stroke] [cut]
+"""Landing page title (art/icons/title.png): "Sobergotchi" in Pirata One (Scott's pick, 2026-11-20), drawn large
+and brought down to size so the strokes stay solid on the e-paper. Fitted to the frame width.
+Usage: python tools/make_title.py [font file in fonts/]
 """
 import os, sys
 from PIL import Image, ImageDraw, ImageFont
@@ -9,20 +9,22 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 W, H, S = 116, 40, 8
 TEXT = "Sobergotchi"
+FONT = "PirataOne-Regular.ttf"
 
 
-def make(stroke=0, cut=215, size=29):
-    font = ImageFont.truetype(os.path.join(ROOT, "fonts", "GreatVibes-Regular.ttf"), size * S)
+def make(font_path, cut=160, max_w=110, max_h=34):
+    size = 60
+    while True:  # largest size that fits the box
+        font = ImageFont.truetype(font_path, size * S)
+        l, t, r, b = ImageDraw.Draw(Image.new("L", (1, 1))).textbbox((0, 0), TEXT, font=font)
+        if (r - l) <= max_w * S and (b - t) <= max_h * S:
+            break
+        size -= 1
     big = Image.new("L", (W * S, H * S), 255)
-    d = ImageDraw.Draw(big)
-    l, t, r, b = d.textbbox((0, 0), TEXT, font=font, stroke_width=stroke)
-    d.text(((W * S - (r - l)) / 2 - l, (H * S - (b - t)) / 2 - t), TEXT, font=font, fill=0,
-           stroke_width=stroke, stroke_fill=0)
-    small = big.resize((W, H), Image.BOX)  # average coverage per pixel
-    return small.point(lambda v: 0 if v < cut else 255).convert("1")
+    ImageDraw.Draw(big).text(((W * S - (r - l)) / 2 - l, (H * S - (b - t)) / 2 - t), TEXT, font=font, fill=0)
+    return big.resize((W, H), Image.BOX).point(lambda v: 0 if v < cut else 255).convert("1")
 
 
 if __name__ == "__main__":
-    st = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    cut = int(sys.argv[2]) if len(sys.argv) > 2 else 215
-    make(st, cut).save(os.path.join(ROOT, "art", "icons", "title.png"))
+    name = sys.argv[1] if len(sys.argv) > 1 else FONT
+    make(os.path.join(ROOT, "fonts", name)).save(os.path.join(ROOT, "art", "icons", "title.png"))
