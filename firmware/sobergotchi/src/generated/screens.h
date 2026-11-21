@@ -305,15 +305,17 @@ static const UiNode SCREEN_intro_nodes[] = {
   {1, 1, 21, 1, 0, 5, 34, 230, 54, 16, 0, 0, "{intro.next}", nullptr, nullptr, 0}, // <text>
 };
 static const UiNode SCREEN_landing_nodes[] = {
-  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 8}, // <col>
-  {0, 0, 4, 0, 1, 6, 1, 1, 120, 248, 0, 0, nullptr, nullptr, nullptr, 7}, // <col>
-  {0, 0, 4, 0, 0, 0, 1, 1, 120, 13, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {3, 0, 5, 0, 0, 0, 1, 14, 120, 40, 8, 1, nullptr, nullptr, nullptr, 0}, // <image>
-  {1, 4, 5, 0, 0, 0, 1, 54, 120, 16, 0, 0, "one day at a time", nullptr, nullptr, 0}, // <text>
-  {0, 0, 4, 0, 0, 0, 1, 70, 120, 13, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {3, 0, 9, 0, 0, 0, 1, 83, 120, 130, 2, 1, nullptr, nullptr, nullptr, 0}, // <image>
-  {0, 0, 4, 0, 0, 0, 1, 213, 120, 14, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
-  {1, 1, 21, 1, 0, 5, 4, 227, 114, 16, 0, 0, "Press any key to start", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 10}, // <col>
+  {0, 0, 4, 0, 1, 6, 1, 1, 120, 248, 0, 0, nullptr, nullptr, nullptr, 9}, // <col>
+  {0, 0, 4, 0, 0, 0, 1, 1, 120, 10, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {3, 0, 5, 0, 0, 0, 1, 11, 120, 36, 8, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {1, 4, 5, 0, 0, 0, 1, 47, 120, 15, 0, 0, "one day at a time", nullptr, nullptr, 0}, // <text>
+  {0, 0, 4, 0, 0, 0, 1, 62, 120, 10, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {3, 0, 9, 0, 0, 0, 1, 72, 120, 130, 2, 1, nullptr, nullptr, nullptr, 0}, // <image>
+  {0, 0, 4, 0, 0, 0, 1, 202, 120, 12, 0, 0, nullptr, nullptr, nullptr, 0}, // <spacer>
+  {0, 0, 20, 1, 0, 5, 4, 214, 114, 30, 0, 0, nullptr, nullptr, nullptr, 2}, // <col>
+  {1, 1, 5, 0, 0, 0, 4, 217, 114, 12, 0, 0, "Press any key to start", nullptr, nullptr, 0}, // <text>
+  {1, 1, 5, 0, 0, 0, 4, 229, 114, 12, 0, 0, "your sober adventure", nullptr, nullptr, 0}, // <text>
 };
 static const UiNode SCREEN_main_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 250, 0, 0, nullptr, nullptr, nullptr, 30}, // <col>
@@ -432,7 +434,7 @@ static const UiScreen UI_SCREENS[] = {
   {"gnome", SCREEN_gnome_nodes, 9},
   {"howto", SCREEN_howto_nodes, 7},
   {"intro", SCREEN_intro_nodes, 18},
-  {"landing", SCREEN_landing_nodes, 9},
+  {"landing", SCREEN_landing_nodes, 11},
   {"main", SCREEN_main_nodes, 31},
   {"menu", SCREEN_menu_nodes, 10},
   {"reflection", SCREEN_reflection_nodes, 10},
