@@ -12,7 +12,7 @@
     {"name": "phone",     "file": "Inter-Bold.otf",          "size": 16},
     {"name": "big",       "file": "InterDisplay-Black.otf",  "size": 36, "chars": " 0123456789,"},
     {"name": "huge",      "file": "InterDisplay-Black.otf",  "size": 46, "chars": " 0123456789"},
-    {"name": "script",    "file": "GreatVibes-Regular.ttf",  "size": 30},
-    {"name": "script-s",  "file": "GreatVibes-Regular.ttf",  "size": 23}
+    {"name": "script",    "file": "PirataOne-Regular.ttf",   "size": 30},
+    {"name": "script-s",  "file": "PirataOne-Regular.ttf",   "size": 22}
   ]
 }
