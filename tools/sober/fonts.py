@@ -65,6 +65,10 @@ def _load(path, size, weight=None):
     return font
 
 
+# Hand spacing fixes: (font name, character) -> pixels to move the glyph right.
+NUDGE = {("small-b", "v"): 1}  # touched the letter before ("adventure" on the landing page)
+
+
 def convert(spec, font_dir):
     path = os.path.join(font_dir, spec["file"])
     size = spec["size"]
@@ -106,7 +110,8 @@ def convert(spec, font_dir):
                     acc, n = 0, 0
         if n:
             bitmap.append(acc << (8 - n))
-        glyphs.append(Glyph(offset, w, h, adv, x0 - ox, y0 - oy, rows))
+        nudge = NUDGE.get((spec["name"], ch), 0)
+        glyphs.append(Glyph(offset, w, h, adv, x0 - ox + nudge, y0 - oy, rows))
     ascent_font, descent_font = font.getmetrics()
     gf = GfxFont(spec["name"], first, last, ascent_font + descent_font, glyphs, bitmap)
     # Visual ascent/descent used for vertical centring: cap/digit height and descender depth.
