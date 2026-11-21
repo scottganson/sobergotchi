@@ -1,18 +1,19 @@
 {
   "_comment": "Fonts used by the screens. name = what screen files use in font=\"...\". The build tool converts each into an Adafruit GFX font. size is in pixels. mono=true uses hinted 1-bit rendering, which is crisper for small text.",
   "fonts": [
-    {"name": "small",     "file": "DejaVuSans.ttf",          "size": 9,  "mono": true},
-    {"name": "small-b",   "file": "DejaVuSans-Bold.ttf",     "size": 9,  "mono": true},
-    {"name": "label",     "file": "Inter-SemiBold.otf",      "size": 11, "mono": true},
-    {"name": "label-b",   "file": "Inter-Bold.otf",          "size": 12, "mono": true},
-    {"name": "body",      "file": "Lora.ttf",                "size": 13, "weight": 420},
-    {"name": "title",     "file": "Lora.ttf",                "size": 14, "mono": true, "weight": 700},
-    {"name": "name",      "file": "Pacifico-Regular.ttf",    "size": 19},
-    {"name": "name-s",    "file": "Pacifico-Regular.ttf",    "size": 15},
-    {"name": "phone",     "file": "Inter-Bold.otf",          "size": 16},
-    {"name": "big",       "file": "InterDisplay-Black.otf",  "size": 36, "chars": " 0123456789,"},
-    {"name": "huge",      "file": "InterDisplay-Black.otf",  "size": 46, "chars": " 0123456789"},
-    {"name": "script",    "file": "GreatVibes-Regular.ttf",  "size": 30},
-    {"name": "script-s",  "file": "GreatVibes-Regular.ttf",  "size": 23}
+    {"name": "small", "file": "DejaVuSans.ttf", "size": 9, "mono": true},
+    {"name": "small-b", "file": "DejaVuSans-Bold.ttf", "size": 9, "mono": true},
+    {"name": "label", "file": "Inter-SemiBold.otf", "size": 11, "mono": true},
+    {"name": "label-b", "file": "Inter-Bold.otf", "size": 12, "mono": true},
+    {"name": "body", "file": "Lora.ttf", "size": 13, "weight": 420},
+    {"name": "title", "file": "Lora.ttf", "size": 14, "mono": true, "weight": 700},
+    {"name": "name", "file": "PirataOne-Regular.ttf", "size": 22},
+    {"name": "name-s", "file": "PirataOne-Regular.ttf", "size": 18},
+    {"name": "phone", "file": "Inter-Bold.otf", "size": 16},
+    {"name": "big", "file": "PirataOne-Regular.ttf", "size": 35, "spacing": 2, "chars": " 0123456789,"},
+    {"name": "huge", "file": "PirataOne-Regular.ttf", "size": 46, "chars": " 0123456789", "spacing": 2},
+    {"name": "script", "file": "PirataOne-Regular.ttf", "size": 30},
+    {"name": "script-s", "file": "PirataOne-Regular.ttf", "size": 22},
+    {"name": "head", "file": "PirataOne-Regular.ttf", "size": 14}
   ]
 }

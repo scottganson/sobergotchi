@@ -1,7 +1,7 @@
 <!-- System info, opened from Settings. Enter goes back to Settings. -->
 <screen id="sysinfo">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">System info</text>
+    <text w="*" font="head">System info</text>
   </row>
   <col h="27" pad="3 5 2 6">
     <text h="13" font="label">Battery</text>

@@ -1,7 +1,7 @@
 <!-- Asks before the sobriety date is changed or a factory reset. KEY1 / KEY3 choose, KEY2 ok. Starts on Cancel. -->
 <screen id="confirm">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">{confirm.title}</text>
+    <text w="*" font="head">{confirm.title}</text>
   </row>
   <spacer h="22"/>
   <wrap h="70" font="label-b" lh="15" margin="0 6" align="center">{confirm.text}</wrap>

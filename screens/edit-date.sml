@@ -1,7 +1,7 @@
 <!-- Date editor. KEY1 (up) plus, KEY3 (down) minus, KEY2 (enter) next field; after the last field Cancel / Save buttons. -->
 <screen id="edit-date">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">{edit.title}</text>
+    <text w="*" font="head">{edit.title}</text>
   </row>
   <spacer h="10"/>
   <stack h="38" margin="2 6">

@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.31-world28"
+#define FIRMWARE_VERSION "1.32-world29"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1
@@ -49,6 +49,7 @@
 // Behaviour
 // ---------------------------------------------------------------------------
 #define IDLE_TIMEOUT_MS        30000UL  // back to the home screen after this long without a press
+#define SETUP_TIMEOUT_MS       600000UL // setup not finished 10 minutes after leaving the landing page: back to it
 #define LONG_PRESS_MS          700UL
 #define POPUP_MS               6000UL   // how long "Friend added" / rock-paper-scissors stay up
 #define ADD_FRIEND_HOLD_MS     2000UL   // hold enter + up together this long to start Add friend from any screen;

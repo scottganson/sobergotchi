@@ -2,7 +2,7 @@
      the buttons page shows where enter, up and down are; the name, sobriety date and phone pages open the usual editors. -->
 <screen id="intro">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">{intro.title}</text>
+    <text w="*" font="head">{intro.title}</text>
     <text w="30" font="small-b" align="right">{intro.step}</text>
   </row>
   <stack h="96">

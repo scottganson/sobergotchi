@@ -1,7 +1,7 @@
 <!-- Friends: an "Add friend" row, the friends soonest anniversary first, then "Back". With none, enter adds one. -->
 <screen id="friends">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">Friends</text>
+    <text w="*" font="head">Friends</text>
     <text w="30" font="small-b" align="right">{friends.count}</text>
   </row>
   <stack h="*">

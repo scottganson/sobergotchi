@@ -1,7 +1,7 @@
 <!-- Today's reflection. KEY2 turns the page when the text is long. -->
 <screen id="reflection">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">Reflection</text>
+    <text w="*" font="head">Reflection</text>
     <text w="42" font="small-b" align="right">{today:MMM d}</text>
   </row>
   <image h="19" src="quote" align="left" valign="bottom" margin="0 0 0 6"/>

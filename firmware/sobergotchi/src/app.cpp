@@ -21,6 +21,7 @@ enum Mode : uint8_t {
   M_FRIEND_CARD,    // one friend
   M_MENU,           // picking a setting
   M_CONFIRM,        // "Are you sure?" before the sobriety date editor or a factory reset
+  M_LANDING,        // the title page before Pip's setup: any key starts it
   M_INTRO,          // Pip's first-time setup (fresh flash or factory reset)
   M_SYSINFO,        // battery, version and device ID, from Settings
   M_HOWTO,          // Friends > Add friend: how to make a friend (hold left + right, devices head to head)
@@ -29,7 +30,7 @@ enum Mode : uint8_t {
 };
 
 static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH, S_HOWTO;
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH, S_HOWTO, S_LANDING;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
@@ -67,6 +68,7 @@ static bool confirmAgain = false;  // factory reset: the second, "really?" quest
 enum IntroStep : uint8_t { I_HELLO, I_BUTTONS, I_NAME, I_SOBER, I_FRIENDS, I_PHONE, I_DONE, I_COUNT };
 static int introStep = I_HELLO;
 static bool introBack = false;  // setup: the < Back button highlighted (else Next)
+static uint32_t introStartMs = 0;  // millis() when a key on the landing page started setup
 static bool inIntro() { return !store::settings.setupDone; }
 
 // Name / phone keyboard: up/down step through every key, then the actions under them (wrapping round); enter types
@@ -652,6 +654,7 @@ static int currentScreen() {
   switch (mode) {
     case M_FRIEND_CARD: return S_FRIEND;
     case M_CONFIRM: return S_CONFIRM;
+    case M_LANDING: return S_LANDING;
     case M_INTRO: return S_INTRO;
     case M_SYSINFO: return S_SYSINFO;
     case M_HOWTO: return S_HOWTO;
@@ -768,9 +771,18 @@ static void editClosed(bool saved) {
   if (saved || editTarget == E_PHONE) introStep++;  // the phone may be skipped with Cancel
 }
 
+// Fresh flash, factory reset, or setup left unfinished too long: the landing page, setup from the start.
 static void startIntro() {
   introStep = I_HELLO;
   introBack = false;
+  mode = M_LANDING;
+}
+
+// Any key on the landing page: Pip's first page, and the SETUP_TIMEOUT_MS clock starts.
+static void beginSetup() {
+  introStep = I_HELLO;
+  introBack = false;
+  introStartMs = millis();
   mode = M_INTRO;
 }
 
@@ -847,6 +859,10 @@ static void stepDate(int dir) {
 static void handleKey(Event e) {
   if (e == EV_KEY2_LONG) e = EV_KEY2;  // no hold actions: a long press is just enter
   switch (mode) {
+    case M_LANDING:
+      if (e == EV_KEY1 || e == EV_KEY2 || e == EV_KEY3) beginSetup();  // any key
+      break;
+
     case M_INTRO:
       // < Back and Next > buttons: up / down choose (no Back on the first page), enter presses
       if ((e == EV_KEY1 || e == EV_KEY3) && introStep > I_HELLO) introBack = !introBack;
@@ -1056,12 +1072,13 @@ void begin() {
   S_SYSINFO = ui::screenByName("sysinfo");
   S_SEARCH = ui::screenByName("search");
   S_HOWTO = ui::screenByName("howto");
+  S_LANDING = ui::screenByName("landing");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();
   hw::setNow(store::settings.clockSecs > built ? store::settings.clockSecs : built);
   sortFriends();
-  if (inIntro()) {  // fresh flash: Pip says hello and asks for the name, sober date and phone
+  if (inIntro()) {  // fresh flash: the landing page, then Pip says hello and asks for the name, sober date and phone
     startIntro();
     show(true);
     sessionDirty = false;
@@ -1072,8 +1089,23 @@ void begin() {
 }
 
 void loop() {
-  if (inIntro()) {  // setup waits for the buttons: no idle timeout, no friend taps until Pip knows who you are
-    Event e = hw::wait(IDLE_TIMEOUT_MS);
+  if (inIntro()) {  // setup waits for the buttons, no friend taps until Pip knows who you are
+    // The landing page waits as long as it takes. Setup started from it gets SETUP_TIMEOUT_MS to finish,
+    // then it is back to the landing page (the next person starts fresh).
+    uint32_t timeout = IDLE_TIMEOUT_MS;
+    if (mode != M_LANDING) {
+      const uint32_t used = millis() - introStartMs;
+      if (used >= SETUP_TIMEOUT_MS) {
+        LOG("setup not finished in time: back to the landing page");
+        startIntro();
+        show(true);
+        sessionDirty = false;
+        display::sleep();
+        return;
+      }
+      if (SETUP_TIMEOUT_MS - used < timeout) timeout = SETUP_TIMEOUT_MS - used;
+    }
+    Event e = hw::wait(timeout);
     if (e == EV_TIMEOUT) { display::sleep(); return; }
     if (e == EV_ADD_FRIEND) { while (hw::comboHeld()) delay(20); hw::flushKeys(); return; }  // not during setup
     if (!keyChanged(e)) return;
