@@ -18,7 +18,8 @@ struct Result {
 // Add friend mode (Friends > Add friend or enter + up held), in steps so the app can keep the radio on for the whole
 // window while it asks the question: start() turns the radio on, found() says whether another Sobergotchi has been
 // heard, best() gives the closest one so far, finish() turns the radio off.
-void start(const Settings& me, int8_t minRssi);
+// story: your Share your story lines; points / month: your Leaderboard points this month (months since 2000)
+void start(const Settings& me, const uint8_t story[3], uint16_t points, uint16_t month, int8_t minRssi);
 bool found();
 Result best();
 void finish();

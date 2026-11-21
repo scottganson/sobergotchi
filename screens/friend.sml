@@ -1,4 +1,4 @@
-<!-- One friend's card. Up / down choose Back or Delete, enter does it; Delete asks first (confirm screen). -->
+<!-- One friend's card. Up / down choose Back, Delete or Their story (when they shared one), enter does it; Delete asks first (confirm screen). -->
 <screen id="friend">
   <row h="21" fill="ink" pad="0 4 0 5">
     <text w="*" font="head">Friend</text>
@@ -15,9 +15,13 @@
     <text h="*" font="small-b" align="center">{friend.date:MMM d} · {friend.in}</text>
   </box>
   <spacer h="*"/>
+  <stack h="22" margin="0 4 3 4">
+    <text if="friend.s2" font="small-b" align="center" fill="ink" radius="5">Their story</text>
+    <text if="friend.story" font="small-b" align="center" border="1" radius="5">Their story</text>
+  </stack>
   <stack h="24" margin="0 4 4 4">
     <row if="!friend.del" gap="6">
-      <text w="*" font="small-b" align="center" fill="ink" radius="5">&lt; Back</text>
+      <stack w="*"><text if="friend.s0" font="small-b" align="center" fill="ink" radius="5">&lt; Back</text><text if="!friend.s0" font="small-b" align="center" border="1" radius="5">&lt; Back</text></stack>
       <text w="*" font="small-b" align="center" border="1" radius="5">Delete</text>
     </row>
     <row if="friend.del" gap="6">
