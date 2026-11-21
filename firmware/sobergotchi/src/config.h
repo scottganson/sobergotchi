@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.34-path1"
+#define FIRMWARE_VERSION "1.35-path2"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1
@@ -64,7 +64,7 @@
 #define LEAF_COUNT             20       // Leaf catch: leaves in a game
 // Your path opens things by days since setup was finished. Set this to e.g. 400 to try everything now (testing
 // only: it adds days, so put it back to 0 for real use).
-#define PATH_TEST_DAYS         0
+#define PATH_TEST_DAYS         400
 #define ADD_FRIEND_MIN_RSSI    (-80)    // reaches across a table (about 1-2 m), not just back to back
 #define MAX_FRIENDS            200
 #define NAME_LEN               12
