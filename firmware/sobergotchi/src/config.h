@@ -4,7 +4,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "1.32-world29"
+#define FIRMWARE_VERSION "1.33-world30"
 
 // 1 = rainy days turn to snow in December, January and February. Set 0 for places without snowy winters.
 #define WINTER_SNOW 1
@@ -56,6 +56,10 @@
                                         // the radio then stays on only while they are held
 #define ADD_FRIEND_SWAP_MS     3000UL   // after a find, keep the radio on this long (so they hear us too), then add
 #define ADD_FRIEND_HOLD_MAX_MS 120000UL // ...but never more than 2 minutes (a button stuck in a pocket)
+#define CALM_HOLD_MS           2000UL   // hold down this long on any screen (after setup): the calm screen
+#define BREATH_STEP_MS         1250UL   // one circle size per step: 4 steps in, 4 out = a 10 s breath (6 a minute)
+#define BREATHS                8        // breaths the circle leads (about 80 s), then it rests
+#define CALM_STAY_MS           120000UL // after the breathing, the calm screen stays this long unless enter closes it
 #define ADD_FRIEND_MIN_RSSI    (-80)    // reaches across a table (about 1-2 m), not just back to back
 #define MAX_FRIENDS            200
 #define NAME_LEN               12

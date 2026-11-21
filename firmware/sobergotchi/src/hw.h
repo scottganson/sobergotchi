@@ -6,7 +6,8 @@ enum Event : uint8_t {
   EV_NONE = 0,
   EV_KEY1, EV_KEY2, EV_KEY3,     // short presses
   EV_KEY2_LONG,                  // KEY2 held
-  EV_ADD_FRIEND,                 // enter + up held together for ADD_FRIEND_HOLD_MS (and still held)
+  EV_ADD_FRIEND,
+  EV_CALM,                       // down held for CALM_HOLD_MS (fires while still held)                 // enter + up held together for ADD_FRIEND_HOLD_MS (and still held)
   EV_TIMEOUT,                    // nothing happened before the timeout
 };
 
@@ -15,7 +16,8 @@ namespace hw {
 void begin();
 // Sleeps (System ON, ~µA) until a button or the timeout. Returns what woke us.
 Event wait(uint32_t timeoutMs);
-bool comboHeld();   // enter and up both down right now
+bool comboHeld();
+bool downHeld();    // down is pressed right now   // enter and up both down right now
 void flushKeys();   // forget presses that arrived meanwhile (bounces from letting go of the combo)
 
 // Battery

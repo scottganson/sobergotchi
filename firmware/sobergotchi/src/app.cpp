@@ -30,7 +30,7 @@ enum Mode : uint8_t {
 };
 
 static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH, S_HOWTO, S_LANDING;
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH, S_HOWTO, S_LANDING, S_CALM;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
@@ -49,6 +49,10 @@ static uint8_t rpsMine, rpsTheirs;
 
 // Add friend (enter + up held): the radio looks for another Sobergotchi while the search screen is up
 static bool searching = false;    // the search screen is showing, the buttons are held and the radio is on
+
+// The calm screen (down held): the circle's size (0 small .. 4 full) and the line under it
+static int calmFrame = 0;
+static const char* calmSay = "";
 
 // ---------------------------------------------------------------------------
 // editors
@@ -359,6 +363,8 @@ class Data : public UiData {
     if (!strcmp(key, "battery.pct")) return num(hw::batteryPercent());
     if (!strcmp(key, "battery.charging")) return flag(hw::charging());
     if (!strcmp(key, "hint")) return hint(out, n);
+    if (!strcmp(key, "calm.frame")) return num(calmFrame);
+    if (!strcmp(key, "calm.say")) return str(calmSay);
 
     if (!strncmp(key, "sober.", 6)) {
       Sober s = sober();
@@ -844,6 +850,49 @@ static void addFriend() {
   friendsBack(r.card.uid);
 }
 
+// ---------------------------------------------------------------------------
+// The calm screen: down held for CALM_HOLD_MS on any screen after setup. The circle leads BREATHS slow breaths (in as it
+// grows, out as it shrinks, one size every BREATH_STEP_MS), then rests with the prayer for CALM_STAY_MS. Only enter
+// closes it (up / down only ever select, and there is nothing to choose here). Partial refreshes only: no flashing.
+// ---------------------------------------------------------------------------
+static void calmDraw(int frame, const char* say) {
+  calmFrame = frame;
+  calmSay = say;
+  draw(S_CALM, false);
+  sessionDirty = true;
+}
+
+// Waits until the given millis() time; true if enter was pressed (close). Other keys are let go of and ignored.
+static bool calmWait(uint32_t until) {
+  for (;;) {
+    const int32_t left = (int32_t)(until - millis());
+    if (left <= 0) return false;
+    const Event e = hw::wait((uint32_t)left);
+    if (e == EV_KEY2 || e == EV_KEY2_LONG) return true;
+    if (e == EV_ADD_FRIEND) { while (hw::comboHeld()) delay(20); hw::flushKeys(); }
+    if (e == EV_CALM) { while (hw::downHeld()) delay(20); hw::flushKeys(); }
+  }
+}
+
+static void calm() {
+  LOG("calm screen");
+  calmDraw(0, "breathe in");
+  while (hw::downHeld()) delay(20);  // letting go of down must not count as a press
+  hw::flushKeys();
+  uint32_t next = millis();
+  for (int step = 1; step <= BREATHS * 8; step++) {  // 8 steps a breath: sizes 0 1 2 3 4 3 2 1, back to 0
+    next += BREATH_STEP_MS;
+    if (calmWait(next)) return;
+    const int s = step % 8;
+    calmDraw(s <= 4 ? s : 8 - s, s < 4 ? "breathe in" : "breathe out");
+    if ((int32_t)(millis() - next) > (int32_t)BREATH_STEP_MS) next = millis();  // a slow refresh: don't rush to catch up
+  }
+  next += BREATH_STEP_MS;
+  if (calmWait(next)) return;
+  calmDraw(2, "one day at a time");
+  calmWait(millis() + CALM_STAY_MS);
+}
+
 static void stepDate(int dir) {
   switch (editField) {
     case 0: editM = (editM - 1 + dir + 12) % 12 + 1; break;
@@ -1073,6 +1122,7 @@ void begin() {
   S_SEARCH = ui::screenByName("search");
   S_HOWTO = ui::screenByName("howto");
   S_LANDING = ui::screenByName("landing");
+  S_CALM = ui::screenByName("calm");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();
@@ -1108,6 +1158,11 @@ void loop() {
     Event e = hw::wait(timeout);
     if (e == EV_TIMEOUT) { display::sleep(); return; }
     if (e == EV_ADD_FRIEND) { while (hw::comboHeld()) delay(20); hw::flushKeys(); return; }  // not during setup
+    if (e == EV_CALM) {  // no calm screen during setup: a long down is just down (on the landing page, any key)
+      while (hw::downHeld()) delay(20);
+      hw::flushKeys();
+      e = EV_KEY3;
+    }
     if (!keyChanged(e)) return;
     if (mode == M_CAROUSEL) goHome(true);  // setup finished: a clean full refresh onto the home screen
     else show(false);
@@ -1131,6 +1186,11 @@ void loop() {
   }
   if (e == EV_ADD_FRIEND) {  // enter + up held: Add friend from any screen, radio on while they are held
     addFriend();
+    show(false);
+    return;
+  }
+  if (e == EV_CALM) {  // down held: the calm screen, then back to whatever was showing
+    calm();
     show(false);
     return;
   }
