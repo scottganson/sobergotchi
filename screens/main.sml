@@ -4,7 +4,7 @@
     <text w="*" font="small-b">{today:ddd, MMM d}</text>
     <battery w="28" align="right"/>
   </row>
-  <text h="27" font="name" align="center">{user.name}</text>
+  <text h="27" font="script-s" align="center">{user.name}</text>
   <!-- Layers: the day's sky, the tree's outline cleared out of it, the tree, from five years the day's view of the gnome's world, the gnome himself, and who is where. -->
   <stack h="*">
     <image src="sky" index="{sky.index}" valign="bottom"/>

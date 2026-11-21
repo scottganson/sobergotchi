@@ -322,7 +322,7 @@ static const UiNode SCREEN_main_nodes[] = {
   {0, 0, 4, 0, 0, 0, 0, 0, 122, 15, 0, 0, nullptr, nullptr, nullptr, 2}, // <row>
   {1, 1, 4, 0, 0, 0, 4, 3, 87, 12, 0, 0, "{today:ddd, MMM d}", nullptr, nullptr, 0}, // <text>
   {4, 0, 6, 0, 0, 0, 91, 3, 28, 12, 0, 0, "{battery.pct}", "battery.charging", nullptr, 0}, // <battery>
-  {1, 6, 5, 0, 0, 0, 0, 15, 122, 27, 0, 0, "{user.name}", nullptr, nullptr, 0}, // <text>
+  {1, 12, 5, 0, 0, 0, 0, 15, 122, 27, 0, 0, "{user.name}", nullptr, nullptr, 0}, // <text>
   {0, 0, 4, 0, 0, 0, 0, 42, 122, 112, 0, 0, nullptr, nullptr, nullptr, 9}, // <stack>
   {3, 0, 9, 0, 0, 0, 0, 42, 122, 112, 64, 13, "{sky.index}", nullptr, nullptr, 0}, // <image>
   {3, 0, 25, 0, 0, 0, 0, 42, 122, 112, 37, 27, "{tree.stage}", nullptr, nullptr, 0}, // <image>
