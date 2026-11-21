@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Landing page picture (art/icons/landing.png): the young tree under a rainbow, Pip waving, birds overhead.
+"""Landing page picture (art/icons/landing.png): the young tree on a clear morning, Pip waving, birds overhead.
 
 Built from the existing pen-and-ink layers (art/sky, art/tree + treemask, art/gnome + gnomemask) so it matches
-the home screen, cropped to fit inside the landing page frame, with a few extra birds drawn on.
+the home screen, cropped to fit inside the landing page frame.
 Usage: python tools/make_landing.py
 """
 import os
 from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKY, TREE, POSE = "sky-12-rainbow", "stage-16", "pose-01-wave"
+SKY, TREE, POSE = "sky-04-birds", "stage-16", "pose-01-wave"
 TOP = 16  # room for the flourish above the scene
 CROP = 3  # trim each side so the picture sits inside the page frame
 
@@ -24,10 +24,6 @@ def main():
         m = layer(mask, name).point(lambda v: 255 - v)  # black in the mask = paper behind the drawing
         pic.paste(255, (0, 0), m)
         pic.paste(layer(art, name), (0, 0), layer(art, name).point(lambda v: 255 - v))
-    d = ImageDraw.Draw(pic)
-    for x, y, s in ((58, 9, 3), (67, 5, 2), (72, 12, 2)):  # little "v" birds
-        d.line((x - s, y - s + 1, x, y), fill=0)
-        d.line((x, y, x + s, y - s + 1), fill=0)
     pic = pic.crop((CROP, 0, pic.width - CROP, pic.height))
     # a pen flourish above the scene: a fine line either side of a small diamond, dots at the ends
     full = Image.new("L", (pic.width, pic.height + TOP), 255)
