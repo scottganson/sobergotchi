@@ -67,11 +67,11 @@ static const char* calmSay = "";
 // ---------------------------------------------------------------------------
 // editors
 // ---------------------------------------------------------------------------
-enum EditTarget : uint8_t { E_SOBER, E_TODAY, E_NAME, E_PHONE };
+enum EditTarget : uint8_t { E_SOBER, E_TODAY, E_NAME, E_PHONE, E_WORD, E_THANK };  // E_WORD / E_THANK: write your own
 static EditTarget editTarget;
 static int editField;
 static int editY, editM, editD, editH;
-static char editBuf[PHONE_LEN + 2];
+static char editBuf[OWN_LEN + 2];  // OWN_LEN is the longest (name 12, phone 15)
 static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
 static bool confirmYes = false;  // on an "Are you sure?" question: Yes highlighted (starts on Cancel)
 enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_DELETE };
@@ -94,8 +94,8 @@ static const char* const KB_ACTION_LABELS[] = {"Space", "Delete", "Save", "Cance
 static int kbSel = 0;    // highlighted key, counted across the rows; past the last key, the actions
 static bool kbShift = false;
 
-static int editMax() { return editTarget == E_NAME ? NAME_LEN : PHONE_LEN; }
-static bool kbName() { return editTarget == E_NAME; }
+static int editMax() { return editTarget == E_NAME ? NAME_LEN : editTarget == E_PHONE ? PHONE_LEN : OWN_LEN; }
+static bool kbName() { return editTarget != E_PHONE; }  // letters: name and write-your-own
 static int kbRows() { return kbName() ? 6 : 2; }
 static const char* kbRowKeys(int r) { return r < 0 || r >= kbRows() ? "" : kbName() ? NAME_ROWS[r] : PHONE_ROWS[r]; }
 static int kbActions() { return kbName() ? 4 : 3; }
@@ -115,7 +115,8 @@ static int kbIndex(int r, int c) { int k = c; for (int i = 0; i < r; i++) k += s
 static char kbChar(char key) {
   if (key < 'A' || key > 'Z') return key;
   int len = strlen(editBuf);
-  bool upper = len == 0 || editBuf[len - 1] == ' ' || editBuf[len - 1] == '-';
+  // names: a capital at each word; write-your-own: only the first letter (Aa for more)
+  bool upper = len == 0 || (editTarget == E_NAME && (editBuf[len - 1] == ' ' || editBuf[len - 1] == '-'));
   if (kbShift) upper = !upper;
   return upper ? key : key - 'A' + 'a';
 }
@@ -385,6 +386,8 @@ static const char* const THANKS[12] = {"Being sober today", "A friend", "My fami
                                        "This moment"};
 static const char* const WORDS[7] = {"God", "Higher Power", "the Universe", "Spirit", "my group", "Love", "none for now"};
 static const uint8_t WORD_NONE = 7;  // 1-based "none for now"
+static const uint8_t WORD_OWN = 8;   // 1-based: their own word (store::path.ownWord)
+static const int THANK_OWN = 12;     // Gratitude jar row (and bit) for their own thank-you
 static const char* const STORY[3][6] = {
   {"I drank to get by.", "I used to escape.", "I felt so alone.", "I lost my way.", "I hid how I felt.", "I couldn't stop."},
   {"I asked for help.", "A friend reached out.", "I found the rooms.", "I hit my bottom.", "I got honest.", "I gave it a try."},
@@ -419,8 +422,8 @@ static const char* leafSay = "";
 static bool leafPlaying = false;
 
 static int pickCount() {
-  if (pickKind == K_THANKS) return 12 + 2;  // + Put in the jar, < Back
-  if (pickKind == K_WORD) return 7 + 1;
+  if (pickKind == K_THANKS) return 12 + 3;  // + Write my own, Put in the jar, < Back
+  if (pickKind == K_WORD) return 7 + 2;     // + Write my own, < Back
   return 6 + 1;
 }
 
@@ -806,7 +809,7 @@ class Data : public UiData {
       case U_CHECKIN: snprintf(out, n, "%s", p.checkDay == t ? "done today" : "open"); return;
       case U_LEAF: if (p.leafBest) snprintf(out, n, "best %d of %d", p.leafBest, LEAF_COUNT); else snprintf(out, n, "open"); return;
       case U_THANKS: snprintf(out, n, "%u in the jar", (unsigned)p.thanks); return;
-      case U_WORD: snprintf(out, n, "%s", p.word ? WORDS[p.word - 1] : "open"); return;
+      case U_WORD: snprintf(out, n, "%s", p.word == WORD_OWN ? p.ownWord : p.word ? WORDS[p.word - 1] : "open"); return;
       case U_TILES: if (p.tilesBest) snprintf(out, n, "best %u moves", (unsigned)p.tilesBest); else snprintf(out, n, "open"); return;
       case U_STORY: snprintf(out, n, "%s", p.story[0] ? "shared with friends" : "open"); return;
       default: snprintf(out, n, "open"); return;
@@ -823,10 +826,14 @@ class Data : public UiData {
                     (pickKind == K_THANKS ? (pickBits >> item) & 1
                      : pickKind == K_WORD ? store::path.word == item + 1
                                           : store::path.story[storyStep] == item + 1);
+    const bool own = (pickKind == K_THANKS && item == THANK_OWN) || (pickKind == K_WORD && item == WORD_OWN - 1);
     if (!strcmp(k, "label")) {
       if (back) snprintf(out, n, "%s", pickKind == K_STORY && storyStep ? "Back a step" : "Back");
       else if (done) snprintf(out, n, "Put in the jar");
-      else snprintf(out, n, "%s", pickKind == K_THANKS ? THANKS[item] : pickKind == K_WORD ? WORDS[item] : STORY[storyStep][item]);
+      else if (own) {
+        const char* mine = pickKind == K_THANKS ? store::path.ownThank : store::path.ownWord;
+        snprintf(out, n, "%s", mine[0] ? mine : "Write my own...");
+      } else snprintf(out, n, "%s", pickKind == K_THANKS ? THANKS[item] : pickKind == K_WORD ? WORDS[item] : STORY[storyStep][item]);
       return;
     }
     if (!strcmp(k, "back")) return flag(back);
@@ -854,7 +861,7 @@ class Data : public UiData {
   void editValue(const char* k, char* out, size_t n) {
     static const char* MON[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
     if (!strcmp(k, "title")) {
-      static const char* T[] = {"Sobriety date", "Today", "Your name", "Your phone"};
+      static const char* T[] = {"Sobriety date", "Today", "Your name", "Your phone", "Your word", "Thankful for"};
       snprintf(out, n, "%s", T[editTarget]);
       return;
     }
@@ -1028,7 +1035,9 @@ static void startEditDate(EditTarget target) {
 static void startEditText(EditTarget target) {
   editTarget = target;
   memset(editBuf, 0, sizeof editBuf);
-  if (!inIntro()) strncpy(editBuf, target == E_NAME ? store::settings.name : store::settings.phone, editMax());
+  const char* was = target == E_NAME ? store::settings.name : target == E_PHONE ? store::settings.phone
+                  : target == E_WORD ? store::path.ownWord : store::path.ownThank;
+  if (!inIntro()) strncpy(editBuf, was, editMax());
   kbSel = 0;
   kbShift = false;
   mode = M_EDIT_TEXT;
@@ -1051,6 +1060,12 @@ static void saveEditDate() {
 static bool saveEditText() {  // false when a name was left empty (nothing saved)
   int len = strlen(editBuf);
   while (len > 0 && editBuf[len - 1] == ' ') editBuf[--len] = 0;
+  if (editTarget == E_WORD || editTarget == E_THANK) {  // write your own: kept on Your path
+    if (!len) return false;
+    strncpy(editTarget == E_WORD ? store::path.ownWord : store::path.ownThank, editBuf, OWN_LEN + 1);
+    store::savePath();
+    return true;
+  }
   if (editTarget == E_NAME) {
     if (!len) return false;
     strncpy(store::settings.name, editBuf, NAME_LEN + 1);
@@ -1067,7 +1082,14 @@ static bool saveEditText() {  // false when a name was left empty (nothing saved
 }
 
 // Where an editor goes when it closes: back to Settings, or during setup on to Pip's next page.
+static void wordChosen(int w);
 static void editClosed(bool saved) {
+  if (editTarget == E_WORD || editTarget == E_THANK) {  // back to the list (a typed word is chosen straight away)
+    mode = M_PICK;
+    if (saved && editTarget == E_WORD) wordChosen(WORD_OWN);
+    else if (saved) pickBits |= 1u << THANK_OWN;
+    return;
+  }
   if (!inIntro()) { mode = M_MENU; return; }
   mode = M_INTRO;
   if (saved || editTarget == E_PHONE) introStep++;  // the phone may be skipped with Cancel
@@ -1111,7 +1133,8 @@ static void buildPrayer(int which) {
   const Prayer& p = PRAYERS[which];
   const uint8_t w = store::path.word;
   char word[24];
-  snprintf(word, sizeof word, "%s", w >= 1 && w < WORD_NONE ? WORDS[w - 1] : p.word);
+  snprintf(word, sizeof word, "%s", w >= 1 && w < WORD_NONE ? WORDS[w - 1]
+                                    : w == WORD_OWN && store::path.ownWord[0] ? store::path.ownWord : p.word);
   int len = 0;
   bool start = true;  // capitalise the word at the start of a sentence ("the Universe" -> "The Universe")
   for (const char* c = p.text; *c && len < (int)sizeof prayerBuf - 1;) {
@@ -1273,6 +1296,24 @@ static void openItem(int i) {
   }
 }
 
+static int thanksTicked() {
+  int on = 0;
+  for (int i = 0; i <= THANK_OWN; i++) if (pickBits >> i & 1) on++;
+  return on;
+}
+
+static void wordChosen(int w) {  // 1-based; WORD_OWN = the word they typed
+  store::path.word = w;
+  store::path.seen |= 1u << U_WORD;
+  store::savePath();
+  if (w == WORD_NONE)
+    snprintf(popText, sizeof popText, "That's fine. The prayers stay as they are written, ready when you are.");
+  else
+    snprintf(popText, sizeof popText, "I'll use \"%s\" in the prayers from now on.",
+             w == WORD_OWN ? store::path.ownWord : WORDS[w - 1]);
+  pipNote("Your word", 7);
+}
+
 static void pickEnter() {
   const int count = pickCount();
   if (pickSel == count - 1) {  // < Back
@@ -1286,7 +1327,7 @@ static void pickEnter() {
       const int32_t t = today();
       const uint16_t before = store::path.thankDay == t ? store::path.thankBits : 0;
       int added = 0;
-      for (int i = 0; i < 12; i++) if ((pickBits & ~before) >> i & 1) added++;
+      for (int i = 0; i <= THANK_OWN; i++) if ((pickBits & ~before) >> i & 1) added++;
       store::path.thanks += added;
       store::path.thankBits = pickBits | before;
       store::path.thankDay = t;
@@ -1297,21 +1338,16 @@ static void pickEnter() {
       return;
     }
     const uint16_t bit = 1u << pickSel;
-    int on = 0;
-    for (int i = 0; i < 12; i++) if (pickBits >> i & 1) on++;
     if (pickBits & bit) pickBits &= ~bit;
-    else if (on < 3) pickBits |= bit;
+    else if (thanksTicked() < 3) {
+      if (pickSel == THANK_OWN) startEditText(E_THANK);  // type it; ticked when saved
+      else pickBits |= bit;
+    }
     return;
   }
   if (pickKind == K_WORD) {
-    store::path.word = pickSel + 1;
-    store::path.seen |= 1u << U_WORD;
-    store::savePath();
-    if (store::path.word == WORD_NONE)
-      snprintf(popText, sizeof popText, "That's fine. The prayers stay as they are written, ready when you are.");
-    else
-      snprintf(popText, sizeof popText, "I'll use \"%s\" in the prayers from now on.", WORDS[pickSel]);
-    pipNote("Your word", 7);
+    if (pickSel == WORD_OWN - 1) startEditText(E_WORD);
+    else wordChosen(pickSel + 1);
     return;
   }
   // Share your story: a line per page
@@ -1661,7 +1697,7 @@ struct UiState {
   bool unlockTry, svBack, svOwn;
   uint16_t pickBits;
   uint8_t board[9];
-  char editBuf[PHONE_LEN + 2];
+  char editBuf[OWN_LEN + 2];
 };
 
 static void snapshot(UiState& u) {

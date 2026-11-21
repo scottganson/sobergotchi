@@ -39,6 +39,8 @@ struct Path {
   uint8_t leafBest;            // Leaf catch best score
   uint16_t tilesBest;          // Tree tiles fewest moves (0 = never solved)
   uint16_t tilesDone;          // times solved
+  char ownWord[OWN_LEN + 1];   // Your word, written by them (path.word == 8)
+  char ownThank[OWN_LEN + 1];  // their own thank-you (Gratitude jar)
 };
 
 namespace store {

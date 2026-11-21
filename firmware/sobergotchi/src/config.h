@@ -69,6 +69,7 @@
 #define MAX_FRIENDS            200
 #define NAME_LEN               12
 #define PHONE_LEN              15
+#define OWN_LEN                16       // write-your-own word or thank-you
 #define BLE_COMPANY_ID         0xFFFF   // test company ID, fine for a personal project
 
 // Start-up and screen messages on Tools > Serial Monitor (115200 baud). Costs nothing when no computer is connected.
