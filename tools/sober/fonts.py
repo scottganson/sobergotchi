@@ -81,7 +81,7 @@ def convert(spec, font_dir):
     bitmap = bytearray()
     for code in range(first, last + 1):
         ch = chr(code) if code < 127 else EXTRA[code - 127]
-        adv = int(round(font.getlength(ch)))
+        adv = int(round(font.getlength(ch))) + (spec.get("spacing", 0) if ch != " " else 0)
         if wanted is not None and ch not in wanted:
             glyphs.append(Glyph(len(bitmap), 0, 0, 0, 0, 0, []))
             continue

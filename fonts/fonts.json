@@ -10,7 +10,7 @@
     {"name": "name",      "file": "Pacifico-Regular.ttf",    "size": 19},
     {"name": "name-s",    "file": "Pacifico-Regular.ttf",    "size": 15},
     {"name": "phone",     "file": "Inter-Bold.otf",          "size": 16},
-    {"name": "big",       "file": "InterDisplay-Black.otf",  "size": 36, "chars": " 0123456789,"},
+    {"name": "big",       "file": "PirataOne-Regular.ttf",   "size": 35, "spacing": 2, "chars": " 0123456789,"},
     {"name": "huge",      "file": "InterDisplay-Black.otf",  "size": 46, "chars": " 0123456789"},
     {"name": "script",    "file": "PirataOne-Regular.ttf",   "size": 30},
     {"name": "script-s",  "file": "PirataOne-Regular.ttf",   "size": 22}
