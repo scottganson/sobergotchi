@@ -19,5 +19,21 @@ static const Prayer PRAYERS[3] = {
                                        "I pray that you now remove from me every single defect of character which "
                                        "stands in the way of my usefulness to you and my fellows. Grant me strength, "
                                        "as I go out from here, to do your bidding. Amen."},
-  {"Eleventh Step", "Lord", "{word}, [paste the Eleventh Step prayer here]"},
+  {"Eleventh Step", "Lord", "{word}, make me a channel of Thy peace; "
+                            "that where there is hatred, I may bring love; "
+                            "that where there is wrong, I may bring the spirit of forgiveness; "
+                            "that where there is discord, I may bring harmony; "
+                            "that where there is error, I may bring truth; "
+                            "that where there is doubt, I may bring faith; "
+                            "that where there is despair, I may bring hope; "
+                            "that where there are shadows, I may bring light; "
+                            "that where there is sadness, I may bring joy. "
+                            "{word}, grant that I may seek rather "
+                            "to comfort, than to be comforted; "
+                            "to understand, than to be understood; "
+                            "to love, than to be loved. "
+                            "For it is by self-forgetting, that one finds. "
+                            "It is by forgiving, that one is forgiven. "
+                            "It is by dying, that one awakens to Eternal Life. "
+                            "Amen."},
 };
