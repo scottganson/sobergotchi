@@ -160,7 +160,7 @@ bool upsertFriend(const Friend& nf) {
       uint16_t meetings = friends[i].meetings;
       uint8_t story[3];
       memcpy(story, friends[i].story, 3);
-      friends[i] = nf;  // name, date, phone and story may have changed
+      friends[i] = nf;  // name, date, phone, story and points may have changed
       if (!nf.story[0]) memcpy(friends[i].story, story, 3);  // an older device sends no story: keep what we had
       friends[i].meetings = meetings + 1;
       saveFriends();

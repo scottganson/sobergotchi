@@ -35,12 +35,17 @@ enum Mode : uint8_t {
   M_PRAYER,         // a Step prayer, a page at a time
   M_STORY,          // a story: yours or a friend's
   M_TILES,          // Tree tiles, the sliding puzzle
+  M_AWARDS,         // picking a year coin
+  M_COIN,           // the back of a coin (its engraving)
+  M_ENGRAVE,        // "A new coin!": Engrave it / Later
+  M_LEADERS,        // scrolling the leaderboard
 };
 
-static const uint8_t CAROUSEL_COUNT = 6;  // main, gnome, reflection, friends, Your path, menu
-static const uint8_t C_PATH = 4, C_MENU = 5;
+static const uint8_t CAROUSEL_COUNT = 8;  // main, gnome, reflection, friends, Your path, Awards, Leaderboard, menu
+static const uint8_t C_PATH = 4, C_AWARDS = 5, C_LEADERS = 6, C_MENU = 7;
 static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH, S_HOWTO, S_LANDING, S_CALM,
-    S_PATH, S_UNLOCK, S_LOCKED, S_PIP, S_CHECKIN, S_PICK, S_PRAYER, S_STORY, S_LEAF, S_TILES;
+    S_PATH, S_UNLOCK, S_LOCKED, S_PIP, S_CHECKIN, S_PICK, S_PRAYER, S_STORY, S_LEAF, S_TILES,
+    S_AWARDS, S_COIN, S_ENGRAVE, S_LEADERS;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
@@ -67,14 +72,14 @@ static const char* calmSay = "";
 // ---------------------------------------------------------------------------
 // editors
 // ---------------------------------------------------------------------------
-enum EditTarget : uint8_t { E_SOBER, E_TODAY, E_NAME, E_PHONE, E_WORD, E_THANK };  // E_WORD / E_THANK: write your own
+enum EditTarget : uint8_t { E_SOBER, E_TODAY, E_NAME, E_PHONE, E_WORD, E_THANK, E_ENGRAVE };  // E_WORD / E_THANK: write your own
 static EditTarget editTarget;
 static int editField;
 static int editY, editM, editD, editH;
-static char editBuf[OWN_LEN + 2];  // OWN_LEN is the longest (name 12, phone 15)
+static char editBuf[ENGRAVE_LEN + 2];  // the longest text (engraving 30; own 16, phone 15, name 12)
 static int editChoice = -1;  // date editor: -1 editing; else the Save / Cancel option highlighted
 static bool confirmYes = false;  // on an "Are you sure?" question: Yes highlighted (starts on Cancel)
-enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_DELETE };
+enum ConfirmWhat : uint8_t { C_SOBER, C_RESET, C_DELETE, C_ENGRAVE };
 static ConfirmWhat confirmWhat = C_SOBER;
 static bool confirmAgain = false;  // factory reset: the second, "really?" question
 
@@ -94,7 +99,9 @@ static const char* const KB_ACTION_LABELS[] = {"Space", "Delete", "Save", "Cance
 static int kbSel = 0;    // highlighted key, counted across the rows; past the last key, the actions
 static bool kbShift = false;
 
-static int editMax() { return editTarget == E_NAME ? NAME_LEN : editTarget == E_PHONE ? PHONE_LEN : OWN_LEN; }
+static int editMax() {
+  return editTarget == E_NAME ? NAME_LEN : editTarget == E_PHONE ? PHONE_LEN : editTarget == E_ENGRAVE ? ENGRAVE_LEN : OWN_LEN;
+}
 static bool kbName() { return editTarget != E_PHONE; }  // letters: name and write-your-own
 static int kbRows() { return kbName() ? 6 : 2; }
 static const char* kbRowKeys(int r) { return r < 0 || r >= kbRows() ? "" : kbName() ? NAME_ROWS[r] : PHONE_ROWS[r]; }
@@ -344,6 +351,65 @@ static int32_t pipDays() {  // whole days since setup was finished
   return d < 0 ? 0 : d;
 }
 static bool isOpen(int i) { return pipDays() >= PATH_ITEMS[i].at; }
+// ---------------------------------------------------------------------------
+// Year coins (Awards) by years sober, and points (Leaderboard) by month
+// ---------------------------------------------------------------------------
+static const uint8_t COIN_YEARS[COIN_COUNT] = {1, 2, 3, 5, 10, 15, 20, 30, 40, 50};
+static int awSel = 0;          // Awards: coin 0-9, COIN_COUNT = < Back
+static int coinIdx = 0;        // the coin on screen (back, engraving)
+static bool egLater = false;   // "A new coin!": Later highlighted (else Engrave it)
+static int lbSel = -1;         // Leaderboard row
+static char lockName[24];      // the locked pop-up (Your path item or a coin to come)
+static char lockText[100];
+
+static int yearsSober() { int y, m, d; diffYmd(store::settings.soberDay, today(), y, m, d); return y; }
+static bool coinEarned(int i) { return yearsSober() >= COIN_YEARS[i]; }
+static int coinsEarned() { int k = 0; for (int i = 0; i < COIN_COUNT; i++) if (coinEarned(i)) k++; return k; }
+static int pendingCoin() {  // a coin earned whose "A new coin!" hasn't been shown, or -1
+  for (int i = 0; i < COIN_COUNT; i++)
+    if (coinEarned(i) && !(store::path.coinsSeen & (1u << i))) return i;
+  return -1;
+}
+// Coins already earned (at setup, or after the sober date is changed) are there without a celebration or points.
+static void coinsQuiet() {
+  for (int i = 0; i < COIN_COUNT; i++) if (coinEarned(i)) store::path.coinsSeen |= 1u << i;
+  store::savePath();
+}
+
+static uint16_t monthNow() { const Ymd d = civilFromDays(today()); return (uint16_t)((d.y - 2000) * 12 + d.m - 1); }
+static uint16_t myPoints() { return store::path.pointsMonth == monthNow() ? store::path.points : 0; }
+static uint16_t friendPoints(const Friend& f) { return f.pointsMonth == monthNow() ? f.points : 0; }
+static void addPoints(int n) {  // this month's points (a new month starts from zero)
+  if (store::path.pointsMonth != monthNow()) { store::path.pointsMonth = monthNow(); store::path.points = 0; }
+  store::path.points = (uint16_t)(store::path.points + n > 60000 ? 60000 : store::path.points + n);
+  store::savePath();
+}
+
+// Leaderboard rows: -1 = you, else a friend index; most points first
+static int lbOrder[MAX_FRIENDS + 1];
+static int lbCount = 0;
+static void sortLeaders() {
+  lbCount = 0;
+  lbOrder[lbCount++] = -1;
+  for (int i = 0; i < store::friendCount; i++) lbOrder[lbCount++] = i;
+  auto pts = [](int k) { return k < 0 ? myPoints() : friendPoints(store::friends[k]); };
+  for (int i = 1; i < lbCount; i++) {
+    const int k = lbOrder[i];
+    int j = i - 1;
+    while (j >= 0 && pts(lbOrder[j]) < pts(k)) { lbOrder[j + 1] = lbOrder[j]; j--; }
+    lbOrder[j + 1] = k;
+  }
+}
+static void formatAgo(int32_t day, char* out, size_t n) {
+  const int32_t d = today() - day;
+  if (day <= 0) snprintf(out, n, "met before");
+  else if (d <= 0) snprintf(out, n, "met today");
+  else if (d == 1) snprintf(out, n, "yesterday");
+  else if (d < 14) snprintf(out, n, "%ld days ago", (long)d);
+  else if (d < 60) snprintf(out, n, "%ld wks ago", (long)(d / 7));
+  else snprintf(out, n, "%ld mos ago", (long)(d / 30));
+}
+
 static int pendingUnlock() {  // the first opened item whose "Something new!" hasn't been shown, or -1
   for (int i = 0; i < U_COUNT; i++)
     if (PATH_ITEMS[i].at > 0 && isOpen(i) && !(store::path.seen & (1u << i))) return i;
@@ -473,6 +539,7 @@ class Data : public UiData {
     if (!strcmp(name, "menu")) return menuCount();
     if (!strcmp(name, "path")) return U_COUNT + 1;  // + < Back
     if (!strcmp(name, "pick")) return pickCount();
+    if (!strcmp(name, "lb")) { sortLeaders(); return lbCount + (mode == M_LEADERS ? 1 : 0); }  // + < Back while scrolling
     return 0;
   }
   void setListItem(const char* name, int index) override {
@@ -556,10 +623,14 @@ class Data : public UiData {
     if (!strcmp(key, "confirm.yes")) return flag(confirmYes);
     if (!strcmp(key, "confirm.title"))
       return str(confirmWhat == C_RESET ? "Factory reset"
-                 : confirmWhat == C_DELETE ? "Delete friend" : "Sobriety date");
+                 : confirmWhat == C_DELETE ? "Delete friend" : confirmWhat == C_ENGRAVE ? "Engraving" : "Sobriety date");
     if (!strcmp(key, "confirm.text")) {
       if (confirmWhat == C_DELETE) {
         snprintf(out, n, "Delete %s from your friends? This can't be undone.", popupFriend.name);
+        return;
+      }
+      if (confirmWhat == C_ENGRAVE) {
+        snprintf(out, n, "Engrave \"%s\" on your %d year coin? It can't be changed.", editBuf, COIN_YEARS[coinIdx]);
         return;
       }
       return str(confirmWhat == C_SOBER ? "Are you sure you want to change your sobriety date?"
@@ -568,6 +639,7 @@ class Data : public UiData {
     }
     if (!strcmp(key, "confirm.ok"))
       return str(confirmWhat == C_DELETE ? "Yes, delete" : confirmWhat == C_SOBER ? "Yes, change it"
+                 : confirmWhat == C_ENGRAVE ? "Yes, engrave it"
                  : confirmAgain ? "Yes, erase all" : "Yes, erase it");
     if (!strcmp(key, "search.title")) {
       return str("Looking...");
@@ -600,14 +672,41 @@ class Data : public UiData {
       if (!strcmp(k, "try")) return flag(unlockTry);
       return;
     }
-    if (!strcmp(key, "lock.name")) return str(PATH_ITEMS[lockItem].name);
-    if (!strcmp(key, "lock.text")) {
-      const int32_t left = PATH_ITEMS[lockItem].at - pipDays();
-      char date[16];
-      formatDate(t + left, "MMM d", date, sizeof date);
-      snprintf(out, n, "Pip is still getting this ready. It opens in %ld day%s, on %s.", (long)left, left == 1 ? "" : "s", date);
+    if (!strcmp(key, "lock.name")) return str(lockName);
+    if (!strcmp(key, "lock.text")) return str(lockText);
+    if (!strncmp(key, "aw.", 3)) {
+      const char* k = key + 3;
+      if (!strcmp(k, "count")) { snprintf(out, n, "%d of %d", coinsEarned(), COIN_COUNT); return; }
+      if (k[0] == 'e') return flag(coinEarned((k[1] - '0') % COIN_COUNT));
+      if (k[0] == 's') return flag(mode == M_AWARDS && awSel == k[1] - '0');
+      if (!strcmp(k, "back")) return flag(mode == M_AWARDS && awSel == COIN_COUNT);
+      if (!strcmp(k, "ret")) return flag(mode == M_AWARDS && awSel != COIN_COUNT);
       return;
     }
+    if (!strncmp(key, "coin.", 5)) {
+      const char* k = key + 5;
+      const int y = COIN_YEARS[coinIdx];
+      if (!strcmp(k, "title")) { snprintf(out, n, "%d year coin", y); return; }
+      if (!strcmp(k, "text")) return str(store::path.engraving[coinIdx]);
+      if (!strcmp(k, "date")) {
+        const Ymd s = civilFromDays(store::settings.soberDay);
+        int dd = s.d, dim = daysInMonth(s.y + y, s.m);
+        return formatDate(daysFromCivil(s.y + y, s.m, dd > dim ? dim : dd), "MMM d, yyyy", out, n);
+      }
+      if (!strcmp(k, "locked")) return str("engraved for good");
+      return;
+    }
+    if (!strncmp(key, "eg.", 3)) {
+      const char* k = key + 3;
+      const int y = COIN_YEARS[coinIdx];
+      if (!strcmp(k, "title")) return str(store::path.coinsSeen & (1u << coinIdx) ? "Your coin" : "A new coin!");
+      if (!strcmp(k, "num")) return num(y);
+      if (!strcmp(k, "sub")) { snprintf(out, n, "%d year%s sober", y, y == 1 ? "" : "s"); return; }
+      if (!strcmp(k, "text")) return str("What would you like engraved on the back? Once it's engraved, it's there for good.");
+      if (!strcmp(k, "later")) return flag(egLater);
+      return;
+    }
+    if (!strcmp(key, "lb.sel")) return num(mode == M_LEADERS ? lbSel : -1);
     if (!strcmp(key, "pop.title")) return str(popTitle);
     if (!strcmp(key, "pop.text")) return str(popText);
     if (!strcmp(key, "pop.pose")) return num(popPose);
@@ -768,6 +867,7 @@ class Data : public UiData {
     if (list && !strcmp(list, "menu")) return menuValue(k, out, n);
     if (list && !strcmp(list, "path")) return pathValue(k, out, n);
     if (list && !strcmp(list, "pick")) return pickValue(k, out, n);
+    if (list && !strcmp(list, "lb")) return leaderValue(k, out, n);
     if (item == 0 || item == store::friendCount + 1) {  // the "Add friend" and "Back" rows
       if (!strcmp(k, "name")) snprintf(out, n, "%s", item ? "Back" : "Add friend");
       else if (!strcmp(k, "back")) snprintf(out, n, "1");  // plain row: no date badge
@@ -816,6 +916,25 @@ class Data : public UiData {
     }
   }
 
+  // Leaderboard rows: item.rank, item.top (first place), item.rest, item.back, item.name, item.seen, item.pts
+  void leaderValue(const char* k, char* out, size_t n) {
+    auto flag = [&](bool b) { snprintf(out, n, "%s", b ? "1" : ""); };
+    if (item == lbCount) {  // < Back
+      if (!strcmp(k, "back")) flag(true);
+      else if (!strcmp(k, "name")) snprintf(out, n, "Back");
+      return;
+    }
+    if (item < 0 || item > lbCount) return;
+    const int who = lbOrder[item];
+    const uint16_t pts = who < 0 ? myPoints() : friendPoints(store::friends[who]);
+    if (!strcmp(k, "rank")) snprintf(out, n, "%d", item + 1);
+    else if (!strcmp(k, "top")) flag(item == 0 && pts > 0);
+    else if (!strcmp(k, "rest")) flag(!(item == 0 && pts > 0));
+    else if (!strcmp(k, "name")) snprintf(out, n, "%s", who < 0 ? store::settings.name : store::friends[who].name);
+    else if (!strcmp(k, "seen")) { if (who < 0) snprintf(out, n, "you"); else formatAgo(store::friends[who].metDay, out, n); }
+    else if (!strcmp(k, "pts")) snprintf(out, n, "%u", (unsigned)pts);
+  }
+
   // Pick rows: item.label, item.box (empty tick box), item.on (ticked), item.back, item.done
   void pickValue(const char* k, char* out, size_t n) {
     auto flag = [&](bool b) { snprintf(out, n, "%s", b ? "1" : ""); };
@@ -861,7 +980,7 @@ class Data : public UiData {
   void editValue(const char* k, char* out, size_t n) {
     static const char* MON[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
     if (!strcmp(k, "title")) {
-      static const char* T[] = {"Sobriety date", "Today", "Your name", "Your phone", "Your word", "Thankful for"};
+      static const char* T[] = {"Sobriety date", "Today", "Your name", "Your phone", "Your word", "Thankful for", "Engraving"};
       snprintf(out, n, "%s", T[editTarget]);
       return;
     }
@@ -899,7 +1018,9 @@ class Data : public UiData {
     }
     if (!strcmp(k, "text")) {
       char shown[24];
-      if (kbName()) snprintf(shown, sizeof shown, "%s", editBuf);
+      const int len = strlen(editBuf);  // long words (an engraving): show the end, where the typing is
+      if (kbName() && len > 17) snprintf(shown, sizeof shown, "..%s", editBuf + len - 15);
+      else if (kbName()) snprintf(shown, sizeof shown, "%s", editBuf);
       else formatPhone(editBuf, shown, sizeof shown);
       snprintf(out, n, "%s_", shown);
     }
@@ -936,10 +1057,14 @@ class Data : public UiData {
       case M_PATH: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
       case M_PICK: snprintf(out, n, "\202 \203 move  \177  \201 %s", pickKind == K_THANKS ? "tick" : "pick"); break;
       case M_TILES: snprintf(out, n, "\202 \203 choose  \177  \201 slide"); break;
+      case M_AWARDS: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
+      case M_LEADERS: snprintf(out, n, "\202 \203 move  \177  \201 back"); break;
       default:
         if (carousel == 3) snprintf(out, n, store::friendCount ? "\201 choose a friend" : "\201 add a friend");
         else if (carousel == C_PATH) snprintf(out, n, "\201 choose");
         else if (carousel == C_MENU) snprintf(out, n, "\201 choose a setting");
+        else if (carousel == C_AWARDS) snprintf(out, n, "\201 choose a coin");
+        else if (carousel == C_LEADERS) snprintf(out, n, "updates when you meet");
         break;
     }
   }
@@ -969,6 +1094,10 @@ static int currentScreen() {
     case M_PRAYER: return S_PRAYER;
     case M_STORY: return S_STORY;
     case M_TILES: return S_TILES;
+    case M_AWARDS: return S_AWARDS;
+    case M_COIN: return S_COIN;
+    case M_ENGRAVE: return S_ENGRAVE;
+    case M_LEADERS: return S_LEADERS;
     default: break;
   }
   switch (carousel) {
@@ -981,6 +1110,8 @@ static int currentScreen() {
     case 2: return S_REFLECT;
     case 3: return S_FRIENDS;
     case C_PATH: return S_PATH;
+    case C_AWARDS: return S_AWARDS;
+    case C_LEADERS: return S_LEADERS;
     default: return S_MENU;
   }
 }
@@ -1036,7 +1167,7 @@ static void startEditText(EditTarget target) {
   editTarget = target;
   memset(editBuf, 0, sizeof editBuf);
   const char* was = target == E_NAME ? store::settings.name : target == E_PHONE ? store::settings.phone
-                  : target == E_WORD ? store::path.ownWord : store::path.ownThank;
+                  : target == E_WORD ? store::path.ownWord : target == E_THANK ? store::path.ownThank : "";
   if (!inIntro()) strncpy(editBuf, was, editMax());
   kbSel = 0;
   kbShift = false;
@@ -1047,6 +1178,7 @@ static void saveEditDate() {
   int32_t day = daysFromCivil(editY, editM, editD);
   if (editTarget == E_SOBER) {
     store::settings.soberDay = day;
+    if (!inIntro()) coinsQuiet();  // no celebration or points for coins from a changed date
   } else {
     uint32_t secs = (uint32_t)day * 86400UL + editH * 3600UL;
     hw::setNow(secs);
@@ -1060,6 +1192,7 @@ static void saveEditDate() {
 static bool saveEditText() {  // false when a name was left empty (nothing saved)
   int len = strlen(editBuf);
   while (len > 0 && editBuf[len - 1] == ' ') editBuf[--len] = 0;
+  if (editTarget == E_ENGRAVE) return len > 0;  // saved only after "Engrave ... ? It can't be changed."
   if (editTarget == E_WORD || editTarget == E_THANK) {  // write your own: kept on Your path
     if (!len) return false;
     strncpy(editTarget == E_WORD ? store::path.ownWord : store::path.ownThank, editBuf, OWN_LEN + 1);
@@ -1084,6 +1217,11 @@ static bool saveEditText() {  // false when a name was left empty (nothing saved
 // Where an editor goes when it closes: back to Settings, or during setup on to Pip's next page.
 static void wordChosen(int w);
 static void editClosed(bool saved) {
+  if (editTarget == E_ENGRAVE) {  // ask once, Cancel highlighted; nothing typed: back to the coin
+    if (saved) { mode = M_CONFIRM; confirmWhat = C_ENGRAVE; confirmYes = false; }
+    else mode = M_ENGRAVE;
+    return;
+  }
   if (editTarget == E_WORD || editTarget == E_THANK) {  // back to the list (a typed word is chosen straight away)
     mode = M_PICK;
     if (saved && editTarget == E_WORD) wordChosen(WORD_OWN);
@@ -1113,6 +1251,7 @@ static void beginSetup() {
 static void finishIntro() {
   store::settings.setupDone = (uint32_t)today();  // Your path counts days with Pip from here
   store::path.seen = 0;
+  coinsQuiet();  // years already sober: those coins are there (to engrave once), no celebration or points
   store::settings.clockSecs = hw::now();
   store::saveSettings();
   sortFriends();
@@ -1328,13 +1467,18 @@ static void pickEnter() {
       const uint16_t before = store::path.thankDay == t ? store::path.thankBits : 0;
       int added = 0;
       for (int i = 0; i <= THANK_OWN; i++) if ((pickBits & ~before) >> i & 1) added++;
+      int had = 0;
+      for (int i = 0; i <= THANK_OWN; i++) if (before >> i & 1) had++;
+      if (added > 3 - had) added = 3 - had > 0 ? 3 - had : 0;  // points for three a day at most
       store::path.thanks += added;
       store::path.thankBits = pickBits | before;
       store::path.thankDay = t;
       store::savePath();
       snprintf(popText, sizeof popText, "%u thank-yous in your jar now. Gratitude keeps the garden growing.",
                (unsigned)store::path.thanks);
-      pipNote("Thank you", 5);
+      static char title[16];
+      if (added) { addPoints(2 * added); snprintf(title, sizeof title, "+%d points", 2 * added); }
+      pipNote(added ? title : "Thank you", 5);
       return;
     }
     const uint16_t bit = 1u << pickSel;
@@ -1385,7 +1529,7 @@ static void addFriend() {
   searching = true;
   draw(S_SEARCH, false);
   sessionDirty = true;
-  exchange::start(store::settings, store::path.story, ADD_FRIEND_MIN_RSSI);
+  exchange::start(store::settings, store::path.story, myPoints(), monthNow(), ADD_FRIEND_MIN_RSSI);
   LOG("add friend: radio on while held");
   const uint32_t t0 = millis();
   uint32_t foundAt = 0;
@@ -1404,7 +1548,14 @@ static void addFriend() {
   popupFriend = r.card;
   rpsMine = r.myThrow;
   rpsTheirs = r.theirThrow;
-  const bool isNew = store::upsertFriend(r.card);  // no question: starting Add friend says you want to
+  int32_t lastMet = -1;  // -1: a new friend
+  for (int i = 0; i < store::friendCount; i++)
+    if (store::friends[i].uid == r.card.uid) lastMet = store::friends[i].metDay;
+  Friend card = r.card;
+  card.metDay = today();
+  const bool isNew = store::upsertFriend(card);  // no question: starting Add friend says you want to
+  if (isNew) addPoints(10);                       // points: a new friend 10, meeting again 3 (once a day each)
+  else if (lastMet != today()) addPoints(3);
   sortFriends();
   showPopup(isNew ? S_ADDED : S_RPS);
   friendsBack(r.card.uid);
@@ -1494,6 +1645,8 @@ static void handleKey(Event e) {
         if (carousel == 2) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
         else if (carousel == 3) { mode = M_FRIENDS; friendSel = store::friendCount ? 1 : 0; }  // first friend, or Add
         else if (carousel == C_PATH) { mode = M_PATH; pathSel = 0; }
+        else if (carousel == C_AWARDS) { mode = M_AWARDS; awSel = 0; }
+        else if (carousel == C_LEADERS) { mode = M_LEADERS; lbSel = 0; }
         else if (carousel == C_MENU) { mode = M_MENU; menuUser = false; menuSel = 0; }
       }
       break;
@@ -1555,7 +1708,14 @@ static void handleKey(Event e) {
     case M_CONFIRM:
       if (e == EV_KEY1 || e == EV_KEY3) confirmYes = !confirmYes;
       else if (e == EV_KEY2) {
-        if (confirmWhat == C_DELETE) {
+        if (confirmWhat == C_ENGRAVE) {
+          if (confirmYes) {  // locked in for good
+            strncpy(store::path.engraving[coinIdx], editBuf, ENGRAVE_LEN + 1);
+            store::path.engraving[coinIdx][ENGRAVE_LEN] = 0;
+            store::savePath();
+            mode = M_COIN;
+          } else mode = M_EDIT_TEXT;  // Cancel: back to the keyboard, words kept
+        } else if (confirmWhat == C_DELETE) {
           if (confirmYes) {
             store::deleteFriend(order[friendSel - 1]);
             sortFriends();
@@ -1582,7 +1742,15 @@ static void handleKey(Event e) {
       if (e == EV_KEY1 && pathSel > 0) pathSel--;
       else if (e == EV_KEY3 && pathSel < U_COUNT) pathSel++;
       else if (e == EV_KEY2 && pathSel == U_COUNT) mode = M_CAROUSEL;
-      else if (e == EV_KEY2 && !isOpen(pathSel)) { lockItem = pathSel; showPopup(S_LOCKED); }
+      else if (e == EV_KEY2 && !isOpen(pathSel)) {
+        const int32_t left = PATH_ITEMS[pathSel].at - pipDays();
+        char date[16];
+        formatDate(today() + left, "MMM d", date, sizeof date);
+        snprintf(lockName, sizeof lockName, "%s", PATH_ITEMS[pathSel].name);
+        snprintf(lockText, sizeof lockText, "Pip is still getting this ready. It opens in %ld day%s, on %s.", (long)left,
+                 left == 1 ? "" : "s", date);
+        showPopup(S_LOCKED);
+      }
       else if (e == EV_KEY2) openItem(pathSel);
       break;
 
@@ -1606,11 +1774,13 @@ static void handleKey(Event e) {
       else if (e == EV_KEY3) ciSel = (ciSel + 1) % 6;
       else if (e == EV_KEY2 && ciSel == 5) mode = M_PATH;
       else if (e == EV_KEY2) {
+        const bool first = store::path.checkDay != today();  // points once a day
         store::path.checkPick = ciSel;
         store::path.checkDay = today();
         store::savePath();
         snprintf(popText, sizeof popText, "%s", CHECKIN_SAY[ciSel]);
-        pipNote("Just for today", 9);
+        if (first) addPoints(5);
+        pipNote(first ? "+5 points" : "Just for today", 9);
       }
       break;
 
@@ -1632,6 +1802,47 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2 && !svOwn) { cardSel = 2; mode = M_FRIEND_CARD; }
       else if (e == EV_KEY2 && svBack) mode = M_PATH;
       else if (e == EV_KEY2) startPick(K_STORY);
+      break;
+
+    case M_AWARDS:  // coins 0-9, then < Back
+      if (e == EV_KEY1) awSel = (awSel + COIN_COUNT) % (COIN_COUNT + 1);
+      else if (e == EV_KEY3) awSel = (awSel + 1) % (COIN_COUNT + 1);
+      else if (e == EV_KEY2 && awSel == COIN_COUNT) mode = M_CAROUSEL;
+      else if (e == EV_KEY2 && !coinEarned(awSel)) {
+        const Ymd s = civilFromDays(store::settings.soberDay);
+        const int y = COIN_YEARS[awSel], dim = daysInMonth(s.y + y, s.m);
+        char date[16];
+        formatDate(daysFromCivil(s.y + y, s.m, s.d > dim ? dim : s.d), "MMM d, yyyy", date, sizeof date);
+        snprintf(lockName, sizeof lockName, "%d year coin", y);
+        snprintf(lockText, sizeof lockText, "This coin is waiting for you. It's yours on %s.", date);
+        showPopup(S_LOCKED);
+      } else if (e == EV_KEY2) {
+        coinIdx = awSel;
+        if (store::path.engraving[coinIdx][0]) mode = M_COIN;
+        else { mode = M_ENGRAVE; egLater = false; }
+      }
+      break;
+
+    case M_COIN:
+      if (e == EV_KEY2) { mode = M_AWARDS; awSel = coinIdx; }
+      break;
+
+    case M_ENGRAVE:  // Engrave it / Later
+      if (e == EV_KEY1 || e == EV_KEY3) egLater = !egLater;
+      else if (e == EV_KEY2) {
+        if (!(store::path.coinsSeen & (1u << coinIdx))) {  // a new coin: celebrated once, 50 points
+          store::path.coinsSeen |= 1u << coinIdx;
+          addPoints(50);
+        }
+        if (!egLater) startEditText(E_ENGRAVE);
+        else { mode = M_AWARDS; awSel = coinIdx; carousel = C_AWARDS; }
+      }
+      break;
+
+    case M_LEADERS:  // up / down scroll, enter goes back
+      if (e == EV_KEY1 && lbSel > 0) lbSel--;
+      else if (e == EV_KEY3 && lbSel < store::friendCount + 1) lbSel++;
+      else if (e == EV_KEY2) mode = M_CAROUSEL;
       break;
 
     case M_TILES: {
@@ -1697,7 +1908,10 @@ struct UiState {
   bool unlockTry, svBack, svOwn;
   uint16_t pickBits;
   uint8_t board[9];
-  char editBuf[OWN_LEN + 2];
+  int awSel, coinIdx, lbSel;
+  bool egLater;
+  uint16_t coinsSeen;
+  char editBuf[ENGRAVE_LEN + 2];
 };
 
 static void snapshot(UiState& u) {
@@ -1713,6 +1927,7 @@ static void snapshot(UiState& u) {
   u.pathSel = pathSel; u.unlockItem = unlockItem; u.ciSel = ciSel; u.pickKind = pickKind; u.pickSel = pickSel;
   u.storyStep = storyStep; u.prayerPage = prayerPage; u.tSel = tSel; u.tMoves = tMoves;
   u.unlockTry = unlockTry; u.svBack = svBack; u.svOwn = svOwn; u.pickBits = pickBits;
+  u.awSel = awSel; u.coinIdx = coinIdx; u.lbSel = lbSel; u.egLater = egLater; u.coinsSeen = store::path.coinsSeen;
   memcpy(u.board, board, sizeof board);
   memcpy(u.editBuf, editBuf, sizeof editBuf);
 }
@@ -1737,6 +1952,8 @@ static void goHome(bool full) {
   cardSel = 0;
   const int u = pendingUnlock();  // something opened on Your path: Pip says so instead of the home screen
   if (u >= 0) { mode = M_UNLOCK; unlockItem = u; unlockTry = true; }
+  const int c = pendingCoin();  // a new year coin comes first
+  if (c >= 0) { mode = M_ENGRAVE; coinIdx = c; egLater = false; }
   show(full);
   sessionDirty = false;
   shownDay = today();
@@ -1772,6 +1989,10 @@ void begin() {
   S_STORY = ui::screenByName("story");
   S_LEAF = ui::screenByName("leaf");
   S_TILES = ui::screenByName("tiles");
+  S_AWARDS = ui::screenByName("awards");
+  S_COIN = ui::screenByName("coin");
+  S_ENGRAVE = ui::screenByName("engrave");
+  S_LEADERS = ui::screenByName("leaders");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();
@@ -1780,6 +2001,7 @@ void begin() {
   if (store::settings.setupDone == 1) {  // set up before v1.34: Your path counts from today
     store::settings.setupDone = (uint32_t)today();
     store::saveSettings();
+    coinsQuiet();
   }
   if (inIntro()) {  // fresh flash: the landing page, then Pip says hello and asks for the name, sober date and phone
     startIntro();
@@ -1821,7 +2043,7 @@ void loop() {
     else show(false);
     return;
   }
-  bool home = ((mode == M_CAROUSEL && carousel == 0) || mode == M_UNLOCK) && !sessionDirty;
+  bool home = ((mode == M_CAROUSEL && carousel == 0) || mode == M_UNLOCK || mode == M_ENGRAVE) && !sessionDirty;
   // At home: sleep until midnight. Elsewhere: until the idle timeout.
   uint32_t timeout = home ? hw::secondsToMidnight() * 1000UL + 2000UL : IDLE_TIMEOUT_MS;
   Event e = hw::wait(timeout);

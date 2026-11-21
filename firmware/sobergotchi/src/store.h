@@ -23,6 +23,9 @@ struct Friend {
   char phone[PHONE_LEN + 1];
   uint16_t meetings;
   uint8_t story[3];            // their three story lines (Share your story), 1-based; 0 = not shared
+  int32_t metDay;              // day we last met (0 = before v1.34)
+  uint16_t points;             // their points in pointsMonth, as of metDay
+  uint16_t pointsMonth;        // months since 2000 (0 = unknown)
 };
 
 // Your path: what has been celebrated and what was picked (kept in its own file, /path.bin).
@@ -41,6 +44,12 @@ struct Path {
   uint16_t tilesDone;          // times solved
   char ownWord[OWN_LEN + 1];   // Your word, written by them (path.word == 8)
   char ownThank[OWN_LEN + 1];  // their own thank-you (Gratitude jar)
+  // Year coins (Awards): bit per coin, its "A new coin!" has been shown (coins earned before setup count as shown)
+  uint16_t coinsSeen;
+  char engraving[COIN_COUNT][ENGRAVE_LEN + 1];  // the back of each coin; empty until engraved (then locked)
+  // Points (Leaderboard): this month's points
+  uint16_t points;
+  uint16_t pointsMonth;        // months since 2000
 };
 
 namespace store {

@@ -20,5 +20,5 @@
     <rule h="1" style="dotted" margin="0 4"/>
   </list>
   <text h="12" font="small" align="center">{hint}</text>
-  <dots h="9" count="6"/>
+  <dots h="9" count="8"/>
 </screen>

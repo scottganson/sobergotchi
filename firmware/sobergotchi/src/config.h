@@ -70,6 +70,8 @@
 #define NAME_LEN               12
 #define PHONE_LEN              15
 #define OWN_LEN                16       // write-your-own word or thank-you
+#define ENGRAVE_LEN            30       // words on the back of a year coin
+#define COIN_COUNT             10       // year coins: 1 2 3 5 10 15 20 30 40 50
 #define BLE_COMPANY_ID         0xFFFF   // test company ID, fine for a personal project
 
 // Start-up and screen messages on Tools > Serial Monitor (115200 baud). Costs nothing when no computer is connected.

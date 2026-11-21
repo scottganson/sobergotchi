@@ -28,6 +28,8 @@ struct __attribute__((packed)) PhoneRsp {
   uint32_t uid;
   uint8_t bcd[8];  // up to 15 digits, 0xF ends
   uint8_t story[3];  // Share your story lines, 1-based (0 = none); not sent before v1.34
+  uint16_t points;   // Leaderboard: points this month (v1.34)
+  uint16_t month;    // ...and which month, months since 2000
 };
 static const int PHONE_RSP_V1 = 17;  // the scan response before story was added
 
@@ -84,7 +86,7 @@ static uint8_t randomThrow() {
   return 1 + r % 3;
 }
 
-void start(const Settings& me, const uint8_t story[3], int8_t rssiFloor) {
+void start(const Settings& me, const uint8_t story[3], uint16_t points, uint16_t month, int8_t rssiFloor) {
   memset(cands, 0, sizeof cands);
   minRssi = rssiFloor;
   myThrow = randomThrow();
@@ -108,6 +110,8 @@ void start(const Settings& me, const uint8_t story[3], int8_t rssiFloor) {
   phone.uid = me.uid;
   memset(phone.bcd, 0xFF, sizeof phone.bcd);
   memcpy(phone.story, story, 3);
+  phone.points = points;
+  phone.month = month;
   for (int i = 0; i < PHONE_LEN && me.phone[i]; i++) {
     uint8_t d = me.phone[i] - '0';
     phone.bcd[i / 2] = (i & 1) ? ((phone.bcd[i / 2] & 0xF0) | d) : ((d << 4) | 0x0F);
@@ -169,6 +173,8 @@ Result best() {
     }
     f.phone[n] = 0;
     memcpy(f.story, best->phone.story, 3);
+    f.points = best->phone.points;
+    f.pointsMonth = best->phone.month;
   }
   return res;
 }
