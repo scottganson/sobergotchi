@@ -248,7 +248,7 @@ static const GFXglyph font_small_b_glyphs[] PROGMEM = {
   {365, 4, 5, 5, 1, -5}, // code 115
   {368, 3, 6, 4, 1, -6}, // code 116
   {371, 5, 5, 6, 1, -5}, // code 117
-  {375, 6, 5, 6, 0, -5}, // code 118 (hand edit: one pixel right, it touched the letter before)
+  {375, 6, 5, 7, 1, -5}, // code 118 (hand edit: was 6, -1; a clear pixel each side, it touched the d in "adventure")
   {379, 8, 5, 8, 0, -5}, // code 119
   {384, 6, 5, 6, 0, -5}, // code 120
   {388, 6, 7, 6, 0, -5}, // code 121
