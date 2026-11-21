@@ -27,7 +27,9 @@ struct __attribute__((packed)) PhoneRsp {
   uint8_t kind;    // KIND_PHONE
   uint32_t uid;
   uint8_t bcd[8];  // up to 15 digits, 0xF ends
+  uint8_t story[3];  // Share your story lines, 1-based (0 = none); not sent before v1.34
 };
+static const int PHONE_RSP_V1 = 17;  // the scan response before story was added
 
 struct Candidate {
   bool used, gotCard, gotPhone;
@@ -57,7 +59,11 @@ static void onScan(ble_gap_evt_adv_report_t* report) {
           if (!k.used) { c = &k; c->used = true; break; }
       if (c) {
         if (kind == KIND_CARD && len >= (int)sizeof(CardAdv)) { memcpy(&c->card, buf, sizeof(CardAdv)); c->gotCard = true; }
-        if (kind == KIND_PHONE && len >= (int)sizeof(PhoneRsp)) { memcpy(&c->phone, buf, sizeof(PhoneRsp)); c->gotPhone = true; }
+        if (kind == KIND_PHONE && len >= PHONE_RSP_V1) {
+          memset(&c->phone, 0, sizeof(PhoneRsp));
+          memcpy(&c->phone, buf, len < (int)sizeof(PhoneRsp) ? len : sizeof(PhoneRsp));
+          c->gotPhone = true;
+        }
         if (report->rssi > c->rssi || c->rssi == 0) c->rssi = report->rssi;
       }
     }
@@ -78,7 +84,7 @@ static uint8_t randomThrow() {
   return 1 + r % 3;
 }
 
-void start(const Settings& me, int8_t rssiFloor) {
+void start(const Settings& me, const uint8_t story[3], int8_t rssiFloor) {
   memset(cands, 0, sizeof cands);
   minRssi = rssiFloor;
   myThrow = randomThrow();
@@ -101,6 +107,7 @@ void start(const Settings& me, int8_t rssiFloor) {
   phone.kind = KIND_PHONE;
   phone.uid = me.uid;
   memset(phone.bcd, 0xFF, sizeof phone.bcd);
+  memcpy(phone.story, story, 3);
   for (int i = 0; i < PHONE_LEN && me.phone[i]; i++) {
     uint8_t d = me.phone[i] - '0';
     phone.bcd[i / 2] = (i & 1) ? ((phone.bcd[i / 2] & 0xF0) | d) : ((d << 4) | 0x0F);
@@ -161,6 +168,7 @@ Result best() {
       f.phone[n++] = '0' + d;
     }
     f.phone[n] = 0;
+    memcpy(f.story, best->phone.story, 3);
   }
   return res;
 }

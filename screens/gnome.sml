@@ -9,5 +9,5 @@
     <text if="note.any" font="head" align="center">{note.short}</text>
   </stack>
   <wrap h="*" font="label" lh="13" margin="2 4 0 4" align="center">{note.full}</wrap>
-  <dots h="9" count="5"/>
+  <dots h="9" count="6"/>
 </screen>

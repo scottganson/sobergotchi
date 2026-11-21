@@ -28,5 +28,5 @@
     </list>
   </stack>
   <text h="12" font="small" align="center">{hint}</text>
-  <dots h="9" count="5"/>
+  <dots h="9" count="6"/>
 </screen>

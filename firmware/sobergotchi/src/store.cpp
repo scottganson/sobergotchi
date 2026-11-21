@@ -16,10 +16,27 @@ static const uint32_t MAGIC = 0x534F4252;  // "SOBR"
 static const uint16_t VERSION = 1;
 static const char* SETTINGS_FILE = "/settings.bin";
 static const char* FRIENDS_FILE = "/friends.bin";
+static const char* PATH_FILE = "/path.bin";
+static const uint32_t PATH_MAGIC = 0x50415448;  // "PATH"
 
 Settings settings;
 Friend friends[MAX_FRIENDS];
 int friendCount = 0;
+Path path;
+
+// Friends saved before v1.34 have no story: the same fields up to meetings.
+struct FriendV1 {
+  uint32_t uid;
+  int32_t soberDay;
+  char name[NAME_LEN + 1];
+  char phone[PHONE_LEN + 1];
+  uint16_t meetings;
+};
+
+static void pathDefaults() {
+  memset(&path, 0, sizeof path);
+  path.magic = PATH_MAGIC;
+}
 
 static void writeFile(const char* path, const void* buf, size_t len) {
   InternalFS.remove(path);
@@ -89,16 +106,42 @@ void begin() {
   File f(InternalFS);
   friendCount = 0;
   if (f.open(FRIENDS_FILE, FILE_O_READ)) {
+    const uint32_t size = f.size();
     uint16_t n = 0;
     if (f.read((uint8_t*)&n, 2) == 2) {
       if (n > MAX_FRIENDS) n = MAX_FRIENDS;
-      if (f.read((uint8_t*)friends, n * sizeof(Friend)) == (int)(n * sizeof(Friend))) friendCount = n;
+      memset(friends, 0, sizeof friends);
+      if (size == 2 + n * sizeof(Friend)) {
+        if (f.read((uint8_t*)friends, n * sizeof(Friend)) == (int)(n * sizeof(Friend))) friendCount = n;
+      } else if (size == 2 + n * sizeof(FriendV1)) {  // before v1.34: no story; read one at a time and widen
+        FriendV1 old;
+        for (int i = 0; i < n && f.read((uint8_t*)&old, sizeof old) == (int)sizeof old; i++) {
+          friends[i].uid = old.uid;
+          friends[i].soberDay = old.soberDay;
+          memcpy(friends[i].name, old.name, sizeof old.name);
+          memcpy(friends[i].phone, old.phone, sizeof old.phone);
+          friends[i].meetings = old.meetings;
+          friendCount = i + 1;
+        }
+      }
     }
     f.close();
+    if (friendCount && size != 2 + friendCount * sizeof(Friend)) saveFriends();  // save in the new layout
   }
+
+  File pf(InternalFS);
+  pathDefaults();
+  bool pathOk = false;
+  if (pf.open(PATH_FILE, FILE_O_READ)) {
+    pathOk = pf.read((uint8_t*)&path, sizeof path) == (int)sizeof path && path.magic == PATH_MAGIC;
+    pf.close();
+  }
+  if (!pathOk) pathDefaults();
 }
 
 void saveSettings() { writeFile(SETTINGS_FILE, &settings, sizeof settings); }
+
+void savePath() { writeFile(PATH_FILE, &path, sizeof path); }
 
 void saveFriends() {
   InternalFS.remove(FRIENDS_FILE);
@@ -115,7 +158,10 @@ bool upsertFriend(const Friend& nf) {
   for (int i = 0; i < friendCount; i++) {
     if (friends[i].uid == nf.uid) {
       uint16_t meetings = friends[i].meetings;
-      friends[i] = nf;  // name, date and phone may have changed
+      uint8_t story[3];
+      memcpy(story, friends[i].story, 3);
+      friends[i] = nf;  // name, date, phone and story may have changed
+      if (!nf.story[0]) memcpy(friends[i].story, story, 3);  // an older device sends no story: keep what we had
       friends[i].meetings = meetings + 1;
       saveFriends();
       return false;
@@ -145,6 +191,8 @@ void factoryReset() {
   defaults(settings.clockSecs);
   saveSettings();
   clearFriends();
+  pathDefaults();
+  savePath();
 }
 
 }  // namespace store

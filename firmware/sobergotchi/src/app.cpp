@@ -9,6 +9,7 @@
 #include "ui/renderer.h"
 #include "generated/reflections.h"
 #include "generated/gnome_notes.h"
+#include "prayers.h"
 
 namespace app {
 
@@ -27,16 +28,25 @@ enum Mode : uint8_t {
   M_HOWTO,          // Friends > Add friend: how to make a friend (hold left + right, devices head to head)
   M_EDIT_DATE,
   M_EDIT_TEXT,
+  M_PATH,           // picking a row on Your path
+  M_UNLOCK,         // Pip's "Something new!" when a Your path item opens (shown instead of the home screen)
+  M_CHECKIN,        // daily check-in: one thing just for today
+  M_PICK,           // a list to tick: Gratitude jar, Your word, Share your story
+  M_PRAYER,         // a Step prayer, a page at a time
+  M_STORY,          // a story: yours or a friend's
+  M_TILES,          // Tree tiles, the sliding puzzle
 };
 
-static const uint8_t CAROUSEL_COUNT = 5;  // main, gnome, reflection, friends, menu
-static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH, S_HOWTO, S_LANDING, S_CALM;
+static const uint8_t CAROUSEL_COUNT = 6;  // main, gnome, reflection, friends, Your path, menu
+static const uint8_t C_PATH = 4, C_MENU = 5;
+static int S_MAIN, S_ANNIV, S_REFLECT, S_FRIENDS, S_MENU, S_FRIEND, S_EDIT_DATE, S_EDIT_TEXT, S_ADDED, S_RPS, S_GNOME, S_CONFIRM, S_INTRO, S_SYSINFO, S_SEARCH, S_HOWTO, S_LANDING, S_CALM,
+    S_PATH, S_UNLOCK, S_LOCKED, S_PIP, S_CHECKIN, S_PICK, S_PRAYER, S_STORY, S_LEAF, S_TILES;
 
 static Mode mode = M_CAROUSEL;
 static uint8_t carousel = 0;
 static int reflectPage = 0, reflectPages = 1;
 static int friendSel = -1, menuSel = -1;
-static bool cardDelete = false;  // friend card: Delete highlighted (else Back)
+static int cardSel = 0;  // friend card: 0 Back, 1 Delete, 2 Their story (only when they shared one)
 static bool sessionDirty = false;  // a partial refresh happened since the last full one
 
 // sorted view of friends: soonest anniversary first
@@ -309,6 +319,127 @@ static void fillN(const char* src, int v, char* out, size_t n) {
   else snprintf(out, n, "%.*s%d%s", (int)(p - src), src, v, p + 3);
 }
 
+// ---------------------------------------------------------------------------
+// Your path: things that open as the days with Pip go by (counted from the day setup was finished, not the sober
+// date, so every new owner has something to look forward to). The calm screen is there from day one.
+// ---------------------------------------------------------------------------
+enum PathItem : uint8_t { U_CALM, U_CHECKIN, U_LEAF, U_THANKS, U_WORD, U_TILES, U_STEP3, U_STORY, U_STEP7, U_STEP11, U_COUNT };
+struct PathInfo { const char* name; uint16_t at; const char* text; };
+static const PathInfo PATH_ITEMS[U_COUNT] = {
+  {"Calm breathing", 0, "Hold down on any screen to breathe with Pip."},
+  {"Daily check-in", 7, "Each day, choose one thing to do just for today."},
+  {"Leaf catch", 30, "A little game. Catch the leaves as they fall."},
+  {"Gratitude jar", 60, "Each night, put three thank-yous in the jar."},
+  {"Your word", 90, "Choose your own word for a power greater than you."},
+  {"Tree tiles", 180, "Slide the pieces to put the tree back together."},
+  {"Third Step prayer", 270, "A prayer for turning it over, here when you want it."},
+  {"Share your story", 365, "Pick three lines to tell your story to friends."},
+  {"Seventh Step prayer", 365, "A prayer for letting go, here when you want it."},
+  {"Eleventh Step prayer", 365, "A prayer for peace, here when you want it."},
+};
+
+static int32_t pipDays() {  // whole days since setup was finished
+  const int32_t d = today() - (int32_t)store::settings.setupDone + PATH_TEST_DAYS;
+  return d < 0 ? 0 : d;
+}
+static bool isOpen(int i) { return pipDays() >= PATH_ITEMS[i].at; }
+static int pendingUnlock() {  // the first opened item whose "Something new!" hasn't been shown, or -1
+  for (int i = 0; i < U_COUNT; i++)
+    if (PATH_ITEMS[i].at > 0 && isOpen(i) && !(store::path.seen & (1u << i))) return i;
+  return -1;
+}
+static void formatWhen(int at, char* out, size_t n) {  // "30 days with Pip", "6 months with Pip", "1 year with Pip"
+  if (at >= 365) snprintf(out, n, "%d year%s with Pip", at / 365, at >= 730 ? "s" : "");
+  else if (at >= 180) snprintf(out, n, "%d months with Pip", (at + 15) / 30);
+  else snprintf(out, n, "%d days with Pip", at);
+}
+static void formatOpensIn(int32_t days, char* out, size_t n) {
+  if (days <= 1) snprintf(out, n, "opens tomorrow");
+  else if (days <= 60) snprintf(out, n, "opens in %ld days", (long)days);
+  else snprintf(out, n, "opens in %ld months", (long)((days * 10 + 152) / 304));
+}
+
+static int pathSel = -1;      // Your path row (U_COUNT = < Back)
+static int unlockItem = 0;    // the item Pip is celebrating
+static bool unlockTry = true; // "Try it now" highlighted (else Later)
+static int lockItem = 0;      // the locked item asked about
+static const char* popTitle = "";  // Pip's note after something is done
+static char popText[120];
+static int popPose = 9;
+
+// Daily check-in
+static const char* const CHECKIN[5] = {"Stay sober", "Call a friend", "Go to a meeting", "Rest and be kind", "Help someone"};
+static const char* const CHECKIN_SAY[5] = {
+  "One day at a time. I'll be right here with you.",
+  "Reaching out takes strength. Who will you call?",
+  "Keep coming back. It works if you work it.",
+  "Be gentle with yourself today. You're doing well.",
+  "We keep what we have by giving it away.",
+};
+static int ciSel = 0;  // 0-4 the choices, 5 < Back
+
+// Lists to tick (M_PICK)
+enum PickKind : uint8_t { K_THANKS, K_WORD, K_STORY };
+static const char* const THANKS[12] = {"Being sober today", "A friend", "My family", "A meeting", "My health", "A good meal",
+                                       "Fresh air", "A good laugh", "A good sleep", "A second chance", "My sponsor",
+                                       "This moment"};
+static const char* const WORDS[7] = {"God", "Higher Power", "the Universe", "Spirit", "my group", "Love", "none for now"};
+static const uint8_t WORD_NONE = 7;  // 1-based "none for now"
+static const char* const STORY[3][6] = {
+  {"I drank to get by.", "I used to escape.", "I felt so alone.", "I lost my way.", "I hid how I felt.", "I couldn't stop."},
+  {"I asked for help.", "A friend reached out.", "I found the rooms.", "I hit my bottom.", "I got honest.", "I gave it a try."},
+  {"Today I'm grateful.", "Today I have hope.", "I take it day by day.", "I help others now.", "I found some peace.",
+   "I came back to life."},
+};
+static const char* const STORY_ASK[3] = {"What it was like:", "What happened:", "What it's like now:"};
+static PickKind pickKind = K_THANKS;
+static int pickSel = 0;
+static uint16_t pickBits = 0;   // Gratitude jar: ticked rows
+static int storyStep = 0;       // Share your story: which line is being picked
+static uint8_t storyTmp[3];
+
+// Step prayers, built with Your word when one is chosen
+static char prayerBuf[960];
+static const char* prayerTitle = "";
+static int prayerPage = 0, prayerPages = 1;
+
+// A story on screen
+static bool svOwn = true, svBack = false;
+static uint8_t svLines[3];
+static char svName[NAME_LEN + 1];
+
+// Tree tiles: board[cell] = tile (8 = the gap); tSel picks among the tiles next to the gap, then < Back
+static uint8_t board[9];
+static int tSel = 0, tMoves = 0;
+
+// Leaf catch
+static int leafBasket = 1, leafCaught = 0, leafFallen = 0;
+static int8_t leafLane[3], leafRow[3];  // up to three leaves falling (row -1 = none)
+static const char* leafSay = "";
+static bool leafPlaying = false;
+
+static int pickCount() {
+  if (pickKind == K_THANKS) return 12 + 2;  // + Put in the jar, < Back
+  if (pickKind == K_WORD) return 7 + 1;
+  return 6 + 1;
+}
+
+// Tree tiles: the cells next to the gap, in order; option i of them, or -1 for < Back
+static int tileOptions(int* cells) {
+  int gap = 0, k = 0;
+  for (int i = 0; i < 9; i++) if (board[i] == 8) gap = i;
+  for (int i = 0; i < 9; i++) {
+    const bool next = (i / 3 == gap / 3 && abs(i - gap) == 1) || (i % 3 == gap % 3 && abs(i - gap) == 3);
+    if (next) cells[k++] = i;
+  }
+  return k;
+}
+static int tileOption(int sel) {
+  int cells[4];
+  const int k = tileOptions(cells);
+  return sel >= 0 && sel < k ? cells[sel] : -1;
+}
+
 static int nextFriend() {  // index into store::friends of the soonest anniversary, or -1
   if (orderToday != today()) sortFriends();
   return store::friendCount ? order[0] : -1;
@@ -337,6 +468,8 @@ class Data : public UiData {
     // first row "Add friend", then the friends, last row "Back"; no friends: the empty page (enter adds one)
     if (!strcmp(name, "friends")) return store::friendCount + 2;  // with no friends: just Add friend and Back
     if (!strcmp(name, "menu")) return menuCount();
+    if (!strcmp(name, "path")) return U_COUNT + 1;  // + < Back
+    if (!strcmp(name, "pick")) return pickCount();
     return 0;
   }
   void setListItem(const char* name, int index) override {
@@ -453,6 +586,99 @@ class Data : public UiData {
       return;
     }
     if (!strncmp(key, "intro.", 6)) return introValue(key + 6, out, n);
+    if (!strcmp(key, "use.days")) return num(pipDays() + 1);
+    if (!strcmp(key, "path.sel")) return num(mode == M_PATH ? pathSel : -1);
+    if (!strncmp(key, "unlock.", 7)) {
+      const char* k = key + 7;
+      const PathInfo& p = PATH_ITEMS[unlockItem];
+      if (!strcmp(k, "when")) return formatWhen(p.at, out, n);
+      if (!strcmp(k, "name")) return str(p.name);
+      if (!strcmp(k, "text")) return str(p.text);
+      if (!strcmp(k, "try")) return flag(unlockTry);
+      return;
+    }
+    if (!strcmp(key, "lock.name")) return str(PATH_ITEMS[lockItem].name);
+    if (!strcmp(key, "lock.text")) {
+      const int32_t left = PATH_ITEMS[lockItem].at - pipDays();
+      char date[16];
+      formatDate(t + left, "MMM d", date, sizeof date);
+      snprintf(out, n, "Pip is still getting this ready. It opens in %ld day%s, on %s.", (long)left, left == 1 ? "" : "s", date);
+      return;
+    }
+    if (!strcmp(key, "pop.title")) return str(popTitle);
+    if (!strcmp(key, "pop.text")) return str(popText);
+    if (!strcmp(key, "pop.pose")) return num(popPose);
+    if (!strncmp(key, "ci.", 3)) {
+      const char* k = key + 3;
+      if (k[0] == 'l') return str(CHECKIN[(k[1] - '0') % 5]);
+      if (k[0] == 's') return flag(ciSel == k[1] - '0');
+      if (!strcmp(k, "done")) {
+        if (store::path.checkDay == t) snprintf(out, n, "Today: %s", CHECKIN[store::path.checkPick % 5]);
+        else str("pick one");
+        return;
+      }
+      return;
+    }
+    if (!strncmp(key, "pick.", 5)) {
+      const char* k = key + 5;
+      if (!strcmp(k, "sel")) return num(mode == M_PICK ? pickSel : -1);
+      if (!strcmp(k, "title")) return str(pickKind == K_THANKS ? "Gratitude jar" : pickKind == K_WORD ? "Your word" : "Your story");
+      if (!strcmp(k, "right")) {
+        if (pickKind == K_THANKS) snprintf(out, n, "%u in jar", (unsigned)store::path.thanks);
+        else if (pickKind == K_STORY) snprintf(out, n, "%d of 3", storyStep + 1);
+        return;
+      }
+      if (!strcmp(k, "text")) {
+        if (pickKind == K_THANKS) return str("Tick up to three things you're thankful for.");
+        if (pickKind == K_WORD) return str("What should I call a higher power?");
+        return str(STORY_ASK[storyStep]);
+      }
+      return;
+    }
+    if (!strncmp(key, "prayer.", 7)) {
+      const char* k = key + 7;
+      if (!strcmp(k, "title")) return str(prayerTitle);
+      if (!strcmp(k, "page")) return num(prayerPage);
+      if (!strcmp(k, "more")) { if (prayerPages > 1) snprintf(out, n, "%d/%d", prayerPage + 1, prayerPages); return; }
+      if (!strcmp(k, "btn")) return str(prayerPage < prayerPages - 1 ? "More >" : "< Back");
+      if (k[0] >= 'a' && k[0] <= 'f' && !k[1]) {  // the prayer in slices that fit a value (150 characters each)
+        const size_t at = (k[0] - 'a') * 150, len = strlen(prayerBuf);
+        if (at < len) snprintf(out, n, "%.150s", prayerBuf + at);
+      }
+      return;
+    }
+    if (!strncmp(key, "sv.", 3)) {
+      const char* k = key + 3;
+      if (!strcmp(k, "title")) { if (svOwn) str("Your story"); else snprintf(out, n, "%s's story", svName); return; }
+      if (k[0] >= 'a' && k[0] <= 'c' && !k[1]) {
+        const int line = k[0] - 'a', v = svLines[line];
+        if (v >= 1 && v <= 6) str(STORY[line][v - 1]);
+        return;
+      }
+      if (!strcmp(k, "own")) return flag(svOwn);
+      if (!strcmp(k, "back")) return flag(svBack);
+      return;
+    }
+    if (!strncmp(key, "tl.", 3)) {
+      const char* k = key + 3;
+      if (k[0] == 'v') return num(board[(k[1] - '0') % 9]);
+      if (k[0] == 's') return flag(tileOption(tSel) == k[1] - '0');
+      if (!strcmp(k, "back")) return flag(tileOption(tSel) < 0);
+      if (!strcmp(k, "moves")) { snprintf(out, n, "%d move%s", tMoves, tMoves == 1 ? "" : "s"); return; }
+      return;
+    }
+    if (!strncmp(key, "lf.", 3)) {
+      const char* k = key + 3;
+      if (k[0] == 'c') {
+        const int r = k[1] - '0', l = k[2] - '0';
+        for (int i = 0; i < 3; i++) if (leafRow[i] == r && leafLane[i] == l) return flag(true);
+        return;
+      }
+      if (k[0] == 'b') return flag(leafBasket == k[1] - '0');
+      if (!strcmp(k, "score")) { snprintf(out, n, "%d caught", leafCaught); return; }
+      if (!strcmp(k, "say")) return str(leafSay);
+      return;
+    }
 
     if (!strncmp(key, "reflect.", 8)) {
       const Reflection& r = REFLECTIONS[dayOfYear366(t) % REFLECTION_COUNT];
@@ -474,7 +700,10 @@ class Data : public UiData {
       if (!strcmp(k, "years")) return num(yearsNow(f.soberDay, t));
       if (!strcmp(k, "phone")) return formatPhone(f.phone, out, n);
       if (!strcmp(k, "in")) return formatUntil(nextAnniversary(f.soberDay, t) - t, out, n);
-      if (!strcmp(k, "del")) return flag(cardDelete);
+      if (!strcmp(k, "del")) return flag(cardSel == 1);
+      if (!strcmp(k, "s0")) return flag(cardSel == 0);
+      if (!strcmp(k, "s2")) return flag(cardSel == 2);
+      if (!strcmp(k, "story")) return flag(f.story[0] && cardSel != 2);
     }
 
     if (!strncmp(key, "rps.", 4)) {
@@ -534,6 +763,8 @@ class Data : public UiData {
 
   void itemValue(const char* k, const char* fmt, char* out, size_t n, int32_t t) {
     if (list && !strcmp(list, "menu")) return menuValue(k, out, n);
+    if (list && !strcmp(list, "path")) return pathValue(k, out, n);
+    if (list && !strcmp(list, "pick")) return pickValue(k, out, n);
     if (item == 0 || item == store::friendCount + 1) {  // the "Add friend" and "Back" rows
       if (!strcmp(k, "name")) snprintf(out, n, "%s", item ? "Back" : "Add friend");
       else if (!strcmp(k, "back")) snprintf(out, n, "1");  // plain row: no date badge
@@ -551,6 +782,57 @@ class Data : public UiData {
     else if (!strcmp(k, "in")) formatUntil(a - t, out, n);
     else if (!strcmp(k, "phone")) formatPhone(f.phone, out, n);
     else if (!strcmp(k, "today")) snprintf(out, n, "%s", a == t ? "1" : "");
+  }
+
+  // Your path rows: item.name, item.sub, item.locked / item.open (padlock), item.back
+  void pathValue(const char* k, char* out, size_t n) {
+    auto flag = [&](bool b) { snprintf(out, n, "%s", b ? "1" : ""); };
+    if (item == U_COUNT) {
+      if (!strcmp(k, "name")) snprintf(out, n, "Back");
+      else if (!strcmp(k, "back")) flag(true);
+      return;
+    }
+    if (item < 0 || item > U_COUNT) return;
+    const bool open = isOpen(item);
+    if (!strcmp(k, "name")) { snprintf(out, n, "%s", PATH_ITEMS[item].name); return; }
+    if (!strcmp(k, "locked")) return flag(!open);
+    if (!strcmp(k, "open")) return flag(open);
+    if (strcmp(k, "sub")) return;
+    if (!open) return formatOpensIn(PATH_ITEMS[item].at - pipDays(), out, n);
+    const Path& p = store::path;
+    const int32_t t = today();
+    switch (item) {
+      case U_CALM: snprintf(out, n, "hold down anytime"); return;
+      case U_CHECKIN: snprintf(out, n, "%s", p.checkDay == t ? "done today" : "open"); return;
+      case U_LEAF: if (p.leafBest) snprintf(out, n, "best %d of %d", p.leafBest, LEAF_COUNT); else snprintf(out, n, "open"); return;
+      case U_THANKS: snprintf(out, n, "%u in the jar", (unsigned)p.thanks); return;
+      case U_WORD: snprintf(out, n, "%s", p.word ? WORDS[p.word - 1] : "open"); return;
+      case U_TILES: if (p.tilesBest) snprintf(out, n, "best %u moves", (unsigned)p.tilesBest); else snprintf(out, n, "open"); return;
+      case U_STORY: snprintf(out, n, "%s", p.story[0] ? "shared with friends" : "open"); return;
+      default: snprintf(out, n, "open"); return;
+    }
+  }
+
+  // Pick rows: item.label, item.box (empty tick box), item.on (ticked), item.back, item.done
+  void pickValue(const char* k, char* out, size_t n) {
+    auto flag = [&](bool b) { snprintf(out, n, "%s", b ? "1" : ""); };
+    const int count = pickCount();
+    if (item < 0 || item >= count) return;
+    const bool back = item == count - 1, done = pickKind == K_THANKS && item == count - 2;
+    const bool on = !back && !done &&
+                    (pickKind == K_THANKS ? (pickBits >> item) & 1
+                     : pickKind == K_WORD ? store::path.word == item + 1
+                                          : store::path.story[storyStep] == item + 1);
+    if (!strcmp(k, "label")) {
+      if (back) snprintf(out, n, "%s", pickKind == K_STORY && storyStep ? "Back a step" : "Back");
+      else if (done) snprintf(out, n, "Put in the jar");
+      else snprintf(out, n, "%s", pickKind == K_THANKS ? THANKS[item] : pickKind == K_WORD ? WORDS[item] : STORY[storyStep][item]);
+      return;
+    }
+    if (!strcmp(k, "back")) return flag(back);
+    if (!strcmp(k, "done")) return flag(done);
+    if (!strcmp(k, "on")) return flag(on);
+    if (!strcmp(k, "box")) return flag(!back && !done && !on && pickKind != K_STORY);
   }
 
   void menuValue(const char* k, char* out, size_t n) {
@@ -637,15 +919,20 @@ class Data : public UiData {
 
   void hint(char* out, size_t n) {
     if (searching) { snprintf(out, n, "radio on while held"); return; }
+    if (leafPlaying) { snprintf(out, n, "\202 \203 move  \177  \201 stop"); return; }
     switch (mode) {
       case M_HOWTO: snprintf(out, n, "\201 back"); break;
       case M_FRIENDS: snprintf(out, n, "\202 \203 move  \177  \201 %s", friendSel == 0 ? "add" : "open"); break;
       case M_MENU: snprintf(out, n, "\202 \203 move  \177  \201 change"); break;
       case M_CONFIRM: snprintf(out, n, "\202 \203 choose  \177  \201 ok"); break;
       case M_EDIT_TEXT: snprintf(out, n, "\202 \203 move  \177  \201 pick"); break;
+      case M_PATH: snprintf(out, n, "\202 \203 move  \177  \201 open"); break;
+      case M_PICK: snprintf(out, n, "\202 \203 move  \177  \201 %s", pickKind == K_THANKS ? "tick" : "pick"); break;
+      case M_TILES: snprintf(out, n, "\202 \203 choose  \177  \201 slide"); break;
       default:
         if (carousel == 3) snprintf(out, n, store::friendCount ? "\201 choose a friend" : "\201 add a friend");
-        else if (carousel == 4) snprintf(out, n, "\201 choose a setting");
+        else if (carousel == C_PATH) snprintf(out, n, "\201 choose");
+        else if (carousel == C_MENU) snprintf(out, n, "\201 choose a setting");
         break;
     }
   }
@@ -668,6 +955,13 @@ static int currentScreen() {
     case M_EDIT_TEXT: return S_EDIT_TEXT;
     case M_FRIENDS: return S_FRIENDS;
     case M_MENU: return S_MENU;
+    case M_PATH: return S_PATH;
+    case M_UNLOCK: return S_UNLOCK;
+    case M_CHECKIN: return S_CHECKIN;
+    case M_PICK: return S_PICK;
+    case M_PRAYER: return S_PRAYER;
+    case M_STORY: return S_STORY;
+    case M_TILES: return S_TILES;
     default: break;
   }
   switch (carousel) {
@@ -679,6 +973,7 @@ static int currentScreen() {
     case 1: return S_GNOME;
     case 2: return S_REFLECT;
     case 3: return S_FRIENDS;
+    case C_PATH: return S_PATH;
     default: return S_MENU;
   }
 }
@@ -696,6 +991,7 @@ static void show(bool full) {
   int pagesBefore = reflectPages;
   draw(id, full);
   if (id == S_REFLECT && reflectPages != pagesBefore && reflectPages > 1) draw(id, false);  // page count now known
+  if (id == S_PRAYER && reflectPages != prayerPages) { prayerPages = reflectPages; draw(id, false); }
   if (!full) sessionDirty = true;
 }
 
@@ -793,11 +1089,239 @@ static void beginSetup() {
 }
 
 static void finishIntro() {
-  store::settings.setupDone = 1;
+  store::settings.setupDone = (uint32_t)today();  // Your path counts days with Pip from here
+  store::path.seen = 0;
   store::settings.clockSecs = hw::now();
   store::saveSettings();
   sortFriends();
   mode = M_CAROUSEL;
+}
+
+// ---------------------------------------------------------------------------
+// Your path
+// ---------------------------------------------------------------------------
+static void pipNote(const char* title, int pose) {  // Pip's note (popText filled first), then back to Your path
+  popTitle = title;
+  popPose = pose;
+  showPopup(S_PIP);
+  mode = M_PATH;
+}
+
+static void buildPrayer(int which) {
+  const Prayer& p = PRAYERS[which];
+  const uint8_t w = store::path.word;
+  char word[24];
+  snprintf(word, sizeof word, "%s", w >= 1 && w < WORD_NONE ? WORDS[w - 1] : p.word);
+  int len = 0;
+  bool start = true;  // capitalise the word at the start of a sentence ("the Universe" -> "The Universe")
+  for (const char* c = p.text; *c && len < (int)sizeof prayerBuf - 1;) {
+    if (!strncmp(c, "{word}", 6)) {
+      for (int i = 0; word[i] && len < (int)sizeof prayerBuf - 1; i++)
+        prayerBuf[len++] = (i == 0 && start && word[0] >= 'a' && word[0] <= 'z') ? word[0] - 32 : word[i];
+      c += 6;
+      start = false;
+      continue;
+    }
+    if (*c == '.' || *c == '!' || *c == '?') start = true;
+    else if (*c != ' ') start = false;
+    prayerBuf[len++] = *c++;
+  }
+  prayerBuf[len] = 0;
+  prayerTitle = p.title;
+  prayerPage = 0;
+  prayerPages = 1;
+}
+
+static void tilesStart() {
+  for (int i = 0; i < 9; i++) board[i] = i;
+  uint32_t h = dayHash((int32_t)millis(), 23);
+  int last = -1;
+  for (int m = 0; m < 80 || board[0] == 0; m++) {  // random slides from the finished picture: always solvable
+    int cells[4];
+    const int k = tileOptions(cells);
+    h = dayHash((int32_t)h, m);
+    int c = cells[h % k];
+    if (c == last) c = cells[(h / 7 + 1) % k];
+    int gap = 0;
+    for (int i = 0; i < 9; i++) if (board[i] == 8) gap = i;
+    board[gap] = board[c];
+    board[c] = 8;
+    last = gap;
+  }
+  tSel = 0;
+  tMoves = 0;
+  mode = M_TILES;
+}
+
+static void tilesSlide() {
+  const int c = tileOption(tSel);
+  if (c < 0) { mode = M_PATH; return; }  // < Back
+  for (int i = 0; i < 9; i++)
+    if (board[i] == 8) { board[i] = board[c]; board[c] = 8; break; }
+  tMoves++;
+  tSel = 0;
+  for (int i = 0; i < 9; i++) if (board[i] != i) return;
+  store::path.tilesDone++;
+  if (!store::path.tilesBest || tMoves < store::path.tilesBest) store::path.tilesBest = tMoves;
+  store::savePath();
+  snprintf(popText, sizeof popText, "The tree is whole again, in %d moves. Your best is %u.", tMoves,
+           (unsigned)store::path.tilesBest);
+  draw(S_TILES, false);
+  delay(1500);
+  pipNote("Solved!", 9);
+}
+
+// Leaf catch: leaves fall down three lanes, one row every LEAF_STEP_MS; up / down move the basket, enter stops.
+static void leafDraw() { draw(S_LEAF, false); sessionDirty = true; }
+
+static void leafGame() {
+  LOG("leaf catch");
+  leafBasket = 1; leafCaught = 0; leafFallen = 0; leafSay = "here they come";
+  leafPlaying = true;
+  for (int i = 0; i < 3; i++) leafRow[i] = -1;
+  int spawned = 0, tick = 0;
+  uint32_t h = dayHash((int32_t)millis(), 31);
+  leafDraw();
+  uint32_t next = millis() + LEAF_STEP_MS;
+  bool stop = false;
+  while (!stop) {
+    const int32_t left = (int32_t)(next - millis());
+    if (left > 0) {
+      const Event e = hw::wait((uint32_t)left);
+      if (e == EV_KEY2 || e == EV_KEY2_LONG) stop = true;
+      else if (e == EV_KEY1 && leafBasket > 0) { leafBasket--; leafDraw(); }
+      else if (e == EV_KEY3 && leafBasket < 2) { leafBasket++; leafDraw(); }
+      else if (e == EV_ADD_FRIEND) { while (hw::comboHeld()) delay(20); hw::flushKeys(); }
+      else if (e == EV_CALM) { while (hw::downHeld()) delay(20); hw::flushKeys(); }
+      continue;
+    }
+    // one step: everything falls a row; a leaf reaching the basket row is caught or missed
+    tick++;
+    bool any = false;
+    for (int i = 0; i < 3; i++) {
+      if (leafRow[i] < 0) continue;
+      if (++leafRow[i] >= 5) {
+        leafFallen++;
+        if (leafLane[i] == leafBasket) { leafCaught++; leafSay = "caught!"; } else leafSay = "missed";
+        leafRow[i] = -1;
+      } else any = true;
+    }
+    if (spawned < LEAF_COUNT && tick % 2 == 1) {
+      for (int i = 0; i < 3; i++)
+        if (leafRow[i] < 0) {
+          h = dayHash((int32_t)h, tick);
+          leafLane[i] = h % 3;
+          leafRow[i] = 0;
+          spawned++;
+          any = true;
+          break;
+        }
+    }
+    if (!any && spawned >= LEAF_COUNT) break;
+    leafDraw();
+    next += LEAF_STEP_MS;
+    if ((int32_t)(millis() - next) > 0) next = millis() + LEAF_STEP_MS;  // slow refresh: don't rush
+  }
+  if (leafCaught > store::path.leafBest) store::path.leafBest = leafCaught;
+  store::savePath();
+  snprintf(popText, sizeof popText, "You caught %d of %d leaves. Your best is %d.", leafCaught, leafFallen,
+           store::path.leafBest);
+  leafPlaying = false;
+  pipNote(stop ? "Good game" : "Well done!", 9);
+}
+
+static void showStory(bool own, const uint8_t* lines, const char* name) {
+  svOwn = own;
+  svBack = false;
+  memcpy(svLines, lines, 3);
+  snprintf(svName, sizeof svName, "%s", name ? name : "");
+  mode = M_STORY;
+}
+
+static void startPick(PickKind kind) {
+  pickKind = kind;
+  pickSel = 0;
+  if (kind == K_THANKS) pickBits = store::path.thankDay == today() ? store::path.thankBits : 0;
+  if (kind == K_WORD && store::path.word) pickSel = store::path.word - 1;
+  if (kind == K_STORY) { storyStep = 0; memcpy(storyTmp, store::path.story, 3); }
+  mode = M_PICK;
+}
+
+static void calm();
+
+// Opens a Your path item (from its row or from "Try it now").
+static void openItem(int i) {
+  pathSel = i;
+  mode = M_PATH;
+  switch (i) {
+    case U_CALM: calm(); break;
+    case U_CHECKIN:
+      mode = M_CHECKIN;
+      ciSel = store::path.checkDay == today() ? store::path.checkPick : 0;
+      break;
+    case U_LEAF: leafGame(); break;
+    case U_THANKS: startPick(K_THANKS); break;
+    case U_WORD: startPick(K_WORD); break;
+    case U_TILES: tilesStart(); break;
+    case U_STEP3: buildPrayer(0); mode = M_PRAYER; break;
+    case U_STEP7: buildPrayer(1); mode = M_PRAYER; break;
+    case U_STEP11: buildPrayer(2); mode = M_PRAYER; break;
+    case U_STORY:
+      if (store::path.story[0]) showStory(true, store::path.story, nullptr);
+      else startPick(K_STORY);
+      break;
+  }
+}
+
+static void pickEnter() {
+  const int count = pickCount();
+  if (pickSel == count - 1) {  // < Back
+    if (pickKind == K_STORY && storyStep > 0) { storyStep--; pickSel = storyTmp[storyStep] ? storyTmp[storyStep] - 1 : 0; return; }
+    mode = M_PATH;
+    return;
+  }
+  if (pickKind == K_THANKS) {
+    if (pickSel == count - 2) {  // Put in the jar
+      if (!pickBits) { mode = M_PATH; return; }
+      const int32_t t = today();
+      const uint16_t before = store::path.thankDay == t ? store::path.thankBits : 0;
+      int added = 0;
+      for (int i = 0; i < 12; i++) if ((pickBits & ~before) >> i & 1) added++;
+      store::path.thanks += added;
+      store::path.thankBits = pickBits | before;
+      store::path.thankDay = t;
+      store::savePath();
+      snprintf(popText, sizeof popText, "%u thank-yous in your jar now. Gratitude keeps the garden growing.",
+               (unsigned)store::path.thanks);
+      pipNote("Thank you", 5);
+      return;
+    }
+    const uint16_t bit = 1u << pickSel;
+    int on = 0;
+    for (int i = 0; i < 12; i++) if (pickBits >> i & 1) on++;
+    if (pickBits & bit) pickBits &= ~bit;
+    else if (on < 3) pickBits |= bit;
+    return;
+  }
+  if (pickKind == K_WORD) {
+    store::path.word = pickSel + 1;
+    store::path.seen |= 1u << U_WORD;
+    store::savePath();
+    if (store::path.word == WORD_NONE)
+      snprintf(popText, sizeof popText, "That's fine. The prayers stay as they are written, ready when you are.");
+    else
+      snprintf(popText, sizeof popText, "I'll use \"%s\" in the prayers from now on.", WORDS[pickSel]);
+    pipNote("Your word", 7);
+    return;
+  }
+  // Share your story: a line per page
+  storyTmp[storyStep] = pickSel + 1;
+  if (++storyStep < 3) { pickSel = storyTmp[storyStep] ? storyTmp[storyStep] - 1 : 0; return; }
+  memcpy(store::path.story, storyTmp, 3);
+  store::savePath();
+  snprintf(popText, sizeof popText, "Friends you meet will see your story, and you'll see theirs.");
+  pipNote("Thank you", 9);
+  showStory(true, store::path.story, nullptr);
 }
 
 // ---------------------------------------------------------------------------
@@ -825,7 +1349,7 @@ static void addFriend() {
   searching = true;
   draw(S_SEARCH, false);
   sessionDirty = true;
-  exchange::start(store::settings, ADD_FRIEND_MIN_RSSI);
+  exchange::start(store::settings, store::path.story, ADD_FRIEND_MIN_RSSI);
   LOG("add friend: radio on while held");
   const uint32_t t0 = millis();
   uint32_t foundAt = 0;
@@ -933,7 +1457,8 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2) {
         if (carousel == 2) reflectPage = (reflectPage + 1) % (reflectPages ? reflectPages : 1);
         else if (carousel == 3) { mode = M_FRIENDS; friendSel = store::friendCount ? 1 : 0; }  // first friend, or Add
-        else if (carousel == 4) { mode = M_MENU; menuUser = false; menuSel = 0; }
+        else if (carousel == C_PATH) { mode = M_PATH; pathSel = 0; }
+        else if (carousel == C_MENU) { mode = M_MENU; menuUser = false; menuSel = 0; }
       }
       break;
 
@@ -952,14 +1477,17 @@ static void handleKey(Event e) {
       else if (e == EV_KEY2 && friendSel > store::friendCount) mode = M_CAROUSEL;
       else if (e == EV_KEY2) {
         popupFriend = store::friends[order[friendSel - 1]];
-        cardDelete = false;  // Back highlighted
+        cardSel = 0;  // Back highlighted
         mode = M_FRIEND_CARD;
       }
       break;
 
     case M_FRIEND_CARD:  // up / down choose Back or Delete; enter does it, and Delete asks first
-      if (e == EV_KEY1 || e == EV_KEY3) cardDelete = !cardDelete;
-      else if (e == EV_KEY2 && !cardDelete) mode = M_FRIENDS;
+      if (e == EV_KEY1 || e == EV_KEY3) {  // Back, Delete, Their story (when shared), round again
+        const int count = popupFriend.story[0] ? 3 : 2;
+        cardSel = (cardSel + (e == EV_KEY3 ? 1 : count - 1)) % count;
+      } else if (e == EV_KEY2 && cardSel == 0) mode = M_FRIENDS;
+      else if (e == EV_KEY2 && cardSel == 2) showStory(false, popupFriend.story, popupFriend.name);
       else if (e == EV_KEY2) {
         mode = M_CONFIRM;
         confirmWhat = C_DELETE;
@@ -998,7 +1526,7 @@ static void handleKey(Event e) {
             if (friendSel > store::friendCount) friendSel = store::friendCount;
             mode = M_FRIENDS;  // with none left, on Add friend
           } else {
-            cardDelete = false;
+            cardSel = 0;
             mode = M_FRIEND_CARD;  // Cancel: back to their card, on Back
           }
         } else if (!confirmYes) mode = M_MENU;
@@ -1013,6 +1541,71 @@ static void handleKey(Event e) {
         }
       }
       break;
+
+    case M_PATH:  // rows: the items, then < Back
+      if (e == EV_KEY1 && pathSel > 0) pathSel--;
+      else if (e == EV_KEY3 && pathSel < U_COUNT) pathSel++;
+      else if (e == EV_KEY2 && pathSel == U_COUNT) mode = M_CAROUSEL;
+      else if (e == EV_KEY2 && !isOpen(pathSel)) { lockItem = pathSel; showPopup(S_LOCKED); }
+      else if (e == EV_KEY2) openItem(pathSel);
+      break;
+
+    case M_UNLOCK:  // Try it now / Later
+      if (e == EV_KEY1 || e == EV_KEY3) unlockTry = !unlockTry;
+      else if (e == EV_KEY2) {
+        store::path.seen |= 1u << unlockItem;
+        store::savePath();
+        if (unlockTry) { carousel = C_PATH; openItem(unlockItem); }
+        else {
+          mode = M_CAROUSEL;
+          carousel = 0;
+          const int u = pendingUnlock();  // two opened on the same day: the next one
+          if (u >= 0) { mode = M_UNLOCK; unlockItem = u; unlockTry = true; }
+        }
+      }
+      break;
+
+    case M_CHECKIN:  // five choices, then < Back
+      if (e == EV_KEY1) ciSel = (ciSel + 5) % 6;
+      else if (e == EV_KEY3) ciSel = (ciSel + 1) % 6;
+      else if (e == EV_KEY2 && ciSel == 5) mode = M_PATH;
+      else if (e == EV_KEY2) {
+        store::path.checkPick = ciSel;
+        store::path.checkDay = today();
+        store::savePath();
+        snprintf(popText, sizeof popText, "%s", CHECKIN_SAY[ciSel]);
+        pipNote("Just for today", 9);
+      }
+      break;
+
+    case M_PICK:
+      if (e == EV_KEY1) pickSel = (pickSel + pickCount() - 1) % pickCount();
+      else if (e == EV_KEY3) pickSel = (pickSel + 1) % pickCount();
+      else if (e == EV_KEY2) pickEnter();
+      break;
+
+    case M_PRAYER:  // enter turns the page, then goes back
+      if (e == EV_KEY2) {
+        if (prayerPage < prayerPages - 1) prayerPage++;
+        else mode = M_PATH;
+      }
+      break;
+
+    case M_STORY:
+      if (svOwn && (e == EV_KEY1 || e == EV_KEY3)) svBack = !svBack;
+      else if (e == EV_KEY2 && !svOwn) { cardSel = 2; mode = M_FRIEND_CARD; }
+      else if (e == EV_KEY2 && svBack) mode = M_PATH;
+      else if (e == EV_KEY2) startPick(K_STORY);
+      break;
+
+    case M_TILES: {
+      int cells[4];
+      const int k = tileOptions(cells) + 1;  // + < Back
+      if (e == EV_KEY1) tSel = (tSel + k - 1) % k;
+      else if (e == EV_KEY3) tSel = (tSel + 1) % k;
+      else if (e == EV_KEY2) tilesSlide();
+      break;
+    }
 
     case M_EDIT_DATE: {
       int fields = editTarget == E_TODAY ? 4 : 3;
@@ -1062,8 +1655,12 @@ struct UiState {
   uint32_t draws;
   int mode, carousel, reflectPage, friendSel, menuSel, introStep;
   int editTarget, editField, editY, editM, editD, editH, editChoice, kbSel, confirmWhat;
-  bool cardDelete, menuUser, confirmYes, confirmAgain, kbShift, searching, introBack;
-  int friendCount;
+  bool menuUser, confirmYes, confirmAgain, kbShift, searching, introBack;
+  int friendCount, cardSel;
+  int pathSel, unlockItem, ciSel, pickKind, pickSel, storyStep, prayerPage, tSel, tMoves;
+  bool unlockTry, svBack, svOwn;
+  uint16_t pickBits;
+  uint8_t board[9];
   char editBuf[PHONE_LEN + 2];
 };
 
@@ -1074,9 +1671,13 @@ static void snapshot(UiState& u) {
   u.introStep = introStep;
   u.editTarget = editTarget; u.editField = editField; u.editY = editY; u.editM = editM; u.editD = editD;
   u.editH = editH; u.editChoice = editChoice; u.kbSel = kbSel; u.confirmWhat = confirmWhat;
-  u.cardDelete = cardDelete; u.menuUser = menuUser; u.confirmYes = confirmYes; u.confirmAgain = confirmAgain;
+  u.cardSel = cardSel; u.menuUser = menuUser; u.confirmYes = confirmYes; u.confirmAgain = confirmAgain;
   u.kbShift = kbShift; u.searching = searching; u.introBack = introBack;
   u.friendCount = store::friendCount;
+  u.pathSel = pathSel; u.unlockItem = unlockItem; u.ciSel = ciSel; u.pickKind = pickKind; u.pickSel = pickSel;
+  u.storyStep = storyStep; u.prayerPage = prayerPage; u.tSel = tSel; u.tMoves = tMoves;
+  u.unlockTry = unlockTry; u.svBack = svBack; u.svOwn = svOwn; u.pickBits = pickBits;
+  memcpy(u.board, board, sizeof board);
   memcpy(u.editBuf, editBuf, sizeof editBuf);
 }
 
@@ -1097,7 +1698,9 @@ static void goHome(bool full) {
   carousel = 0;
   menuUser = false;
   reflectPage = 0;
-  cardDelete = false;
+  cardSel = 0;
+  const int u = pendingUnlock();  // something opened on Your path: Pip says so instead of the home screen
+  if (u >= 0) { mode = M_UNLOCK; unlockItem = u; unlockTry = true; }
   show(full);
   sessionDirty = false;
   shownDay = today();
@@ -1123,11 +1726,25 @@ void begin() {
   S_HOWTO = ui::screenByName("howto");
   S_LANDING = ui::screenByName("landing");
   S_CALM = ui::screenByName("calm");
+  S_PATH = ui::screenByName("journey");
+  S_UNLOCK = ui::screenByName("unlock");
+  S_LOCKED = ui::screenByName("locked");
+  S_PIP = ui::screenByName("pip");
+  S_CHECKIN = ui::screenByName("checkin");
+  S_PICK = ui::screenByName("pick");
+  S_PRAYER = ui::screenByName("prayer");
+  S_STORY = ui::screenByName("story");
+  S_LEAF = ui::screenByName("leaf");
+  S_TILES = ui::screenByName("tiles");
 
   // Clock: the newest of the saved time and the firmware build time.
   uint32_t built = hw::buildTime();
   hw::setNow(store::settings.clockSecs > built ? store::settings.clockSecs : built);
   sortFriends();
+  if (store::settings.setupDone == 1) {  // set up before v1.34: Your path counts from today
+    store::settings.setupDone = (uint32_t)today();
+    store::saveSettings();
+  }
   if (inIntro()) {  // fresh flash: the landing page, then Pip says hello and asks for the name, sober date and phone
     startIntro();
     show(true);
@@ -1168,7 +1785,7 @@ void loop() {
     else show(false);
     return;
   }
-  bool home = mode == M_CAROUSEL && carousel == 0 && !sessionDirty;
+  bool home = ((mode == M_CAROUSEL && carousel == 0) || mode == M_UNLOCK) && !sessionDirty;
   // At home: sleep until midnight. Elsewhere: until the idle timeout.
   uint32_t timeout = home ? hw::secondsToMidnight() * 1000UL + 2000UL : IDLE_TIMEOUT_MS;
   Event e = hw::wait(timeout);

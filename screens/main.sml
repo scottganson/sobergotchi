@@ -41,5 +41,5 @@
       <text w="*" font="small-b">{next.name} · {next.years} yrs!</text>
     </row>
   </stack>
-  <dots h="9" count="5"/>
+  <dots h="9" count="6"/>
 </screen>
