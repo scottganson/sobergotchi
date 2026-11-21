@@ -1,10 +1,10 @@
 <!-- One friend's card. Up / down choose Back or Delete, enter does it; Delete asks first (confirm screen). -->
 <screen id="friend">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">Friend</text>
+    <text w="*" font="head">Friend</text>
   </row>
   <text h="36" font="name" align="center" margin="6 2 0 2">{friend.name}</text>
-  <text h="16" font="label-b" align="center">{friend.years} years sober</text>
+  <text h="16" font="head" align="center">{friend.years} years sober</text>
   <text h="13" font="small" align="center">since {friend.date:MMM d, yyyy}</text>
   <image h="16" src="sprig"/>
   <image h="16" src="phone"/>

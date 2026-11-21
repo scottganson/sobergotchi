@@ -2,7 +2,7 @@
      highlighted key or does the action. -->
 <screen id="edit-text">
   <row h="21" fill="ink" pad="0 4 0 5">
-    <text w="*" font="label-b">{edit.title}</text>
+    <text w="*" font="head">{edit.title}</text>
   </row>
   <spacer h="5"/>
   <text h="22" font="label-b" align="center" margin="0 4">{edit.text}</text>
